@@ -71,6 +71,33 @@
             .mapa-marker--centro .mapa-marker__pin {
                 background: linear-gradient(145deg, #10b981, #047857);
             }
+
+            /* Mantener capas Leaflet dentro del mapa; no tapar menús Filament (z-30+) */
+            .mapa-operacion-contenedor {
+                position: relative;
+                z-index: 0;
+                isolation: isolate;
+            }
+
+            #mapa-operacion.leaflet-container {
+                z-index: 1 !important;
+            }
+
+            #mapa-operacion .leaflet-tile-pane { z-index: 1 !important; }
+            #mapa-operacion .leaflet-overlay-pane { z-index: 2 !important; }
+            #mapa-operacion .leaflet-shadow-pane { z-index: 3 !important; }
+            #mapa-operacion .leaflet-marker-pane { z-index: 4 !important; }
+            #mapa-operacion .leaflet-tooltip-pane { z-index: 5 !important; }
+            #mapa-operacion .leaflet-popup-pane { z-index: 6 !important; }
+            #mapa-operacion .leaflet-map-pane canvas { z-index: 1 !important; }
+            #mapa-operacion .leaflet-map-pane svg { z-index: 2 !important; }
+            #mapa-operacion .leaflet-control-container .leaflet-top,
+            #mapa-operacion .leaflet-control-container .leaflet-bottom,
+            #mapa-operacion .leaflet-control { z-index: 7 !important; }
+
+            #mapa-operacion-estado {
+                z-index: 8 !important;
+            }
         </style>
     @endpush
 
@@ -314,10 +341,10 @@
 
         <script type="application/json" id="mapa-operacion-puntos">@json($puntos)</script>
 
-        <div class="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700" style="height: 640px; min-height: 420px;">
+        <div class="mapa-operacion-contenedor relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700" style="height: 640px; min-height: 420px;">
             <div
                 id="mapa-operacion-estado"
-                class="pointer-events-none absolute inset-0 z-[500] flex items-center justify-center bg-gray-100 text-sm text-gray-600 dark:bg-gray-900 dark:text-gray-300"
+                class="pointer-events-none absolute inset-0 flex items-center justify-center bg-gray-100 text-sm text-gray-600 dark:bg-gray-900 dark:text-gray-300"
             >
                 Cargando mapa…
             </div>
