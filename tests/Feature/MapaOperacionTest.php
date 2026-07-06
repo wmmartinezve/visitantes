@@ -39,7 +39,8 @@ class MapaOperacionTest extends TestCase
             ->assertSee('Municipio')
             ->assertSee('Parroquia')
             ->assertSee('id="mapa-operacion"', false)
-            ->assertSee('leaflet.js', false);
+            ->assertSee('leaflet.js', false)
+            ->assertSee('data-puntos', false);
     }
 
     public function test_filtro_por_municipio_reduce_puntos_en_mapa(): void

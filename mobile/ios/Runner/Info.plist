@@ -45,5 +45,7 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Necesitamos su ubicación para georreferenciar el centro de acopio en el mapa operativo.</string>
 </dict>
 </plist>

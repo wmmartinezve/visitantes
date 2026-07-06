@@ -6,6 +6,7 @@ namespace Tests\Feature;
 
 use App\Enums\RequerimientoEstatus;
 use App\Enums\UserRole;
+use App\Http\Controllers\Api\MobileEntregaController;
 use App\Models\CentroAcopio;
 use App\Models\Invitado;
 use App\Models\Parroquia;
@@ -113,6 +114,39 @@ class MobileFieldApiTest extends TestCase
         $this->getJson('/api/mobile/entregas')
             ->assertOk()
             ->assertJsonPath('data.0.subcategoria', 'Frazada / cobija')
-            ->assertJsonStructure(['data' => [['distancia_km', 'ruta_url']]]);
+            ->assertJsonStructure(['data' => [['distancia_km', 'ruta_url', 'refugio_url', 'refugio_latitud']]]);
+    }
+
+    public function test_geo_links_incluye_refugio_url_aunque_centro_no_tenga_gps(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
+
+        $refugio = Refugio::query()->create([
+            'nombre' => 'Refugio API',
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.214,
+            'longitud' => -64.633,
+            'direccion_exacta' => 'PLC',
+        ]);
+
+        $invitado = Invitado::query()->create([
+            'nombre' => 'Test',
+            'apellido' => 'API',
+            'fecha_nacimiento' => '1990-01-01',
+            'refugio_id' => $refugio->id,
+            'estatus' => 'activo',
+        ]);
+
+        $requerimiento = Requerimiento::query()->make([
+            'invitado_id' => $invitado->id,
+        ]);
+        $requerimiento->setRelation('invitado', $invitado->load('refugio'));
+
+        $links = MobileEntregaController::geoLinksFor($requerimiento, null, null);
+
+        $this->assertArrayHasKey('refugio_url', $links);
+        $this->assertStringContainsString('google.com/maps', $links['refugio_url']);
+        $this->assertArrayNotHasKey('ruta_url', $links);
     }
 }

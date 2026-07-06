@@ -62,6 +62,10 @@ class RequerimientoModel {
     this.centroAcopioNombre,
     this.refugioNombre,
     this.refugioDireccion,
+    this.refugioLatitud,
+    this.refugioLongitud,
+    this.centroLatitud,
+    this.centroLongitud,
     this.distanciaKm,
     this.rutaUrl,
     this.refugioUrl,
@@ -77,6 +81,10 @@ class RequerimientoModel {
   final String? centroAcopioNombre;
   final String? refugioNombre;
   final String? refugioDireccion;
+  final double? refugioLatitud;
+  final double? refugioLongitud;
+  final double? centroLatitud;
+  final double? centroLongitud;
   final double? distanciaKm;
   final String? rutaUrl;
   final String? refugioUrl;
@@ -93,6 +101,10 @@ class RequerimientoModel {
       centroAcopioNombre: json['centro_acopio_nombre'] as String?,
       refugioNombre: json['refugio_nombre'] as String?,
       refugioDireccion: json['refugio_direccion'] as String?,
+      refugioLatitud: (json['refugio_latitud'] as num?)?.toDouble(),
+      refugioLongitud: (json['refugio_longitud'] as num?)?.toDouble(),
+      centroLatitud: (json['centro_latitud'] as num?)?.toDouble(),
+      centroLongitud: (json['centro_longitud'] as num?)?.toDouble(),
       distanciaKm: (json['distancia_km'] as num?)?.toDouble(),
       rutaUrl: json['ruta_url'] as String?,
       refugioUrl: json['refugio_url'] as String?,

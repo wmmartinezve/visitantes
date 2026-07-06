@@ -32,6 +32,8 @@ class MobileRequerimientoResource extends JsonResource
             'refugio_direccion' => $this->invitado?->refugio?->direccion_exacta,
             'refugio_latitud' => $this->invitado?->refugio ? (float) $this->invitado->refugio->latitud : null,
             'refugio_longitud' => $this->invitado?->refugio ? (float) $this->invitado->refugio->longitud : null,
+            'centro_latitud' => $this->centro_latitud !== null ? (float) $this->centro_latitud : null,
+            'centro_longitud' => $this->centro_longitud !== null ? (float) $this->centro_longitud : null,
             'distancia_km' => $this->when($this->distancia_km !== null, $this->distancia_km),
             'ruta_url' => $this->when($this->ruta_url !== null, $this->ruta_url),
             'refugio_url' => $this->when($this->refugio_url !== null, $this->refugio_url),

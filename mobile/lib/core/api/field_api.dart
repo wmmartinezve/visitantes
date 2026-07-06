@@ -1,5 +1,6 @@
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
+import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
 
@@ -100,6 +101,29 @@ class FieldApi {
     await _api.dio.post<void>('/entregas/$requerimientoId/entregar');
   }
 
+  Future<CentroAcopioInfo> updateCentroGeolocalizacion({
+    required double latitud,
+    required double longitud,
+    String? direccionExacta,
+  }) async {
+    final response = await _api.dio.put<Map<String, dynamic>>(
+      '/centro/geolocalizacion',
+      data: {
+        'latitud': latitud,
+        'longitud': longitud,
+        if (direccionExacta != null && direccionExacta.trim().isNotEmpty)
+          'direccion_exacta': direccionExacta.trim(),
+      },
+    );
+
+    final data = response.data?['data'];
+    if (data is! Map) {
+      throw StateError('Respuesta inválida del servidor');
+    }
+
+    return CentroAcopioInfo.fromJson(Map<String, dynamic>.from(data));
+  }
+
   List<InvitadoModel> _cachedInvitados() {
     final raw = LocalDb.meta.get('invitados_cache');
     if (raw is! List) return [];
@@ -146,6 +170,10 @@ class FieldApi {
         'centro_acopio_nombre': r.centroAcopioNombre,
         'refugio_nombre': r.refugioNombre,
         'refugio_direccion': r.refugioDireccion,
+        'refugio_latitud': r.refugioLatitud,
+        'refugio_longitud': r.refugioLongitud,
+        'centro_latitud': r.centroLatitud,
+        'centro_longitud': r.centroLongitud,
         'distancia_km': r.distanciaKm,
         'ruta_url': r.rutaUrl,
         'refugio_url': r.refugioUrl,

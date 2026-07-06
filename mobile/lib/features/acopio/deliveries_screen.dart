@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'package:url_launcher/url_launcher.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/core/utils/geo_links.dart';
+import 'package:visitantes_mobile/core/utils/map_launcher.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/delivery_card.dart';
 import 'package:visitantes_mobile/shared/widgets/pending_queue_panel.dart';
@@ -53,12 +54,20 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
     await _loadEntregas();
   }
 
-  Future<void> _openUrl(String? url) async {
-    if (url == null) return;
-    final uri = Uri.parse(url);
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
-    }
+  Future<void> _openNavigate(RequerimientoModel entrega) async {
+    await MapLauncher.open(
+      context,
+      GeoLinks.rutaUrlFor(entrega),
+      errorMessage: 'No se pudo abrir la ruta. Configure la ubicación GPS de su centro en Inicio.',
+    );
+  }
+
+  Future<void> _openRefugio(RequerimientoModel entrega) async {
+    await MapLauncher.open(
+      context,
+      GeoLinks.refugioUrlFor(entrega),
+      errorMessage: 'No se pudo abrir el mapa del refugio.',
+    );
   }
 
   Future<void> _marcarEntregado(RequerimientoModel entrega) async {
@@ -143,8 +152,8 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
             ..._entregas.map(
               (e) => DeliveryCard(
                 entrega: e,
-                onNavigate: () => _openUrl(e.rutaUrl),
-                onViewRefugio: () => _openUrl(e.refugioUrl),
+                onNavigate: () => _openNavigate(e),
+                onViewRefugio: () => _openRefugio(e),
                 onDeliver: () => _marcarEntregado(e),
               ),
             ),

@@ -26,7 +26,8 @@
         <div
             id="mapa-operacion"
             wire:ignore
-            class="relative z-[1] w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700"
+            data-puntos='@json($puntos)'
+            class="relative z-[1] w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-900"
             style="height: min(70vh, 640px); min-height: 420px;"
         ></div>
     </div>
@@ -34,24 +35,43 @@
     @assets
         <link
             rel="stylesheet"
-            href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+            href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css"
             crossorigin=""
         />
         <script
-            src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            src="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js"
             crossorigin=""
         ></script>
+        <style>
+            #mapa-operacion.leaflet-container {
+                height: 100%;
+                width: 100%;
+                z-index: 1;
+            }
+
+            #mapa-operacion img,
+            #mapa-operacion .leaflet-tile {
+                max-width: none !important;
+                max-height: none !important;
+            }
+        </style>
     @endassets
 
     @script
         <script>
+            function readMapaPuntos(mapEl) {
+                try {
+                    return JSON.parse(mapEl?.dataset?.puntos ?? '{}');
+                } catch {
+                    return { refugios: [], centros: [] };
+                }
+            }
+
             function renderMapaOperacion(puntos) {
                 const mapEl = document.getElementById('mapa-operacion');
 
                 if (!mapEl || typeof L === 'undefined') {
-                    return;
+                    return false;
                 }
 
                 if (mapEl._leaflet_map) {
@@ -59,7 +79,7 @@
                     mapEl._leaflet_map = null;
                 }
 
-                const map = L.map(mapEl).setView([9.85, -64.25], 8);
+                const map = L.map(mapEl, { scrollWheelZoom: true }).setView([9.85, -64.25], 8);
                 mapEl._leaflet_map = map;
 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -83,7 +103,11 @@
                     iconAnchor: [7, 7],
                 });
 
-                (puntos.refugios ?? []).forEach((r) => {
+                (puntos?.refugios ?? []).forEach((r) => {
+                    if (r.lat == null || r.lng == null) {
+                        return;
+                    }
+
                     L.marker([r.lat, r.lng], { icon: refIcon })
                         .addTo(map)
                         .bindPopup(
@@ -94,8 +118,8 @@
                     bounds.push([r.lat, r.lng]);
                 });
 
-                (puntos.centros ?? []).forEach((c) => {
-                    if (!c.activo) {
+                (puntos?.centros ?? []).forEach((c) => {
+                    if (!c.activo || c.lat == null || c.lng == null) {
                         return;
                     }
 
@@ -115,24 +139,42 @@
                     map.setView([9.85, -64.25], 8);
                 }
 
-                [100, 300, 600].forEach((delay) => {
+                [50, 150, 400, 800].forEach((delay) => {
                     setTimeout(() => map.invalidateSize(), delay);
                 });
+
+                return true;
             }
 
-            function initMapaOperacion() {
-                if (typeof L === 'undefined') {
-                    setTimeout(initMapaOperacion, 100);
+            function bootMapaOperacion(attempt = 0) {
+                const mapEl = document.getElementById('mapa-operacion');
+
+                if (typeof L !== 'undefined' && mapEl) {
+                    renderMapaOperacion(readMapaPuntos(mapEl));
                     return;
                 }
 
-                renderMapaOperacion(@json($puntos));
+                if (attempt < 120) {
+                    setTimeout(() => bootMapaOperacion(attempt + 1), 100);
+                }
             }
 
-            initMapaOperacion();
+            bootMapaOperacion();
 
-            $wire.on('refresh-mapa-operacion', (event) => {
-                renderMapaOperacion(event.puntos);
+            document.addEventListener('livewire:navigated', () => bootMapaOperacion());
+
+            $wire.on('refresh-mapa-operacion', (...args) => {
+                const payload = args[0] ?? {};
+                const puntos = payload.puntos ?? payload;
+                const mapEl = document.getElementById('mapa-operacion');
+
+                if (mapEl && puntos?.refugios) {
+                    mapEl.dataset.puntos = JSON.stringify(puntos);
+                }
+
+                if (!renderMapaOperacion(puntos)) {
+                    bootMapaOperacion();
+                }
             });
         </script>
     @endscript

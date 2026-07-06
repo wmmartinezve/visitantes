@@ -93,6 +93,7 @@ class _AuthGateState extends State<AuthGate> {
       catalog: _catalog,
       sync: _sync,
       onLogout: _logout,
+      onUserUpdated: (updated) => setState(() => _user = updated),
     );
   }
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/core/utils/geo_links.dart';
 import 'package:visitantes_mobile/shared/widgets/venezuela_tricolor_bar.dart';
 
 class DeliveryCard extends StatelessWidget {
@@ -20,6 +21,8 @@ class DeliveryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final canNavigate = GeoLinks.canNavigate(entrega);
+    final canViewRefugio = GeoLinks.canViewRefugio(entrega);
 
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
@@ -84,33 +87,35 @@ class DeliveryCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   _InfoRow(icon: Icons.location_on, label: 'Dirección', value: entrega.refugioDireccion!),
                 ],
-                if (entrega.rutaUrl != null) ...[
+                if (canNavigate || canViewRefugio) ...[
                   const SizedBox(height: 12),
                   Row(
                     children: [
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: onNavigate,
-                          icon: const Icon(Icons.directions, size: 18),
-                          label: const Text('Cómo llegar'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: VenezuelaColors.blue,
-                            side: const BorderSide(color: VenezuelaColors.blue),
+                      if (canNavigate)
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: onNavigate,
+                            icon: const Icon(Icons.directions, size: 18),
+                            label: const Text('Cómo llegar'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: VenezuelaColors.blue,
+                              side: const BorderSide(color: VenezuelaColors.blue),
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: OutlinedButton.icon(
-                          onPressed: onViewRefugio,
-                          icon: const Icon(Icons.map, size: 18),
-                          label: const Text('Ver refugio'),
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: VenezuelaColors.blue,
-                            side: const BorderSide(color: VenezuelaColors.blue),
+                      if (canNavigate && canViewRefugio) const SizedBox(width: 8),
+                      if (canViewRefugio)
+                        Expanded(
+                          child: OutlinedButton.icon(
+                            onPressed: onViewRefugio,
+                            icon: const Icon(Icons.map, size: 18),
+                            label: const Text('Ver refugio'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: VenezuelaColors.blue,
+                              side: const BorderSide(color: VenezuelaColors.blue),
+                            ),
                           ),
                         ),
-                      ),
                     ],
                   ),
                 ],

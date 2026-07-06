@@ -2,11 +2,13 @@
 
 namespace App\Providers;
 
-use App\Models\Invitado;
+use App\Models\CentroAcopio;
 use App\Models\Inventario;
+use App\Models\Invitado;
 use App\Models\Requerimiento;
-use App\Policies\InvitadoPolicy;
+use App\Policies\CentroAcopioPolicy;
 use App\Policies\InventarioPolicy;
+use App\Policies\InvitadoPolicy;
 use App\Policies\RequerimientoPolicy;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\App;
@@ -39,5 +41,6 @@ class AppServiceProvider extends ServiceProvider
         Gate::policy(Invitado::class, InvitadoPolicy::class);
         Gate::policy(Requerimiento::class, RequerimientoPolicy::class);
         Gate::policy(Inventario::class, InventarioPolicy::class);
+        Gate::policy(CentroAcopio::class, CentroAcopioPolicy::class);
     }
 }

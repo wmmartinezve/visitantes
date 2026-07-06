@@ -34,7 +34,7 @@ class AuthRepository {
 
     try {
       final response = await _api.dio.get<Map<String, dynamic>>('/me');
-      _user = MobileUser.fromJson(response.data!);
+      _user = _parseUserResponse(response.data);
       return _user;
     } catch (_) {
       await _api.tokenStorage.clear();
@@ -48,5 +48,23 @@ class AuthRepository {
     } catch (_) {}
     await _api.tokenStorage.clear();
     _user = null;
+  }
+
+  Future<MobileUser> fetchCurrentUser() async {
+    final response = await _api.dio.get<Map<String, dynamic>>('/me');
+    _user = _parseUserResponse(response.data);
+    return _user!;
+  }
+
+  MobileUser _parseUserResponse(Map<String, dynamic>? payload) {
+    if (payload == null) {
+      throw StateError('Respuesta inválida del servidor');
+    }
+
+    final userJson = payload['data'] is Map<String, dynamic>
+        ? payload['data'] as Map<String, dynamic>
+        : payload;
+
+    return MobileUser.fromJson(userJson);
   }
 }

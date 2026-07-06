@@ -18,6 +18,7 @@ class CentroAcopio extends Model
         'direccion_exacta',
         'latitud',
         'longitud',
+        'geolocalizacion_fijada_en',
         'contacto',
         'activo',
     ];
@@ -27,8 +28,19 @@ class CentroAcopio extends Model
         return [
             'latitud' => 'decimal:8',
             'longitud' => 'decimal:8',
+            'geolocalizacion_fijada_en' => 'datetime',
             'activo' => 'boolean',
         ];
+    }
+
+    public function geolocalizacionEditableDesdeApp(): bool
+    {
+        return $this->geolocalizacion_fijada_en === null;
+    }
+
+    public function geolocalizacionFijadaDesdeApp(): bool
+    {
+        return $this->geolocalizacion_fijada_en !== null;
     }
 
     public function parroquia(): BelongsTo
