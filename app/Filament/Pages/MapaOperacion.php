@@ -5,11 +5,23 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Models\CentroAcopio;
+use App\Models\Municipio;
+use App\Models\Parroquia;
 use App\Models\Refugio;
+use Filament\Actions\Action;
+use Filament\Forms\Components\Select;
+use Filament\Forms\Concerns\InteractsWithForms;
+use Filament\Forms\Contracts\HasForms;
+use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Pages\Page;
+use Illuminate\Database\Eloquent\Builder;
 
-class MapaOperacion extends Page
+class MapaOperacion extends Page implements HasForms
 {
+    use InteractsWithForms;
+
     protected static ?string $navigationIcon = 'heroicon-o-map';
 
     protected static ?string $navigationGroup = 'Operación';
@@ -22,6 +34,71 @@ class MapaOperacion extends Page
 
     protected static string $view = 'filament.pages.mapa-operacion';
 
+    /** @var array{municipio_id: ?int, parroquia_id: ?int} */
+    public ?array $data = [];
+
+    public function mount(): void
+    {
+        $this->form->fill([
+            'municipio_id' => null,
+            'parroquia_id' => null,
+        ]);
+    }
+
+    public function form(Form $form): Form
+    {
+        return $form
+            ->schema([
+                Select::make('municipio_id')
+                    ->label('Municipio')
+                    ->placeholder('Todos los municipios')
+                    ->options(fn (): array => Municipio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
+                    ->searchable()
+                    ->preload()
+                    ->live()
+                    ->afterStateUpdated(fn (Set $set) => $set('parroquia_id', null)),
+
+                Select::make('parroquia_id')
+                    ->label('Parroquia')
+                    ->placeholder('Todas las parroquias')
+                    ->options(function (Get $get): array {
+                        $municipioId = $get('municipio_id');
+                        if (! $municipioId) {
+                            return [];
+                        }
+
+                        return Parroquia::query()
+                            ->where('municipio_id', $municipioId)
+                            ->orderBy('nombre')
+                            ->pluck('nombre', 'id')
+                            ->all();
+                    })
+                    ->searchable()
+                    ->live()
+                    ->disabled(fn (Get $get): bool => ! $get('municipio_id')),
+            ])
+            ->columns(2)
+            ->statePath('data');
+    }
+
+    protected function getHeaderActions(): array
+    {
+        return [
+            Action::make('limpiarFiltros')
+                ->label('Limpiar filtros')
+                ->icon('heroicon-o-x-mark')
+                ->color('gray')
+                ->visible(fn (): bool => ($this->data['municipio_id'] ?? null) !== null
+                    || ($this->data['parroquia_id'] ?? null) !== null)
+                ->action(function (): void {
+                    $this->form->fill([
+                        'municipio_id' => null,
+                        'parroquia_id' => null,
+                    ]);
+                }),
+        ];
+    }
+
     /**
      * @return array{
      *     refugios: list<array{id: int, nombre: string, lat: float, lng: float, municipio: string, parroquia: string, invitados: int}>,
@@ -30,7 +107,7 @@ class MapaOperacion extends Page
      */
     public function getPuntosProperty(): array
     {
-        $refugios = Refugio::query()
+        $refugios = $this->refugiosQuery()
             ->with(['parroquia.municipio'])
             ->withCount('invitados')
             ->get()
@@ -46,7 +123,7 @@ class MapaOperacion extends Page
             ->values()
             ->all();
 
-        $centros = CentroAcopio::query()
+        $centros = $this->centrosQuery()
             ->with(['parroquia.municipio'])
             ->get()
             ->map(fn (CentroAcopio $centro): array => [
@@ -65,5 +142,40 @@ class MapaOperacion extends Page
             'refugios' => $refugios,
             'centros' => $centros,
         ];
+    }
+
+    /** @return Builder<Refugio> */
+    private function refugiosQuery(): Builder
+    {
+        $query = Refugio::query();
+        $this->aplicarFiltroTerritorial($query);
+
+        return $query;
+    }
+
+    /** @return Builder<CentroAcopio> */
+    private function centrosQuery(): Builder
+    {
+        $query = CentroAcopio::query();
+        $this->aplicarFiltroTerritorial($query);
+
+        return $query;
+    }
+
+    /** @param  Builder<Refugio>|Builder<CentroAcopio>  $query */
+    private function aplicarFiltroTerritorial(Builder $query): void
+    {
+        $parroquiaId = $this->data['parroquia_id'] ?? null;
+        $municipioId = $this->data['municipio_id'] ?? null;
+
+        if ($parroquiaId) {
+            $query->where('parroquia_id', $parroquiaId);
+
+            return;
+        }
+
+        if ($municipioId) {
+            $query->whereHas('parroquia', fn (Builder $q) => $q->where('municipio_id', $municipioId));
+        }
     }
 }

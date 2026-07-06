@@ -2,6 +2,10 @@
     @php($puntos = $this->puntos)
 
     <div class="space-y-4">
+        <x-filament::section heading="Filtros territoriales">
+            {{ $this->form }}
+        </x-filament::section>
+
         <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
             <span class="inline-flex items-center gap-2">
                 <span class="inline-block h-3 w-3 rounded-full bg-blue-600"></span>
