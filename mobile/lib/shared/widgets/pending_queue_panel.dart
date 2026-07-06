@@ -98,8 +98,14 @@ class PendingQueuePanel extends StatelessWidget {
                   ),
                   title: Text(SyncService.pendingSummary(item)),
                   subtitle: Text(
-                    '${SyncService.typeLabel(type)}${createdAt != null ? ' · ${_formatTime(createdAt)}' : ''}',
-                    style: Theme.of(context).textTheme.bodySmall,
+                    [
+                      '${SyncService.typeLabel(type)}${createdAt != null ? ' · ${_formatTime(createdAt)}' : ''}',
+                      if (item['last_error'] is String && (item['last_error'] as String).isNotEmpty)
+                        item['last_error'] as String,
+                    ].join('\n'),
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: item['last_error'] != null ? VenezuelaColors.red : null,
+                    ),
                   ),
                 );
               }),
@@ -223,20 +229,36 @@ class _OfflineBannerState extends State<OfflineBanner> {
             color: VenezuelaColors.blueContainer,
             icon: Icons.cloud_upload_outlined,
             iconColor: VenezuelaColors.onBlueContainer,
-            child: Row(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(
-                    '$pending registro(s) pendiente(s) de sincronización',
-                    style: TextStyle(fontSize: 12, color: VenezuelaColors.onBlueContainer, fontWeight: FontWeight.w600),
-                  ),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '$pending registro(s) pendiente(s) de sincronización',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: VenezuelaColors.onBlueContainer,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    if (widget.onRefresh != null)
+                      TextButton.icon(
+                        onPressed: widget.onRefresh,
+                        icon: Icon(Icons.sync, size: 18, color: VenezuelaColors.onBlueContainer),
+                        label: Text('Sync', style: TextStyle(color: VenezuelaColors.onBlueContainer)),
+                      ),
+                  ],
                 ),
-                if (widget.onRefresh != null)
-                  TextButton.icon(
-                    onPressed: widget.onRefresh,
-                    icon: Icon(Icons.sync, size: 18, color: VenezuelaColors.onBlueContainer),
-                    label: Text('Sync', style: TextStyle(color: VenezuelaColors.onBlueContainer)),
+                if (widget.sync.lastSyncError != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    widget.sync.lastSyncError!,
+                    style: TextStyle(fontSize: 11, color: Colors.red.shade700),
                   ),
+                ],
               ],
             ),
           );

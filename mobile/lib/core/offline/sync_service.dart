@@ -162,6 +162,17 @@ class SyncService extends ChangeNotifier {
     });
   }
 
+  Future<void> _storeQueueError(String? clientId, String error) async {
+    if (clientId == null || clientId.isEmpty) return;
+    final raw = LocalDb.queue.get(clientId);
+    if (raw is! Map) return;
+    await LocalDb.queue.put(clientId, {
+      ...Map<String, dynamic>.from(raw),
+      'last_error': error,
+      'last_error_at': DateTime.now().toUtc().toIso8601String(),
+    });
+  }
+
   Future<SyncResult> syncPending() async {
     if (!await _catalog.isOnline || pendingCount == 0) {
       return SyncResult(ok: 0, failed: 0);
@@ -203,7 +214,9 @@ class SyncService extends ChangeNotifier {
             ok++;
           } else {
             failed++;
-            lastError = result['error'] as String? ?? lastError;
+            final error = result['error'] as String? ?? 'No se pudo sincronizar.';
+            lastError = error;
+            await _storeQueueError(result['client_id'] as String?, error);
           }
         }
       } on DioException catch (e) {

@@ -67,10 +67,14 @@ class _AppScaffoldState extends State<AppScaffold> {
           ),
         );
       } else if (parts.isNotEmpty) {
+        final detail = result.sync.failed > 0 && result.sync.lastError != null
+            ? '${parts.join(' · ')}\n${result.sync.lastError}'
+            : parts.join(' · ');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text(parts.join(' · ')),
+            content: Text(detail),
             backgroundColor: result.sync.failed > 0 ? VenezuelaColors.red : VenezuelaColors.blue,
+            duration: Duration(seconds: result.sync.failed > 0 ? 6 : 4),
           ),
         );
       }

@@ -12,8 +12,11 @@ use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InsumoCatalog;
 use App\Support\WitnessPhotoDecoder;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Validation\ValidationException;
+use League\Flysystem\FilesystemException;
 use RuntimeException;
 
 class OfflineSyncService
@@ -58,12 +61,41 @@ class OfflineSyncService
                 $results[] = [
                     'client_id' => $clientId,
                     'status' => 'error',
-                    'error' => app()->environment('local') ? $e->getMessage() : 'No se pudo procesar la operación.',
+                    'error' => $this->syncErrorMessage($e),
                 ];
             }
         }
 
         return $results;
+    }
+
+    private function syncErrorMessage(\Throwable $e): string
+    {
+        if ($e instanceof ValidationException) {
+            $first = collect($e->errors())->flatten()->first();
+
+            return is_string($first) ? $first : 'Datos del registro inválidos.';
+        }
+
+        $message = $e->getMessage();
+
+        if ($e instanceof FilesystemException || str_contains($message, 'Unable to write')) {
+            return 'No se pudo guardar la foto en el almacenamiento. Contacte al administrador.';
+        }
+
+        if (str_contains($message, 'decodificar') || str_contains($message, 'imagen válida')) {
+            return 'La foto no pudo procesarse. Registre de nuevo con otra captura.';
+        }
+
+        if (str_contains($message, 'tamaño máximo')) {
+            return 'La foto supera el tamaño máximo permitido (8 MB).';
+        }
+
+        if (app()->environment('local')) {
+            return $message;
+        }
+
+        return 'No se pudo procesar la operación.';
     }
 
     /**
@@ -113,27 +145,31 @@ class OfflineSyncService
             );
         }
 
-        $jefe = $this->invitadoRegistration->register(
-            $user,
-            [
-                'nombre' => $validated['nombre'],
-                'apellido' => $validated['apellido'],
-                'cedula' => $validated['cedula'] ?? null,
-                'telefono' => $validated['telefono'] ?? null,
-                'fecha_nacimiento' => $validated['fecha_nacimiento'],
-            ],
-            $foto,
-            $validated['familiares'] ?? [],
-        );
+        $jefe = DB::transaction(function () use ($user, $validated, $foto, $clientId): Invitado {
+            $jefe = $this->invitadoRegistration->register(
+                $user,
+                [
+                    'nombre' => $validated['nombre'],
+                    'apellido' => $validated['apellido'],
+                    'cedula' => $validated['cedula'] ?? null,
+                    'telefono' => $validated['telefono'] ?? null,
+                    'fecha_nacimiento' => $validated['fecha_nacimiento'],
+                ],
+                $foto,
+                $validated['familiares'] ?? [],
+            );
+
+            OfflineSyncRecord::query()->create([
+                'client_id' => $clientId,
+                'type' => 'invitado.registro',
+                'server_id' => $jefe->id,
+                'user_id' => $user->id,
+            ]);
+
+            return $jefe;
+        });
 
         $idMap[$clientId] = $jefe->id;
-
-        OfflineSyncRecord::query()->create([
-            'client_id' => $clientId,
-            'type' => 'invitado.registro',
-            'server_id' => $jefe->id,
-            'user_id' => $user->id,
-        ]);
 
         return $jefe->id;
     }
