@@ -6,7 +6,9 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\OperacionOverviewWidget;
-use App\Filament\Widgets\RequerimientosPendientesWidget;
+use App\Filament\Widgets\RequerimientosEstatusChartWidget;
+use App\Filament\Widgets\RequerimientosFiltradosWidget;
+use App\Filament\Widgets\TopRefugiosWidget;
 use App\Http\Middleware\PreventAdminSearchIndexing;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -56,7 +58,9 @@ class AdminPanelProvider extends PanelProvider
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
             ->widgets([
                 OperacionOverviewWidget::class,
-                RequerimientosPendientesWidget::class,
+                RequerimientosEstatusChartWidget::class,
+                RequerimientosFiltradosWidget::class,
+                TopRefugiosWidget::class,
                 Widgets\AccountWidget::class,
             ])
             ->middleware([

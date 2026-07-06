@@ -4,14 +4,37 @@ declare(strict_types=1);
 
 namespace App\Services;
 
-use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Requerimiento;
+use App\Support\OperacionFiltros;
+use Barryvdh\DomPDF\Facade\Pdf;
+use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReporteExportService
 {
+    public function __construct(
+        private readonly OperacionMetricsService $metrics,
+    ) {}
+
+    public function dashboardPdf(OperacionFiltros $filtros): Response
+    {
+        $data = $this->metrics->reporteCompleto($filtros);
+
+        $pdf = Pdf::loadView('reports.dashboard-operacion-pdf', $data)
+            ->setPaper('letter', 'portrait');
+
+        $filename = sprintf(
+            'reporte-operacion-%s-%s_%s.pdf',
+            str(config('visitantes.estado'))->slug(),
+            $filtros->desde->format('Y-m-d'),
+            $filtros->hasta->format('Y-m-d'),
+        );
+
+        return $pdf->download($filename);
+    }
+
     public function invitados(): StreamedResponse
     {
         return $this->csv('invitados-'.config('visitantes.estado').'-'.now()->format('Y-m-d').'.csv', [
