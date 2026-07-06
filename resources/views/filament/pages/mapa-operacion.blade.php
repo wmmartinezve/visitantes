@@ -1,57 +1,17 @@
 <x-filament-panels::page>
     @php($puntos = $this->puntos)
 
-    <div class="space-y-4">
-        <x-filament::section heading="Filtros territoriales">
-            {{ $this->form }}
-        </x-filament::section>
-
-        <div
-            wire:key="mapa-resumen-{{ md5(json_encode($this->data ?? [])) }}"
-            class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300"
-        >
-            <span class="inline-flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full bg-blue-600"></span>
-                Refugios ({{ count($puntos['refugios']) }})
-            </span>
-            <span class="inline-flex items-center gap-2">
-                <span class="inline-block h-3 w-3 rounded-full bg-emerald-600"></span>
-                Centros de acopio ({{ count($puntos['centros']) }})
-            </span>
-            <span class="text-gray-500 dark:text-gray-400">
-                {{ config('visitantes.estado') }}, {{ config('visitantes.pais') }}
-            </span>
-        </div>
-
-        <script type="application/json" id="mapa-operacion-puntos">@json($puntos)</script>
-
-        <div
-            id="mapa-operacion"
-            wire:ignore
-            class="relative isolate w-full overflow-hidden rounded-xl border border-gray-200 bg-gray-100 dark:border-gray-700 dark:bg-gray-900"
-            style="height: 640px; min-height: 420px;"
-            role="region"
-            aria-label="Mapa operativo de refugios y centros de acopio"
-        >
-            <div id="mapa-operacion-estado" class="absolute inset-0 flex items-center justify-center text-sm text-gray-500 dark:text-gray-400">
-                Cargando mapa…
-            </div>
-        </div>
-    </div>
-
     @push('styles')
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css" crossorigin="" />
+        <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
         <style>
             #mapa-operacion.leaflet-container {
                 height: 100% !important;
                 width: 100% !important;
-                z-index: 0;
+                background: #e5e7eb;
             }
 
-            #mapa-operacion .leaflet-pane,
-            #mapa-operacion .leaflet-top,
-            #mapa-operacion .leaflet-bottom {
-                z-index: 1;
+            .dark #mapa-operacion.leaflet-container {
+                background: #111827;
             }
 
             #mapa-operacion img,
@@ -59,19 +19,30 @@
                 max-width: none !important;
                 max-height: none !important;
             }
-
-            #mapa-operacion-estado {
-                z-index: 0;
-                pointer-events: none;
-            }
         </style>
     @endpush
 
     @push('scripts')
+        <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
         <script>
             (function () {
-                const LEAFLET_JS = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.js';
-                const LEAFLET_CSS = 'https://cdn.jsdelivr.net/npm/leaflet@1.9.4/dist/leaflet.css';
+                const TILE_LAYERS = [
+                    {
+                        url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+                        options: {
+                            maxZoom: 19,
+                            subdomains: 'abcd',
+                            attribution: '&copy; OpenStreetMap &copy; CARTO',
+                        },
+                    },
+                    {
+                        url: 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}',
+                        options: {
+                            maxZoom: 19,
+                            attribution: '&copy; Esri',
+                        },
+                    },
+                ];
 
                 function readMapaPuntos() {
                     const jsonEl = document.getElementById('mapa-operacion-puntos');
@@ -104,45 +75,22 @@
 
                     if (mensaje) {
                         estado.textContent = mensaje;
-                        estado.classList.remove('hidden');
+                        estado.style.display = 'flex';
                     } else {
-                        estado.classList.add('hidden');
+                        estado.style.display = 'none';
                     }
                 }
 
-                function loadStylesheet(href) {
-                    if (document.querySelector(`link[href="${href}"]`)) {
-                        return Promise.resolve();
+                function addTileLayer(map) {
+                    for (const layer of TILE_LAYERS) {
+                        try {
+                            return L.tileLayer(layer.url, layer.options).addTo(map);
+                        } catch (error) {
+                            console.warn('[mapa-operacion] Capa base no disponible', error);
+                        }
                     }
 
-                    return new Promise((resolve, reject) => {
-                        const link = document.createElement('link');
-                        link.rel = 'stylesheet';
-                        link.href = href;
-                        link.crossOrigin = '';
-                        link.onload = () => resolve();
-                        link.onerror = () => reject(new Error('No se pudo cargar Leaflet CSS.'));
-                        document.head.appendChild(link);
-                    });
-                }
-
-                function loadScript(src) {
-                    if (document.querySelector(`script[src="${src}"]`)) {
-                        return Promise.resolve();
-                    }
-
-                    return new Promise((resolve, reject) => {
-                        const script = document.createElement('script');
-                        script.src = src;
-                        script.crossOrigin = '';
-                        script.onload = () => resolve();
-                        script.onerror = () => reject(new Error('No se pudo cargar Leaflet JS.'));
-                        document.head.appendChild(script);
-                    });
-                }
-
-                function ensureLeaflet() {
-                    return loadStylesheet(LEAFLET_CSS).then(() => loadScript(LEAFLET_JS));
+                    throw new Error('No hay capa de mapa disponible.');
                 }
 
                 function renderMapaOperacion(puntos) {
@@ -160,10 +108,7 @@
                     const map = L.map(mapEl, { scrollWheelZoom: true }).setView([9.85, -64.25], 8);
                     mapEl._leaflet_map = map;
 
-                    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                        maxZoom: 18,
-                        attribution: '&copy; OpenStreetMap',
-                    }).addTo(map);
+                    addTileLayer(map);
 
                     const bounds = [];
 
@@ -217,28 +162,34 @@
                         map.setView([9.85, -64.25], 8);
                     }
 
-                    [50, 200, 500, 1000].forEach((delay) => {
-                        setTimeout(() => map.invalidateSize(), delay);
-                    });
+                    requestAnimationFrame(() => map.invalidateSize());
+                    [100, 300, 800].forEach((delay) => setTimeout(() => map.invalidateSize(), delay));
 
                     setMapaEstado(null);
 
                     return true;
                 }
 
-                function bootMapaOperacion() {
-                    setMapaEstado('Cargando mapa…');
-
-                    ensureLeaflet()
-                        .then(() => {
+                function bootMapaOperacion(attempt = 0) {
+                    if (typeof L !== 'undefined' && document.getElementById('mapa-operacion')) {
+                        try {
                             if (!renderMapaOperacion(readMapaPuntos())) {
                                 throw new Error('Contenedor del mapa no disponible.');
                             }
-                        })
-                        .catch((error) => {
+                        } catch (error) {
                             console.error('[mapa-operacion]', error);
-                            setMapaEstado('No se pudo cargar el mapa. Revise su conexión e intente recargar la página.');
-                        });
+                            setMapaEstado('No se pudo inicializar el mapa. Recargue la página.');
+                        }
+
+                        return;
+                    }
+
+                    if (attempt < 80) {
+                        setTimeout(() => bootMapaOperacion(attempt + 1), 100);
+                        return;
+                    }
+
+                    setMapaEstado('No se pudo cargar la librería del mapa.');
                 }
 
                 function extractPuntosFromEvent(event) {
@@ -254,7 +205,7 @@
                 }
 
                 function registerLivewireListeners() {
-                    if (window.__mapaOperacionListenersRegistered) {
+                    if (window.__mapaOperacionListenersRegistered || !window.Livewire) {
                         return;
                     }
 
@@ -268,27 +219,57 @@
                         }
 
                         writeMapaPuntos(puntos);
-
-                        ensureLeaflet()
-                            .then(() => renderMapaOperacion(puntos))
-                            .catch((error) => console.error('[mapa-operacion]', error));
+                        renderMapaOperacion(puntos);
                     });
                 }
 
-                if (document.readyState === 'loading') {
-                    document.addEventListener('DOMContentLoaded', bootMapaOperacion, { once: true });
-                } else {
-                    bootMapaOperacion();
-                }
-
-                document.addEventListener('livewire:navigated', bootMapaOperacion);
-
+                bootMapaOperacion();
+                document.addEventListener('livewire:navigated', () => bootMapaOperacion());
                 document.addEventListener('livewire:init', registerLivewireListeners, { once: true });
-
-                if (window.Livewire) {
-                    registerLivewireListeners();
-                }
+                registerLivewireListeners();
             })();
         </script>
     @endpush
+
+    <div class="space-y-4">
+        <x-filament::section heading="Filtros territoriales">
+            {{ $this->form }}
+        </x-filament::section>
+
+        <div
+            wire:key="mapa-resumen-{{ md5(json_encode($this->data ?? [])) }}"
+            class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300"
+        >
+            <span class="inline-flex items-center gap-2">
+                <span class="inline-block h-3 w-3 rounded-full bg-blue-600"></span>
+                Refugios ({{ count($puntos['refugios']) }})
+            </span>
+            <span class="inline-flex items-center gap-2">
+                <span class="inline-block h-3 w-3 rounded-full bg-emerald-600"></span>
+                Centros de acopio ({{ count($puntos['centros']) }})
+            </span>
+            <span class="text-gray-500 dark:text-gray-400">
+                {{ config('visitantes.estado') }}, {{ config('visitantes.pais') }}
+            </span>
+        </div>
+
+        <script type="application/json" id="mapa-operacion-puntos">@json($puntos)</script>
+
+        <div class="relative w-full overflow-hidden rounded-xl border border-gray-200 dark:border-gray-700" style="height: 640px; min-height: 420px;">
+            <div
+                id="mapa-operacion-estado"
+                class="pointer-events-none absolute inset-0 z-[500] flex items-center justify-center bg-gray-100 text-sm text-gray-600 dark:bg-gray-900 dark:text-gray-300"
+            >
+                Cargando mapa…
+            </div>
+
+            <div
+                id="mapa-operacion"
+                wire:ignore
+                class="h-full w-full"
+                role="region"
+                aria-label="Mapa operativo de refugios y centros de acopio"
+            ></div>
+        </div>
+    </div>
 </x-filament-panels::page>

@@ -39,7 +39,7 @@ class MapaOperacionTest extends TestCase
             ->assertSee('Municipio')
             ->assertSee('Parroquia')
             ->assertSee('id="mapa-operacion"', false)
-            ->assertSee('bootMapaOperacion', false)
+            ->assertSee('/vendor/leaflet/leaflet.js', false)
             ->assertSee('mapa-operacion-puntos', false);
     }
 
