@@ -8,6 +8,8 @@ if [ -z "$APP_KEY" ]; then
   exit 1
 fi
 
+php artisan package:discover --ansi
+
 php artisan migrate --force --no-interaction
 
 php artisan storage:link --force 2>/dev/null || true

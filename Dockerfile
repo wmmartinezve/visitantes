@@ -47,13 +47,20 @@ RUN npm run build
 
 FROM base AS runner
 
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 COPY --from=vendor /app/vendor ./vendor
 COPY --from=assets /app/public/build ./public/build
 COPY . .
 
-RUN composer dump-autoload --optimize \
-    && mkdir -p storage/framework/{cache,sessions,views} storage/app/public bootstrap/cache \
-    && chmod -R 775 storage bootstrap/cache
+RUN mkdir -p \
+    storage/framework/cache/data \
+    storage/framework/sessions \
+    storage/framework/views \
+    storage/app/public \
+    bootstrap/cache \
+    && chmod -R 775 storage bootstrap/cache \
+    && composer dump-autoload --optimize --no-scripts
 
 COPY docker/railway-entrypoint.sh /usr/local/bin/railway-entrypoint
 RUN chmod +x /usr/local/bin/railway-entrypoint
