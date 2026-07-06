@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM php:8.2-cli-bookworm AS base
+FROM php:8.4-cli-bookworm AS base
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     git \
