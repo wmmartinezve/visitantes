@@ -102,9 +102,15 @@
     @endpush
 
     @push('scripts')
+        @php($googleMapsKey = config('services.google_maps.api_key'))
         <script src="{{ asset('vendor/leaflet/leaflet.js') }}"></script>
+        @if ($googleMapsKey)
+            <script async defer src="https://maps.googleapis.com/maps/api/js?key={{ $googleMapsKey }}"></script>
+            <script src="{{ asset('vendor/leaflet/google-mutant.js') }}"></script>
+        @endif
         <script>
             (function () {
+                const GOOGLE_MAPS_KEY = @json($googleMapsKey);
                 const TILE_LAYERS = [
                     {
                         url: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
@@ -160,7 +166,25 @@
                     }
                 }
 
+                function googleMapsReady() {
+                    return typeof google !== 'undefined' && typeof google.maps !== 'undefined';
+                }
+
                 function addTileLayer(map) {
+                    if (
+                        GOOGLE_MAPS_KEY
+                        && typeof L !== 'undefined'
+                        && L.gridLayer
+                        && typeof L.gridLayer.googleMutant === 'function'
+                        && googleMapsReady()
+                    ) {
+                        try {
+                            return L.gridLayer.googleMutant({ type: 'roadmap', maxZoom: 21 }).addTo(map);
+                        } catch (error) {
+                            console.warn('[mapa-operacion] Google Maps no disponible', error);
+                        }
+                    }
+
                     for (const layer of TILE_LAYERS) {
                         try {
                             return L.tileLayer(layer.url, layer.options).addTo(map);
@@ -170,6 +194,27 @@
                     }
 
                     throw new Error('No hay capa de mapa disponible.');
+                }
+
+                function whenMapLibrariesReady(callback, attempt = 0) {
+                    const leafletReady = typeof L !== 'undefined';
+                    const googleReady = !GOOGLE_MAPS_KEY || googleMapsReady();
+
+                    if (leafletReady && googleReady) {
+                        callback();
+                        return;
+                    }
+
+                    if (attempt < 100) {
+                        setTimeout(() => whenMapLibrariesReady(callback, attempt + 1), 100);
+                        return;
+                    }
+
+                    if (GOOGLE_MAPS_KEY && !googleMapsReady()) {
+                        console.warn('[mapa-operacion] Google Maps no cargó a tiempo; usando capa alternativa.');
+                    }
+
+                    callback();
                 }
 
                 function escapeHtml(value) {
@@ -265,8 +310,13 @@
                     return true;
                 }
 
-                function bootMapaOperacion(attempt = 0) {
-                    if (typeof L !== 'undefined' && document.getElementById('mapa-operacion')) {
+                function bootMapaOperacion() {
+                    whenMapLibrariesReady(() => {
+                        if (!document.getElementById('mapa-operacion')) {
+                            setMapaEstado('No se pudo cargar la librería del mapa.');
+                            return;
+                        }
+
                         try {
                             if (!renderMapaOperacion(readMapaPuntos())) {
                                 throw new Error('Contenedor del mapa no disponible.');
@@ -275,16 +325,7 @@
                             console.error('[mapa-operacion]', error);
                             setMapaEstado('No se pudo inicializar el mapa. Recargue la página.');
                         }
-
-                        return;
-                    }
-
-                    if (attempt < 80) {
-                        setTimeout(() => bootMapaOperacion(attempt + 1), 100);
-                        return;
-                    }
-
-                    setMapaEstado('No se pudo cargar la librería del mapa.');
+                    });
                 }
 
                 function extractPuntosFromEvent(event) {

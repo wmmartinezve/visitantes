@@ -4,3 +4,6 @@ const String kProductionApiBaseUrl =
 
 /// Dominio público del backend (sin path).
 const String kProductionAppHost = 'visitantes.proyectoswm.com';
+
+/// Google Maps — sincronizar con AndroidManifest / AppDelegate si cambia.
+const String kGoogleMapsApiKey = 'AIzaSyAHBteh9phME2UGVEPYFXc-_ovWEcYONxE';

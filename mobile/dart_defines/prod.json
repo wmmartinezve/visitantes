@@ -1,3 +1,4 @@
 {
-  "API_BASE_URL": "https://visitantes.proyectoswm.com/api/mobile"
+  "API_BASE_URL": "https://visitantes.proyectoswm.com/api/mobile",
+  "GOOGLE_MAPS_API_KEY": "AIzaSyAHBteh9phME2UGVEPYFXc-_ovWEcYONxE"
 }

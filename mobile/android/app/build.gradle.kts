@@ -5,6 +5,19 @@ plugins {
     id("dev.flutter.flutter-gradle-plugin")
 }
 
+import java.util.Properties
+
+fun readGoogleMapsApiKey(): String {
+    val props = Properties()
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localFile.inputStream().use { props.load(it) }
+        props.getProperty("GOOGLE_MAPS_API_KEY")?.takeIf { it.isNotBlank() }?.let { return it }
+    }
+    // Sincronizado con lib/config/production_env.dart
+    return "AIzaSyAHBteh9phME2UGVEPYFXc-_ovWEcYONxE"
+}
+
 android {
     namespace = "com.visitantes.anzoategui.visitantes_mobile"
     compileSdk = flutter.compileSdkVersion
@@ -28,6 +41,7 @@ android {
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName
+        manifestPlaceholders["GOOGLE_MAPS_API_KEY"] = readGoogleMapsApiKey()
     }
 
     buildTypes {

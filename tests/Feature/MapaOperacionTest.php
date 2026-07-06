@@ -43,6 +43,19 @@ class MapaOperacionTest extends TestCase
             ->assertSee('mapa-operacion-puntos', false);
     }
 
+    public function test_mapa_operativo_carga_google_maps_cuando_hay_api_key(): void
+    {
+        config(['services.google_maps.api_key' => 'test-google-maps-key']);
+
+        $admin = User::factory()->create(['rol' => UserRole::Admin]);
+
+        $this->actingAs($admin)
+            ->get('/admin/mapa-operacion')
+            ->assertOk()
+            ->assertSee('maps.googleapis.com/maps/api/js?key=test-google-maps-key', false)
+            ->assertSee('/vendor/leaflet/google-mutant.js', false);
+    }
+
     public function test_filtro_por_municipio_reduce_puntos_en_mapa(): void
     {
         $admin = User::factory()->create(['rol' => UserRole::Admin]);

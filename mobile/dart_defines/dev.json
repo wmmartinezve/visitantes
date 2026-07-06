@@ -1,3 +1,4 @@
 {
-  "API_BASE_URL": "http://10.0.2.2:8000/api/mobile"
+  "API_BASE_URL": "http://10.0.2.2:8000/api/mobile",
+  "GOOGLE_MAPS_API_KEY": "AIzaSyAHBteh9phME2UGVEPYFXc-_ovWEcYONxE"
 }

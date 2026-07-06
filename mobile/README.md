@@ -36,16 +36,25 @@ Backend local: `php artisan serve` (emulador) o `./scripts/serve-lan.sh` (dispos
 
 ```bash
 cd mobile
-flutter build apk --release
-```
-
-Opcional — override en compile time:
-
-```bash
 flutter build apk --release --dart-define-from-file=dart_defines/prod.json
 ```
 
 APK: `build/app/outputs/flutter-apk/app-release.apk`
+
+### Google Maps (georreferenciación del centro de acopio)
+
+La app embebe Google Maps en la pantalla de **Centro de Acopio → Inicio**.
+
+1. En [Google Cloud Console](https://console.cloud.google.com/google/maps-apis) active:
+   - **Maps SDK for Android**
+   - **Maps SDK for iOS**
+   - **Maps JavaScript API** (panel admin web)
+2. Restrinja la clave:
+   - Android: package `com.visitantes.anzoategui.visitantes_mobile`
+   - iOS: bundle `com.visitantes.anzoategui.visitantesMobile`
+   - Web: `https://visitantes.proyectoswm.com/*`
+3. La clave vive en `lib/config/production_env.dart` (sincronizar con `AppDelegate.swift` y Gradle si la cambia).
+4. Override en compile time: `GOOGLE_MAPS_API_KEY` en `dart_defines/*.json` o `android/local.properties`.
 
 ## Build iOS
 

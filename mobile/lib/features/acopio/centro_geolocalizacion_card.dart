@@ -1,10 +1,12 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/shared/widgets/centro_geolocalizacion_map.dart';
 
 class CentroGeolocalizacionCard extends StatefulWidget {
   const CentroGeolocalizacionCard({
@@ -56,6 +58,13 @@ class _CentroGeolocalizacionCardState extends State<CentroGeolocalizacionCard> {
     _direccionController.text = centro?.direccionExacta ?? '';
     _latitud = centro?.latitud;
     _longitud = centro?.longitud;
+  }
+
+  void _actualizarUbicacion(LatLng posicion) {
+    setState(() {
+      _latitud = posicion.latitude;
+      _longitud = posicion.longitude;
+    });
   }
 
   bool get _editable => widget.user.centroAcopio?.geolocalizacionEditable ?? true;
@@ -269,6 +278,13 @@ class _CentroGeolocalizacionCardState extends State<CentroGeolocalizacionCard> {
               )
             else
               _ReadOnlyField(label: 'Dirección exacta', value: centro?.direccionExacta ?? '—'),
+            const SizedBox(height: 12),
+            CentroGeolocalizacionMap(
+              latitud: lat,
+              longitud: lng,
+              editable: _editable,
+              onLocationChanged: _editable ? _actualizarUbicacion : null,
+            ),
             const SizedBox(height: 12),
             if (lat != null && lng != null)
               Container(
