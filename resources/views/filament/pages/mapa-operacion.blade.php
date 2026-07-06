@@ -172,6 +172,15 @@
                     throw new Error('No hay capa de mapa disponible.');
                 }
 
+                function escapeHtml(value) {
+                    return String(value ?? '')
+                        .replace(/&/g, '&amp;')
+                        .replace(/</g, '&lt;')
+                        .replace(/>/g, '&gt;')
+                        .replace(/"/g, '&quot;')
+                        .replace(/'/g, '&#39;');
+                }
+
                 function markerIcon(tipo) {
                     const isRefugio = tipo === 'refugio';
                     const iconSvg = isRefugio
@@ -220,9 +229,9 @@
                         L.marker([r.lat, r.lng], { icon: refIcon })
                             .addTo(map)
                             .bindPopup(
-                                `<strong>${r.nombre}</strong><br>` +
-                                `${r.parroquia}, ${r.municipio}<br>` +
-                                `Invitados: ${r.invitados}`
+                                `<strong>${escapeHtml(r.nombre)}</strong><br>` +
+                                `${escapeHtml(r.parroquia)}, ${escapeHtml(r.municipio)}<br>` +
+                                `Invitados: ${escapeHtml(r.invitados)}`
                             );
                         bounds.push([r.lat, r.lng]);
                     });
@@ -235,8 +244,8 @@
                         L.marker([c.lat, c.lng], { icon: centroIcon })
                             .addTo(map)
                             .bindPopup(
-                                `<strong>${c.nombre}</strong><br>` +
-                                `${c.parroquia}, ${c.municipio}<br>` +
+                                `<strong>${escapeHtml(c.nombre)}</strong><br>` +
+                                `${escapeHtml(c.parroquia)}, ${escapeHtml(c.municipio)}<br>` +
                                 `Centro de acopio`
                             );
                         bounds.push([c.lat, c.lng]);

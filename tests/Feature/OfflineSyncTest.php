@@ -11,6 +11,7 @@ use App\Models\Invitado;
 use App\Models\Parroquia;
 use App\Models\Refugio;
 use App\Models\User;
+use App\Support\InvitadoFotoStorage;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -71,7 +72,7 @@ class OfflineSyncTest extends TestCase
 
     public function test_sincroniza_registro_de_invitado_offline(): void
     {
-        Storage::fake('public');
+        Storage::fake(InvitadoFotoStorage::PRIVATE_DISK);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
@@ -89,7 +90,12 @@ class OfflineSyncTest extends TestCase
         ]);
 
         $clientId = 'offline-client-1';
-        $fotoBase64 = base64_encode('fake-image-data');
+        $fotoBase64 = base64_encode(
+            base64_decode(
+                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AL+AAf/Z',
+                true,
+            ) ?: '',
+        );
 
         $response = $this->actingAs($anfitrion)
             ->postJson(route('api.offline.sync'), [

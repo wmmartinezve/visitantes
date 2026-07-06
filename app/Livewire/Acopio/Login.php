@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Acopio;
 
+use App\Concerns\ThrottlesAuthentication;
 use App\Enums\UserRole;
 use Illuminate\Support\Facades\Auth;
 use Livewire\Attributes\Layout;
@@ -12,6 +13,8 @@ use Livewire\Component;
 #[Layout('components.m3.guest-shell')]
 class Login extends Component
 {
+    use ThrottlesAuthentication;
+
     public string $email = '';
 
     public string $password = '';
@@ -32,11 +35,16 @@ class Login extends Component
             'password' => ['required', 'string'],
         ]);
 
+        $this->ensureIsNotRateLimited($credentials['email']);
+
         if (! Auth::attempt($credentials, remember: true)) {
+            $this->hitRateLimiter($credentials['email']);
             $this->addError('email', 'Credenciales incorrectas.');
 
             return;
         }
+
+        $this->clearRateLimiter($credentials['email']);
 
         $user = Auth::user();
 

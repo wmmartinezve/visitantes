@@ -26,7 +26,7 @@ class MobileInvitadoResource extends JsonResource
             'fecha_nacimiento' => $this->fecha_nacimiento?->format('Y-m-d'),
             'estatus' => $this->estatus?->value,
             'estatus_label' => $this->estatus?->label(),
-            'foto_url' => $this->foto_ingreso ? asset('storage/'.$this->foto_ingreso) : null,
+            'foto_url' => $this->fotoUrl('api.mobile.invitados.foto'),
             'miembros_familia' => MobileInvitadoMemberResource::collection(
                 $this->whenLoaded('miembrosFamilia'),
             ),

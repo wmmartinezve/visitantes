@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\InvitadoEstatus;
 use App\Models\Invitado;
 use App\Models\User;
+use App\Support\InvitadoFotoStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -62,8 +63,19 @@ class InvitadoRegistrationService
 
     private function storeFoto(UploadedFile $foto, int $invitadoId): string
     {
-        $filename = Str::uuid().'.'.$foto->getClientOriginalExtension();
+        $extension = strtolower($foto->extension() ?: 'jpg');
+        $allowed = ['jpg', 'jpeg', 'png', 'webp'];
 
-        return $foto->storeAs("invitados/fotos/{$invitadoId}", $filename, 'public');
+        if (! in_array($extension, $allowed, true)) {
+            throw new \InvalidArgumentException('Formato de imagen no permitido.');
+        }
+
+        $filename = Str::uuid().'.'.$extension;
+
+        return $foto->storeAs(
+            "invitados/fotos/{$invitadoId}",
+            $filename,
+            InvitadoFotoStorage::PRIVATE_DISK,
+        );
     }
 }

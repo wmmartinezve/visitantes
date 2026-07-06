@@ -3,6 +3,7 @@
 use App\Http\Controllers\AcopioLogoutController;
 use App\Http\Controllers\Admin\DashboardPdfExportController;
 use App\Http\Controllers\AnfitrionLogoutController;
+use App\Http\Controllers\InvitadoFotoController;
 use App\Http\Controllers\Api\OfflineCatalogController;
 use App\Http\Controllers\Api\OfflineSyncController;
 use App\Livewire\Acopio\Dashboard as AcopioDashboard;
@@ -33,6 +34,11 @@ Route::get('/', function () {
 Route::middleware(['auth'])->prefix('admin')->group(function (): void {
     Route::get('/dashboard/exportar-pdf', DashboardPdfExportController::class)
         ->name('filament.admin.dashboard.export-pdf');
+});
+
+Route::middleware(['auth'])->group(function (): void {
+    Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)
+        ->name('invitados.foto');
 });
 
 Route::middleware(['auth', 'field_operator'])->prefix('api/offline')->name('api.offline.')->group(function (): void {

@@ -6,7 +6,9 @@ namespace App\Filament\Resources\UserResource\Pages;
 
 use App\Enums\UserRole;
 use App\Filament\Resources\UserResource;
+use App\Models\User;
 use Filament\Resources\Pages\CreateRecord;
+use Illuminate\Database\Eloquent\Model;
 
 class CreateUser extends CreateRecord
 {
@@ -15,6 +17,26 @@ class CreateUser extends CreateRecord
     protected function mutateFormDataBeforeCreate(array $data): array
     {
         return self::normalizeRoleFields($data);
+    }
+
+    protected function handleRecordCreation(array $data): Model
+    {
+        $data = self::normalizeRoleFields($data);
+
+        $user = new User;
+        $user->fill([
+            'name' => $data['name'],
+            'email' => $data['email'],
+            'password' => $data['password'],
+        ]);
+        $user->forceFill([
+            'rol' => $data['rol'],
+            'refugio_id' => $data['refugio_id'] ?? null,
+            'centro_acopio_id' => $data['centro_acopio_id'] ?? null,
+        ]);
+        $user->save();
+
+        return $user;
     }
 
     /**

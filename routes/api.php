@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\MobileAuthController;
+use App\Http\Controllers\InvitadoFotoController;
 use App\Http\Controllers\Api\MobileCentroAcopioController;
 use App\Http\Controllers\Api\MobileEntregaController;
 use App\Http\Controllers\Api\MobileInvitadoController;
@@ -20,6 +21,7 @@ Route::prefix('mobile')->name('api.mobile.')->group(function (): void {
 
         Route::get('/invitados', [MobileInvitadoController::class, 'index'])->name('invitados.index');
         Route::get('/invitados/{invitado}', [MobileInvitadoController::class, 'show'])->name('invitados.show');
+        Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)->name('invitados.foto');
 
         Route::get('/requerimientos', [MobileRequerimientoController::class, 'index'])->name('requerimientos.index');
         Route::post('/requerimientos', [MobileRequerimientoController::class, 'store'])->name('requerimientos.store');

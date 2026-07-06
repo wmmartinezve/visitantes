@@ -18,8 +18,8 @@ php artisan config:cache
 php artisan route:cache
 php artisan view:cache
 
-if [ "${RUN_SEED:-false}" = "true" ]; then
-  echo ">> Ejecutando seeders (RUN_SEED=true)"
+if [ "${RUN_DEMO_SEED:-false}" = "true" ] || [ "${RUN_SEED:-false}" = "true" ]; then
+  echo ">> Ejecutando seeders demo (RUN_DEMO_SEED/RUN_SEED)"
   php artisan db:seed --force --no-interaction
 fi
 

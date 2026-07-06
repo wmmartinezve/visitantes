@@ -11,6 +11,7 @@ use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InsumoCatalog;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use RuntimeException;
@@ -52,10 +53,12 @@ class OfflineSyncService
                     'server_id' => $serverId,
                 ];
             } catch (\Throwable $e) {
+                report($e);
+
                 $results[] = [
                     'client_id' => $clientId,
                     'status' => 'error',
-                    'error' => $e->getMessage(),
+                    'error' => app()->environment('local') ? $e->getMessage() : 'No se pudo procesar la operación.',
                 ];
             }
         }
@@ -86,8 +89,8 @@ class OfflineSyncService
             'familiares.*.telefono' => ['nullable', 'string', 'max:30'],
             'familiares.*.parentesco' => ['required_with:familiares.*.nombre', 'string', 'max:50'],
             'familiares.*.fecha_nacimiento' => ['required_with:familiares.*.nombre', 'date', 'before_or_equal:today'],
-            'foto_base64' => ['nullable', 'string'],
-            'foto_mime' => ['nullable', 'string', 'max:50'],
+            'foto_base64' => ['nullable', 'string', 'max:12000000'],
+            'foto_mime' => ['nullable', 'string', 'in:image/jpeg,image/png,image/webp'],
         ])->validate();
 
         $foto = null;
@@ -233,6 +236,8 @@ class OfflineSyncService
             ->whereKey($validated['requerimiento_id'])
             ->firstOrFail();
 
+        Gate::forUser($user)->authorize('entregar', $requerimiento);
+
         $this->requerimientoAsignacion->marcarEntregado($requerimiento);
 
         return $requerimiento->id;
@@ -244,6 +249,16 @@ class OfflineSyncService
 
         if ($raw === false) {
             throw new RuntimeException('No se pudo decodificar la foto.');
+        }
+
+        if (strlen($raw) > 8 * 1024 * 1024) {
+            throw new RuntimeException('La foto supera el tamaño máximo permitido (8 MB).');
+        }
+
+        $imageInfo = @getimagesizefromstring($raw);
+
+        if ($imageInfo === false) {
+            throw new RuntimeException('El archivo no es una imagen válida.');
         }
 
         $extension = match ($mime) {

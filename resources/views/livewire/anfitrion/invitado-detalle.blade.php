@@ -15,8 +15,8 @@
             <span class="ve-red"></span>
         </div>
         <div class="flex gap-4 p-4">
-            @if ($invitado->foto_ingreso)
-                <img src="{{ asset('storage/'.$invitado->foto_ingreso) }}" alt="" class="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-m3-primary/20">
+            @if ($fotoUrl = $invitado->fotoUrl())
+                <img src="{{ $fotoUrl }}" alt="" class="h-16 w-16 shrink-0 rounded-full object-cover ring-2 ring-m3-primary/20">
             @else
                 <div class="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-m3-primary-container text-xl font-bold text-m3-primary">
                     {{ strtoupper(substr($invitado->nombre, 0, 1)) }}

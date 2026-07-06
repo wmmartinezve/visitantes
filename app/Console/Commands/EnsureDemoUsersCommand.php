@@ -11,12 +11,18 @@ use Illuminate\Support\Facades\Hash;
 
 class EnsureDemoUsersCommand extends Command
 {
-    protected $signature = 'visitantes:ensure-demo-users';
+    protected $signature = 'visitantes:ensure-demo-users {--force : Permitir en producción (no recomendado)}';
 
-    protected $description = 'Garantiza que existan las cuentas demo (admin, anfitrión, acopio) con contraseña conocida';
+    protected $description = 'Garantiza cuentas demo solo en entornos locales o con --force';
 
     public function handle(): int
     {
+        if (app()->environment('production') && ! $this->option('force')) {
+            $this->error('Comando bloqueado en producción. Use --force solo en entornos controlados.');
+
+            return self::FAILURE;
+        }
+
         $admin = User::query()->updateOrCreate(
             ['email' => 'admin@visitantes.test'],
             [
@@ -32,7 +38,7 @@ class EnsureDemoUsersCommand extends Command
 
         $total = User::query()->count();
         if ($total <= 1) {
-            $this->warn('Pocos usuarios en la base. Ejecute: php artisan db:seed --class=DemoOperacionSeeder');
+            $this->warn('Pocos usuarios en la base. Ejecute: php artisan db:seed --class=DemoDatabaseSeeder');
         } else {
             $this->info("Total usuarios en la base: {$total}");
         }

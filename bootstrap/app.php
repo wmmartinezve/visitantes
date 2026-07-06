@@ -14,6 +14,8 @@ return Application::configure(basePath: dirname(__DIR__))
     ->withMiddleware(function (Middleware $middleware) {
         $middleware->trustProxies(at: '*');
 
+        $middleware->redirectGuestsTo(fn () => url('/'));
+
         $middleware->alias([
             'anfitrion' => \App\Http\Middleware\EnsureAnfitrion::class,
             'centro_acopio' => \App\Http\Middleware\EnsureCentroAcopio::class,

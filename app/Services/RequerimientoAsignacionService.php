@@ -87,6 +87,14 @@ class RequerimientoAsignacionService
             throw new RuntimeException('El requerimiento no tiene centro asignado.');
         }
 
+        if ($requerimiento->estatus === RequerimientoEstatus::Entregado) {
+            return $requerimiento->fresh(['centroAcopio', 'invitado']);
+        }
+
+        if ($requerimiento->estatus !== RequerimientoEstatus::Asignado) {
+            throw new RuntimeException('Solo se pueden entregar requerimientos en estatus asignado.');
+        }
+
         return DB::transaction(function () use ($requerimiento): Requerimiento {
             $inventario = $this->inventarioQueryForRequerimiento($requerimiento)
                 ->where('centro_acopio_id', $requerimiento->centro_acopio_id)

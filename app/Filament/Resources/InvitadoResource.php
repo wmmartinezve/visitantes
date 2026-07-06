@@ -8,6 +8,7 @@ use App\Enums\InvitadoEstatus;
 use App\Filament\Resources\InvitadoResource\Pages;
 use App\Filament\Resources\InvitadoResource\RelationManagers\MiembrosFamiliaRelationManager;
 use App\Models\Invitado;
+use App\Support\InvitadoFotoStorage;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -56,8 +57,9 @@ class InvitadoResource extends Resource
                 ->schema([
                     Forms\Components\FileUpload::make('foto_ingreso')
                         ->label('Foto de ingreso')
-                        ->disk('public')
+                        ->disk(InvitadoFotoStorage::PRIVATE_DISK)
                         ->directory('invitados/fotos')
+                        ->visibility('private')
                         ->image()
                         ->avatar()
                         ->columnSpanFull(),
@@ -140,7 +142,8 @@ class InvitadoResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('foto_ingreso')
                     ->label('Foto')
-                    ->disk('public')
+                    ->checkFileExistence(false)
+                    ->url(fn (Invitado $record): ?string => $record->fotoUrl())
                     ->circular()
                     ->defaultImageUrl(fn (): string => 'https://ui-avatars.com/api/?background=002776&color=fff&name=I'),
                 Tables\Columns\TextColumn::make('nombre')

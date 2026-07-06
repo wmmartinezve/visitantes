@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Controllers\Api;
 
+use App\Concerns\ThrottlesAuthentication;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MobileUserResource;
 use Illuminate\Http\JsonResponse;
@@ -13,6 +14,8 @@ use Illuminate\Validation\ValidationException;
 
 class MobileAuthController extends Controller
 {
+    use ThrottlesAuthentication;
+
     public function login(Request $request): JsonResponse
     {
         $credentials = $request->validate([
@@ -21,14 +24,20 @@ class MobileAuthController extends Controller
             'device_name' => ['nullable', 'string', 'max:120'],
         ]);
 
+        $this->ensureIsNotRateLimited($credentials['email']);
+
         if (! Auth::attempt([
             'email' => $credentials['email'],
             'password' => $credentials['password'],
         ])) {
+            $this->hitRateLimiter($credentials['email']);
+
             throw ValidationException::withMessages([
                 'email' => ['Credenciales inválidas.'],
             ]);
         }
+
+        $this->clearRateLimiter($credentials['email']);
 
         $user = $request->user();
 

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\InvitadoEstatus;
+use App\Support\InvitadoFotoStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -63,5 +64,14 @@ class Invitado extends Model
     public function nombreCompleto(): string
     {
         return trim("{$this->nombre} {$this->apellido}");
+    }
+
+    public function fotoUrl(string $routeName = 'invitados.foto'): ?string
+    {
+        if ($this->foto_ingreso === null || ! InvitadoFotoStorage::exists($this->foto_ingreso)) {
+            return null;
+        }
+
+        return route($routeName, $this);
     }
 }
