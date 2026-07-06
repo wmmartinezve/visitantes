@@ -27,10 +27,18 @@
             color: #555;
         }
         .tricolor {
+            width: 100%;
             height: 4px;
             margin: 10px 0 0;
-            background: linear-gradient(to right, #FFCC00 33%, #002776 33%, #002776 66%, #CF142B 66%);
+            border-collapse: collapse;
         }
+        .tricolor td {
+            height: 4px;
+            padding: 0;
+        }
+        .tricolor .c-yellow { background: #FFCC00; width: 33%; }
+        .tricolor .c-blue { background: #002776; width: 34%; }
+        .tricolor .c-red { background: #CF142B; width: 33%; }
         .filtros {
             background: #f4f6fb;
             border: 1px solid #d8deea;
@@ -115,7 +123,13 @@
         <h1>Reporte de operación — Visitantes · {{ config('visitantes.estado') }}</h1>
         <p>{{ config('visitantes.estado') }}, {{ config('visitantes.pais') }}</p>
         <p>Generado: {{ $generado_en }}</p>
-        <div class="tricolor"></div>
+        <table class="tricolor" cellspacing="0" cellpadding="0">
+            <tr>
+                <td class="c-yellow"></td>
+                <td class="c-blue"></td>
+                <td class="c-red"></td>
+            </tr>
+        </table>
     </div>
 
     <div class="filtros">

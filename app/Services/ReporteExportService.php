@@ -23,11 +23,13 @@ class ReporteExportService
         $data = $this->metrics->reporteCompleto($filtros);
 
         $pdf = Pdf::loadView('reports.dashboard-operacion-pdf', $data)
-            ->setPaper('letter', 'portrait');
+            ->setPaper('letter', 'portrait')
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
 
         $filename = sprintf(
             'reporte-operacion-%s-%s_%s.pdf',
-            str(config('visitantes.estado'))->slug(),
+            str(config('visitantes.estado'))->slug('-', 'es'),
             $filtros->desde->format('Y-m-d'),
             $filtros->hasta->format('Y-m-d'),
         );

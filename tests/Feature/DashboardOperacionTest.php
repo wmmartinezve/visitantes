@@ -49,6 +49,16 @@ class DashboardOperacionTest extends TestCase
         $this->assertArrayHasKey('tasa_cumplimiento', $kpis);
     }
 
+    public function test_admin_puede_descargar_pdf_desde_ruta(): void
+    {
+        $admin = User::factory()->create(['rol' => UserRole::Admin]);
+
+        $this->actingAs($admin)
+            ->get('/admin/dashboard/exportar-pdf')
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+    }
+
     public function test_export_pdf_dashboard_genera_archivo(): void
     {
         $filtros = OperacionFiltros::fromArray(null);

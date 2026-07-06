@@ -8,7 +8,6 @@ use App\Models\CentroAcopio;
 use App\Models\Municipio;
 use App\Models\Parroquia;
 use App\Models\Refugio;
-use App\Services\ReporteExportService;
 use App\Support\OperacionFiltros;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -19,7 +18,6 @@ use Filament\Forms\Get;
 use Filament\Forms\Set;
 use Filament\Pages\Dashboard as BaseDashboard;
 use Filament\Pages\Dashboard\Concerns\HasFiltersForm;
-use Symfony\Component\HttpFoundation\Response;
 
 class Dashboard extends BaseDashboard
 {
@@ -143,10 +141,13 @@ class Dashboard extends BaseDashboard
                 ->label('Exportar PDF')
                 ->icon('heroicon-o-document-arrow-down')
                 ->color('success')
-                ->action(function (ReporteExportService $service): Response {
+                ->url(function (): string {
                     $filtros = OperacionFiltros::fromArray($this->filters);
 
-                    return $service->dashboardPdf($filtros);
+                    return route('filament.admin.dashboard.export-pdf', array_filter(
+                        $filtros->toArray(),
+                        fn (mixed $value): bool => $value !== null && $value !== '',
+                    ));
                 }),
         ];
     }
