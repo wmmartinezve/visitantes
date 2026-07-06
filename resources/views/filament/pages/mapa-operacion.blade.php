@@ -6,7 +6,10 @@
             {{ $this->form }}
         </x-filament::section>
 
-        <div class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300">
+        <div
+            wire:key="mapa-resumen-{{ md5(json_encode($this->data ?? [])) }}"
+            class="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-300"
+        >
             <span class="inline-flex items-center gap-2">
                 <span class="inline-block h-3 w-3 rounded-full bg-blue-600"></span>
                 Refugios ({{ count($puntos['refugios']) }})
@@ -44,16 +47,10 @@
 
     @script
         <script>
-            (function initMapaOperacion() {
-                const puntos = @json($puntos);
+            function renderMapaOperacion(puntos) {
                 const mapEl = document.getElementById('mapa-operacion');
 
-                if (!mapEl) {
-                    return;
-                }
-
-                if (typeof L === 'undefined') {
-                    setTimeout(initMapaOperacion, 100);
+                if (!mapEl || typeof L === 'undefined') {
                     return;
                 }
 
@@ -86,7 +83,7 @@
                     iconAnchor: [7, 7],
                 });
 
-                puntos.refugios.forEach((r) => {
+                (puntos.refugios ?? []).forEach((r) => {
                     L.marker([r.lat, r.lng], { icon: refIcon })
                         .addTo(map)
                         .bindPopup(
@@ -97,7 +94,7 @@
                     bounds.push([r.lat, r.lng]);
                 });
 
-                puntos.centros.forEach((c) => {
+                (puntos.centros ?? []).forEach((c) => {
                     if (!c.activo) {
                         return;
                     }
@@ -121,7 +118,22 @@
                 [100, 300, 600].forEach((delay) => {
                     setTimeout(() => map.invalidateSize(), delay);
                 });
-            })();
+            }
+
+            function initMapaOperacion() {
+                if (typeof L === 'undefined') {
+                    setTimeout(initMapaOperacion, 100);
+                    return;
+                }
+
+                renderMapaOperacion(@json($puntos));
+            }
+
+            initMapaOperacion();
+
+            $wire.on('refresh-mapa-operacion', (event) => {
+                renderMapaOperacion(event.puntos);
+            });
         </script>
     @endscript
 </x-filament-panels::page>

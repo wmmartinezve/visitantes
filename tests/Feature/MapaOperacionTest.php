@@ -52,7 +52,8 @@ class MapaOperacionTest extends TestCase
         Livewire::test(MapaOperacion::class)
             ->assertSet('data.municipio_id', null)
             ->set('data.municipio_id', $municipio->id)
-            ->assertSet('data.municipio_id', $municipio->id);
+            ->assertSet('data.municipio_id', $municipio->id)
+            ->assertDispatched('refresh-mapa-operacion');
 
         $component = Livewire::test(MapaOperacion::class)
             ->set('data.municipio_id', $municipio->id);

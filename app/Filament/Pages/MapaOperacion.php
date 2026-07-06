@@ -56,7 +56,10 @@ class MapaOperacion extends Page implements HasForms
                     ->searchable()
                     ->preload()
                     ->live()
-                    ->afterStateUpdated(fn (Set $set) => $set('parroquia_id', null)),
+                    ->afterStateUpdated(function (Set $set): void {
+                        $set('parroquia_id', null);
+                        $this->dispatchMapaRefresh();
+                    }),
 
                 Select::make('parroquia_id')
                     ->label('Parroquia')
@@ -75,6 +78,7 @@ class MapaOperacion extends Page implements HasForms
                     })
                     ->searchable()
                     ->live()
+                    ->afterStateUpdated(fn () => $this->dispatchMapaRefresh())
                     ->disabled(fn (Get $get): bool => ! $get('municipio_id')),
             ])
             ->columns(2)
@@ -95,8 +99,20 @@ class MapaOperacion extends Page implements HasForms
                         'municipio_id' => null,
                         'parroquia_id' => null,
                     ]);
+
+                    $this->dispatchMapaRefresh();
                 }),
         ];
+    }
+
+    public function updatedData(): void
+    {
+        $this->dispatchMapaRefresh();
+    }
+
+    private function dispatchMapaRefresh(): void
+    {
+        $this->dispatch('refresh-mapa-operacion', puntos: $this->puntos);
     }
 
     /**
@@ -165,8 +181,12 @@ class MapaOperacion extends Page implements HasForms
     /** @param  Builder<Refugio>|Builder<CentroAcopio>  $query */
     private function aplicarFiltroTerritorial(Builder $query): void
     {
-        $parroquiaId = $this->data['parroquia_id'] ?? null;
-        $municipioId = $this->data['municipio_id'] ?? null;
+        $parroquiaId = filled($this->data['parroquia_id'] ?? null)
+            ? (int) $this->data['parroquia_id']
+            : null;
+        $municipioId = filled($this->data['municipio_id'] ?? null)
+            ? (int) $this->data['municipio_id']
+            : null;
 
         if ($parroquiaId) {
             $query->where('parroquia_id', $parroquiaId);
