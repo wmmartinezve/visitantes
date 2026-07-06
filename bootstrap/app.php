@@ -33,6 +33,7 @@ return Application::configure(basePath: dirname(__DIR__))
                 || str_contains($message, 'Unable to write')
                 || str_contains($message, 'Access Denied')
                 || str_contains($message, 'AccessDenied')
+                || str_contains($message, 'AccessControlListNotSupported')
                 || str_contains($message, 'Driver [s3]')
                 || $e instanceof \League\Flysystem\FilesystemException;
 

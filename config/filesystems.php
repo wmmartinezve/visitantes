@@ -58,6 +58,10 @@ return [
             'use_path_style_endpoint' => env('AWS_USE_PATH_STYLE_ENDPOINT', false),
             'throw' => true,
             'report' => true,
+            // Buckets nuevos de AWS tienen ACLs deshabilitadas (Object Ownership enforced).
+            'options' => [
+                'ACL' => '',
+            ],
         ],
 
     ],
