@@ -96,6 +96,8 @@ class OfflineSyncService
             || str_contains($message, 'AccessDenied')
             || str_contains($message, 'Could not connect to the endpoint')
             || str_contains($message, 'InvalidAccessKeyId')
+            || str_contains($message, 'AwsS3V3')
+            || str_contains($message, 'Driver [s3]')
         ) {
             return 'No se pudo guardar la foto en el almacenamiento. Contacte al administrador.';
         }

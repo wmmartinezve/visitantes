@@ -174,6 +174,9 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           }
         }
       }
+      if (message == 'Server Error' || e.response?.statusCode == 500) {
+        message = 'Error interno del servidor. Intente de nuevo o contacte al administrador.';
+      }
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _saving = false);
