@@ -19,6 +19,58 @@
                 max-width: none !important;
                 max-height: none !important;
             }
+
+            .mapa-marker-wrap {
+                background: transparent !important;
+                border: none !important;
+            }
+
+            .mapa-marker {
+                position: relative;
+                width: 44px;
+                height: 52px;
+            }
+
+            .mapa-marker__pin {
+                position: absolute;
+                top: 0;
+                left: 50%;
+                width: 38px;
+                height: 38px;
+                margin-left: -19px;
+                border: 3px solid #fff;
+                border-radius: 50% 50% 50% 0;
+                transform: rotate(-45deg);
+                box-shadow: 0 4px 14px rgba(0, 0, 0, 0.45);
+            }
+
+            .mapa-marker__icon {
+                position: absolute;
+                top: 7px;
+                left: 50%;
+                width: 24px;
+                height: 24px;
+                margin-left: -12px;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                color: #fff;
+                pointer-events: none;
+            }
+
+            .mapa-marker__icon svg {
+                width: 20px;
+                height: 20px;
+                filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.35));
+            }
+
+            .mapa-marker--refugio .mapa-marker__pin {
+                background: linear-gradient(145deg, #2563eb, #002776);
+            }
+
+            .mapa-marker--centro .mapa-marker__pin {
+                background: linear-gradient(145deg, #10b981, #047857);
+            }
         </style>
     @endpush
 
@@ -93,6 +145,25 @@
                     throw new Error('No hay capa de mapa disponible.');
                 }
 
+                function markerIcon(tipo) {
+                    const isRefugio = tipo === 'refugio';
+                    const iconSvg = isRefugio
+                        ? '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 3 3 10v11h7v-6h4v6h7V10L12 3z"/></svg>'
+                        : '<svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20 8h-3V4H7v4H4c-1.1 0-2 .9-2 2v9h20v-9c0-1.1-.9-2-2-2zm-5 0H9V6h6v2z"/></svg>';
+
+                    return L.divIcon({
+                        className: 'mapa-marker-wrap',
+                        html:
+                            `<div class="mapa-marker mapa-marker--${isRefugio ? 'refugio' : 'centro'}">` +
+                            '<div class="mapa-marker__pin"></div>' +
+                            `<div class="mapa-marker__icon">${iconSvg}</div>` +
+                            '</div>',
+                        iconSize: [44, 52],
+                        iconAnchor: [22, 48],
+                        popupAnchor: [0, -46],
+                    });
+                }
+
                 function renderMapaOperacion(puntos) {
                     const mapEl = document.getElementById('mapa-operacion');
 
@@ -111,20 +182,8 @@
                     addTileLayer(map);
 
                     const bounds = [];
-
-                    const refIcon = L.divIcon({
-                        className: '',
-                        html: '<div style="background:#2563eb;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)"></div>',
-                        iconSize: [14, 14],
-                        iconAnchor: [7, 7],
-                    });
-
-                    const centroIcon = L.divIcon({
-                        className: '',
-                        html: '<div style="background:#059669;width:14px;height:14px;border-radius:50%;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.35)"></div>',
-                        iconSize: [14, 14],
-                        iconAnchor: [7, 7],
-                    });
+                    const refIcon = markerIcon('refugio');
+                    const centroIcon = markerIcon('centro');
 
                     (puntos?.refugios ?? []).forEach((r) => {
                         if (r.lat == null || r.lng == null) {
