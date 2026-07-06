@@ -4,6 +4,8 @@ import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/features/auth/auth_repository.dart';
+import 'package:visitantes_mobile/features/auth/profile_screen.dart';
 import 'package:visitantes_mobile/features/anfitrion/guests_list_screen.dart';
 import 'package:visitantes_mobile/features/anfitrion/register_guest_screen.dart';
 import 'package:visitantes_mobile/features/anfitrion/requirements_list_screen.dart';
@@ -17,13 +19,17 @@ class AnfitrionShell extends StatefulWidget {
     required this.user,
     required this.catalog,
     required this.sync,
+    required this.auth,
     required this.onLogout,
+    required this.onUserUpdated,
   });
 
   final MobileUser user;
   final CatalogService catalog;
   final SyncService sync;
+  final AuthRepository auth;
   final VoidCallback onLogout;
+  final ValueChanged<MobileUser> onUserUpdated;
 
   @override
   State<AnfitrionShell> createState() => _AnfitrionShellState();
@@ -32,7 +38,26 @@ class AnfitrionShell extends StatefulWidget {
 class _AnfitrionShellState extends State<AnfitrionShell> {
   int _index = 0;
   int _refreshTick = 0;
+  bool _showProfile = false;
+  late MobileUser _user = widget.user;
   late final FieldApi _fieldApi = FieldApi(catalogService: widget.catalog);
+
+  @override
+  void didUpdateWidget(covariant AnfitrionShell oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.user.id != widget.user.id) {
+      _user = widget.user;
+    }
+  }
+
+  void _openProfile() => setState(() => _showProfile = true);
+
+  void _closeProfile() => setState(() => _showProfile = false);
+
+  void _handleUserUpdated(MobileUser user) {
+    setState(() => _user = user);
+    widget.onUserUpdated(user);
+  }
 
   void _goTo(int index) => setState(() => _index = index);
 
@@ -45,19 +70,36 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showProfile) {
+      return AppScaffold(
+        title: 'Mi perfil',
+        subtitle: _user.name,
+        catalog: widget.catalog,
+        sync: widget.sync,
+        onLogout: widget.onLogout,
+        onBack: _closeProfile,
+        body: ProfileScreen(
+          user: _user,
+          auth: widget.auth,
+          onUserUpdated: _handleUserUpdated,
+        ),
+      );
+    }
+
     final pages = [
-      _HomeTab(sync: widget.sync, user: widget.user, onNavigate: _goTo, onSync: _syncFromHome),
+      _HomeTab(sync: widget.sync, user: _user, onNavigate: _goTo, onSync: _syncFromHome),
       RegisterGuestScreen(catalog: widget.catalog, sync: widget.sync),
       GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi),
       RequirementsListScreen(key: ValueKey('reqs-$_refreshTick'), fieldApi: _fieldApi),
     ];
 
     return AppScaffold(
-      title: widget.user.name,
-      subtitle: 'Refugio: ${widget.user.refugioNombre ?? '—'}',
+      title: _user.name,
+      subtitle: 'Refugio: ${_user.refugioNombre ?? '—'}',
       catalog: widget.catalog,
       sync: widget.sync,
       onLogout: widget.onLogout,
+      onProfile: _openProfile,
       onRefreshComplete: _bumpRefresh,
       body: pages[_index],
       bottomNav: NavigationBar(

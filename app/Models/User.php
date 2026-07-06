@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\UserRole;
+use App\Notifications\FieldOperatorResetPasswordNotification;
 use Filament\Models\Contracts\FilamentUser;
 use Filament\Panel;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
@@ -72,5 +73,26 @@ class User extends Authenticatable implements FilamentUser
     public function canAccessPanel(Panel $panel): bool
     {
         return $this->isAdmin();
+    }
+
+    public function sendPasswordResetNotification($token): void
+    {
+        $this->notify(new FieldOperatorResetPasswordNotification(
+            $this->passwordResetUrl($token),
+        ));
+    }
+
+    public function passwordResetUrl(string $token): string
+    {
+        $params = [
+            'token' => $token,
+            'email' => $this->getEmailForPasswordReset(),
+        ];
+
+        return match ($this->rol) {
+            UserRole::Anfitrion => route('anfitrion.password.reset', $params),
+            UserRole::CentroAcopio => route('acopio.password.reset', $params),
+            UserRole::Admin => route('filament.admin.auth.password-reset.reset', $params),
+        };
     }
 }

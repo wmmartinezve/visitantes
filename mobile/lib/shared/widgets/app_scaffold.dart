@@ -15,6 +15,8 @@ class AppScaffold extends StatefulWidget {
     required this.sync,
     required this.body,
     required this.onLogout,
+    this.onProfile,
+    this.onBack,
     this.bottomNav,
     this.onRefreshComplete,
   });
@@ -25,6 +27,8 @@ class AppScaffold extends StatefulWidget {
   final SyncService sync;
   final Widget body;
   final VoidCallback onLogout;
+  final VoidCallback? onProfile;
+  final VoidCallback? onBack;
   final Widget? bottomNav;
   final VoidCallback? onRefreshComplete;
 
@@ -89,14 +93,21 @@ class _AppScaffoldState extends State<AppScaffold> {
             padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
             child: Row(
               children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                    color: VenezuelaColors.yellow,
-                    borderRadius: BorderRadius.circular(12),
+                if (widget.onBack != null)
+                  IconButton(
+                    onPressed: widget.onBack,
+                    tooltip: 'Volver',
+                    icon: const Icon(Icons.arrow_back, color: Colors.white),
+                  )
+                else
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: VenezuelaColors.yellow,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(Icons.volunteer_activism, color: VenezuelaColors.blue, size: 28),
                   ),
-                  child: const Icon(Icons.volunteer_activism, color: VenezuelaColors.blue, size: 28),
-                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -111,6 +122,12 @@ class _AppScaffoldState extends State<AppScaffold> {
                     ],
                   ),
                 ),
+                if (widget.onProfile != null && widget.onBack == null)
+                  IconButton(
+                    onPressed: widget.onProfile,
+                    tooltip: 'Mi perfil',
+                    icon: const Icon(Icons.manage_accounts_outlined, color: Colors.white),
+                  ),
                 ListenableBuilder(
                   listenable: widget.sync,
                   builder: (context, _) {

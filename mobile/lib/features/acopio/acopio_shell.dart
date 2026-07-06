@@ -4,6 +4,8 @@ import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/features/auth/auth_repository.dart';
+import 'package:visitantes_mobile/features/auth/profile_screen.dart';
 import 'package:visitantes_mobile/features/acopio/centro_geolocalizacion_card.dart';
 import 'package:visitantes_mobile/features/acopio/deliveries_screen.dart';
 import 'package:visitantes_mobile/features/acopio/inventory_screen.dart';
@@ -17,6 +19,7 @@ class AcopioShell extends StatefulWidget {
     required this.user,
     required this.catalog,
     required this.sync,
+    required this.auth,
     required this.onLogout,
     required this.onUserUpdated,
   });
@@ -24,6 +27,7 @@ class AcopioShell extends StatefulWidget {
   final MobileUser user;
   final CatalogService catalog;
   final SyncService sync;
+  final AuthRepository auth;
   final VoidCallback onLogout;
   final ValueChanged<MobileUser> onUserUpdated;
 
@@ -34,6 +38,7 @@ class AcopioShell extends StatefulWidget {
 class _AcopioShellState extends State<AcopioShell> {
   int _index = 0;
   int _refreshTick = 0;
+  bool _showProfile = false;
   late MobileUser _user = widget.user;
   late final FieldApi _fieldApi = FieldApi(catalogService: widget.catalog);
 
@@ -54,6 +59,10 @@ class _AcopioShellState extends State<AcopioShell> {
     widget.onUserUpdated(user);
   }
 
+  void _openProfile() => setState(() => _showProfile = true);
+
+  void _closeProfile() => setState(() => _showProfile = false);
+
   Future<void> _syncFromHome() async {
     await widget.sync.refreshAll();
     _bumpRefresh();
@@ -61,6 +70,22 @@ class _AcopioShellState extends State<AcopioShell> {
 
   @override
   Widget build(BuildContext context) {
+    if (_showProfile) {
+      return AppScaffold(
+        title: 'Mi perfil',
+        subtitle: _user.name,
+        catalog: widget.catalog,
+        sync: widget.sync,
+        onLogout: widget.onLogout,
+        onBack: _closeProfile,
+        body: ProfileScreen(
+          user: _user,
+          auth: widget.auth,
+          onUserUpdated: _handleUserUpdated,
+        ),
+      );
+    }
+
     final pages = [
       _HomeTab(
         user: _user,
@@ -86,6 +111,7 @@ class _AcopioShellState extends State<AcopioShell> {
       catalog: widget.catalog,
       sync: widget.sync,
       onLogout: widget.onLogout,
+      onProfile: _openProfile,
       onRefreshComplete: _bumpRefresh,
       body: pages[_index],
       bottomNav: NavigationBar(

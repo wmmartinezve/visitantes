@@ -79,11 +79,15 @@ class MobileUser {
   bool get isAnfitrion => rol == 'anfitrion';
   bool get isCentroAcopio => rol == 'centro_acopio';
 
-  MobileUser copyWith({CentroAcopioInfo? centroAcopio}) {
+  MobileUser copyWith({
+    String? name,
+    String? email,
+    CentroAcopioInfo? centroAcopio,
+  }) {
     return MobileUser(
       id: id,
-      name: name,
-      email: email,
+      name: name ?? this.name,
+      email: email ?? this.email,
       rol: rol,
       refugioId: refugioId,
       centroAcopioId: centroAcopioId,

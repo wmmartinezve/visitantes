@@ -1,4 +1,4 @@
-@props(['title' => 'Visitantes', 'subtitle' => null, 'userName' => null, 'contextLabel' => null, 'contextValue' => null, 'logoutRoute' => null, 'offlineEnabled' => false])
+@props(['title' => 'Visitantes', 'subtitle' => null, 'userName' => null, 'contextLabel' => null, 'contextValue' => null, 'logoutRoute' => null, 'profileRoute' => null, 'offlineEnabled' => false])
 
 <x-layouts.m3-base :title="$title">
     @if($offlineEnabled)
@@ -34,6 +34,11 @@
                         </p>
                     @endif
                 </div>
+                @if($profileRoute)
+                    <a href="{{ $profileRoute }}" class="m3-btn-text !min-h-0 !px-3 !py-2 !text-m3-on-primary hover:bg-white/10" title="Mi perfil">
+                        <span class="material-symbols-outlined text-xl">manage_accounts</span>
+                    </a>
+                @endif
                 @if($logoutRoute)
                     <form method="POST" action="{{ $logoutRoute }}">
                         @csrf

@@ -56,6 +56,54 @@ class AuthRepository {
     return _user!;
   }
 
+  Future<MobileUser> updateProfile({required String name, required String email}) async {
+    final response = await _api.dio.put<Map<String, dynamic>>(
+      '/profile',
+      data: {'name': name, 'email': email},
+    );
+    _user = _parseUserResponse(response.data);
+    return _user!;
+  }
+
+  Future<void> updatePassword({
+    required String currentPassword,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    await _api.dio.put<void>(
+      '/profile/password',
+      data: {
+        'current_password': currentPassword,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
+  }
+
+  Future<void> sendPasswordResetEmail(String email) async {
+    await _api.dio.post<void>(
+      '/forgot-password',
+      data: {'email': email},
+    );
+  }
+
+  Future<void> resetPassword({
+    required String token,
+    required String email,
+    required String password,
+    required String passwordConfirmation,
+  }) async {
+    await _api.dio.post<void>(
+      '/reset-password',
+      data: {
+        'token': token,
+        'email': email,
+        'password': password,
+        'password_confirmation': passwordConfirmation,
+      },
+    );
+  }
+
   MobileUser _parseUserResponse(Map<String, dynamic>? payload) {
     if (payload == null) {
       throw StateError('Respuesta inválida del servidor');

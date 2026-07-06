@@ -22,5 +22,9 @@
                 <span wire:loading wire:target="login">Verificando…</span>
             </x-m3.button>
         </form>
+
+        <a href="{{ route('anfitrion.password.request') }}" class="block text-center text-sm font-medium text-m3-primary hover:underline">
+            ¿Olvidó su contraseña?
+        </a>
     </div>
 </div>

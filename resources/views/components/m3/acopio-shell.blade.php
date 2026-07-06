@@ -5,6 +5,7 @@
     context-label="Centro"
     :context-value="auth()->user()->centroAcopio?->nombre"
     :logout-route="route('acopio.logout')"
+    :profile-route="route('acopio.perfil')"
     :offline-enabled="true"
 >
     <x-slot:navigation>

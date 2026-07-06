@@ -44,6 +44,8 @@ class AdminPanelProvider extends PanelProvider
             ->id('admin')
             ->path('admin')
             ->login(Login::class)
+            ->passwordReset()
+            ->profile()
             ->brandName('Visitantes · '.config('visitantes.estado'))
             ->brandLogo(asset(config('visitantes.brand.logo')))
             ->brandLogoHeight('2rem')

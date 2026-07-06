@@ -6,9 +6,14 @@ import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/venezuela_tricolor_bar.dart';
 
 class LoginScreen extends StatefulWidget {
-  const LoginScreen({super.key, required this.onLogin});
+  const LoginScreen({
+    super.key,
+    required this.onLogin,
+    this.onForgotPassword,
+  });
 
   final Future<void> Function(String email, String password) onLogin;
+  final VoidCallback? onForgotPassword;
 
   @override
   State<LoginScreen> createState() => _LoginScreenState();
@@ -147,6 +152,13 @@ class _LoginScreenState extends State<LoginScreen> {
                             style: Theme.of(context).textTheme.bodySmall,
                             textAlign: TextAlign.center,
                           ),
+                          if (widget.onForgotPassword != null) ...[
+                            const SizedBox(height: 8),
+                            TextButton(
+                              onPressed: widget.onForgotPassword,
+                              child: const Text('¿Olvidó su contraseña?'),
+                            ),
+                          ],
                         ],
                       ),
                     ),

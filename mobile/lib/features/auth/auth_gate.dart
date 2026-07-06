@@ -6,6 +6,7 @@ import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/features/acopio/acopio_shell.dart';
 import 'package:visitantes_mobile/features/anfitrion/anfitrion_shell.dart';
 import 'package:visitantes_mobile/features/auth/auth_repository.dart';
+import 'package:visitantes_mobile/features/auth/forgot_password_screen.dart';
 import 'package:visitantes_mobile/features/auth/login_screen.dart';
 
 class AuthGate extends StatefulWidget {
@@ -21,6 +22,7 @@ class _AuthGateState extends State<AuthGate> {
   final _sync = SyncService();
 
   bool _loading = true;
+  bool _showForgotPassword = false;
   MobileUser? _user;
 
   @override
@@ -76,7 +78,17 @@ class _AuthGateState extends State<AuthGate> {
 
     final user = _user;
     if (user == null) {
-      return LoginScreen(onLogin: _handleLogin);
+      if (_showForgotPassword) {
+        return ForgotPasswordScreen(
+          auth: _auth,
+          onBack: () => setState(() => _showForgotPassword = false),
+        );
+      }
+
+      return LoginScreen(
+        onLogin: _handleLogin,
+        onForgotPassword: () => setState(() => _showForgotPassword = true),
+      );
     }
 
     if (user.isAnfitrion) {
@@ -84,7 +96,9 @@ class _AuthGateState extends State<AuthGate> {
         user: user,
         catalog: _catalog,
         sync: _sync,
+        auth: _auth,
         onLogout: _logout,
+        onUserUpdated: (updated) => setState(() => _user = updated),
       );
     }
 
@@ -92,6 +106,7 @@ class _AuthGateState extends State<AuthGate> {
       user: user,
       catalog: _catalog,
       sync: _sync,
+      auth: _auth,
       onLogout: _logout,
       onUserUpdated: (updated) => setState(() => _user = updated),
     );

@@ -5,6 +5,7 @@
     context-label="Refugio"
     :context-value="auth()->user()->refugio?->nombre"
     :logout-route="route('anfitrion.logout')"
+    :profile-route="route('anfitrion.perfil')"
     :offline-enabled="true"
 >
     <x-slot:navigation>
