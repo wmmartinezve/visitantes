@@ -1,9 +1,6 @@
-/// URL pública del backend desplegado en Railway.
-///
-/// Tras el primer deploy, reemplace el dominio con el generado en Railway
-/// (Settings → Networking → Public domain) y recompile la app móvil.
+/// URL pública del backend en producción (Railway + dominio personalizado).
 const String kProductionApiBaseUrl =
-    'https://visitantes-production.up.railway.app/api/mobile';
+    'https://visitantes.proyectoswm.com/api/mobile';
 
-/// Dominio público del backend (sin path). Usado para documentación interna.
-const String kProductionAppHost = 'visitantes-production.up.railway.app';
+/// Dominio público del backend (sin path).
+const String kProductionAppHost = 'visitantes.proyectoswm.com';

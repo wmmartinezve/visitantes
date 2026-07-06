@@ -17,7 +17,7 @@ Backend Laravel (API móvil + panel Filament `/admin`) para **Visitantes · Anzo
 | `APP_ENV` | `production` |
 | `APP_DEBUG` | `false` |
 | `APP_KEY` | Generar: `php artisan key:generate --show` |
-| `APP_URL` | `https://<su-dominio>.up.railway.app` |
+| `APP_URL` | `https://visitantes.proyectoswm.com` |
 | `APP_TIMEZONE` | `America/Caracas` |
 | `DB_CONNECTION` | `pgsql` |
 | `DATABASE_URL` | Referencia al plugin PostgreSQL |
@@ -33,15 +33,19 @@ Railway inyecta `PORT` automáticamente.
 
 ## 3. Dominio público
 
-Settings → **Networking** → **Generate Domain**
+Servicio Railway: **`visitantes-anz`**
 
-Anote la URL, por ejemplo: `https://visitantes-production.up.railway.app`
+Dominio de producción: **`https://visitantes.proyectoswm.com`**
 
-- Panel admin: `https://<dominio>/admin`
-- API móvil: `https://<dominio>/api/mobile`
-- Health: `https://<dominio>/up`
+En Railway → servicio `visitantes-anz` → **Settings** → **Networking** → **Custom Domain** → agregue `visitantes.proyectoswm.com` y configure el registro DNS (CNAME) que indique Railway.
 
-Actualice `APP_URL` con ese dominio.
+| Recurso | URL |
+|---------|-----|
+| Panel admin | `https://visitantes.proyectoswm.com/admin` |
+| API móvil | `https://visitantes.proyectoswm.com/api/mobile` |
+| Health | `https://visitantes.proyectoswm.com/up` |
+
+Confirme que `APP_URL=https://visitantes.proyectoswm.com` en las variables del servicio.
 
 ## 4. Primer deploy
 
@@ -57,12 +61,9 @@ Tras verificar el panel, ponga `RUN_SEED=false` para evitar re-seeds en redeploy
 
 La URL de la API **no se muestra** en la app. Está fijada en:
 
-`mobile/lib/config/production_env.dart`
+`mobile/lib/config/production_env.dart` → `https://visitantes.proyectoswm.com/api/mobile`
 
-Tras obtener el dominio Railway:
-
-1. Edite `kProductionApiBaseUrl` y `kProductionAppHost`
-2. Compile release:
+Para compilar release:
 
 ```bash
 cd mobile
@@ -97,7 +98,7 @@ Para producción estable:
 php artisan serve        # emulador Android: 10.0.2.2:8000
 ```
 
-En debug, la app Flutter usa localhost/emulador automáticamente; en release apunta a Railway.
+En debug, la app Flutter usa localhost/emulador automáticamente; en release apunta a `visitantes.proyectoswm.com`.
 
 ## 8. Comandos útiles
 

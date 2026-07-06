@@ -13,6 +13,15 @@ use App\Livewire\Anfitrion\Login;
 use App\Livewire\Anfitrion\Requerimientos as AnfitrionRequerimientos;
 use App\Livewire\Anfitrion\RegistrarInvitado;
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\File;
+
+Route::get('/robots.txt', function () {
+    $path = public_path('robots.txt');
+
+    abort_unless(File::exists($path), 404);
+
+    return response(File::get($path), 200, ['Content-Type' => 'text/plain; charset=UTF-8']);
+});
 
 Route::get('/', function () {
     return view('welcome');

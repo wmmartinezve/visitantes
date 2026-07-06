@@ -8,6 +8,8 @@ use App\Models\Requerimiento;
 use App\Policies\InvitadoPolicy;
 use App\Policies\InventarioPolicy;
 use App\Policies\RequerimientoPolicy;
+use Carbon\Carbon;
+use Illuminate\Support\Facades\App;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\URL;
 use Illuminate\Support\ServiceProvider;
@@ -27,6 +29,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        App::setLocale(config('app.locale', 'es'));
+        Carbon::setLocale(config('app.locale', 'es'));
+
         if ($this->app->environment('production')) {
             URL::forceScheme('https');
         }

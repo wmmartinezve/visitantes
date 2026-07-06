@@ -34,4 +34,29 @@ class FilamentAdminPanelTest extends TestCase
             ->get('/admin')
             ->assertForbidden();
     }
+
+    public function test_admin_login_no_es_indexado(): void
+    {
+        $this->get('/admin/login')
+            ->assertOk()
+            ->assertHeader('X-Robots-Tag', 'noindex, nofollow, noarchive, nosnippet');
+    }
+
+    public function test_admin_usa_locale_espanol(): void
+    {
+        $this->assertSame('es', app()->getLocale());
+
+        $response = $this->get('/admin/login');
+
+        $response->assertOk();
+        $response->assertSee('Correo electrónico', false);
+        $response->assertSee('Contraseña', false);
+    }
+
+    public function test_robots_txt_bloquea_admin(): void
+    {
+        $this->get('/robots.txt')
+            ->assertOk()
+            ->assertSee('Disallow: /admin');
+    }
 }
