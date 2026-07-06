@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visitantes — Manual de usuario</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 22mm 16mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 10pt;
+      line-height: 1.5;
+      color: #1a1a2e;
+      background: #fff;
+    }
+    .tricolor { height: 6px; display: flex; margin-bottom: 18px; }
+    .tricolor span { flex: 1; }
+    .ve-yellow { background: #FFCC00; }
+    .ve-blue { background: #002776; }
+    .ve-red { background: #CF142B; }
+    h1 { font-size: 22pt; font-weight: 700; color: #002776; margin-bottom: 4px; }
+    .subtitle { font-size: 11pt; color: #555; margin-bottom: 16px; }
+    h2 {
+      font-size: 13pt; font-weight: 700; color: #002776;
+      margin: 22px 0 10px; padding-bottom: 4px;
+      border-bottom: 2px solid #FFCC00;
+    }
+    h3 { font-size: 11pt; font-weight: 600; color: #002776; margin: 16px 0 6px; }
+    h4 { font-size: 10pt; font-weight: 600; color: #333; margin: 12px 0 4px; }
+    p { margin-bottom: 8px; }
+    ul, ol { margin: 6px 0 12px 20px; }
+    li { margin-bottom: 5px; }
+    .toc { background: #f8f9fc; border-radius: 8px; padding: 14px 18px; margin: 14px 0; }
+    .toc ol { margin-bottom: 0; }
+    .callout {
+      background: #eef3ff; border-left: 4px solid #002776;
+      padding: 10px 14px; margin: 12px 0; border-radius: 0 6px 6px 0;
+    }
+    .callout-warn {
+      background: #fff8e6; border-left-color: #FFCC00;
+    }
+    .callout-tip {
+      background: #f0faf0; border-left-color: #1b7a1b;
+    }
+    table {
+      width: 100%; border-collapse: collapse;
+      margin: 8px 0 14px; font-size: 9pt;
+    }
+    th {
+      background: #002776; color: #fff;
+      text-align: left; padding: 6px 10px; font-weight: 600;
+    }
+    td { padding: 5px 10px; border-bottom: 1px solid #e8ecf4; vertical-align: top; }
+    tr:nth-child(even) td { background: #f8f9fc; }
+    .steps { counter-reset: step; list-style: none; margin-left: 0; padding: 0; }
+    .steps li {
+      counter-increment: step;
+      padding: 8px 0 8px 36px;
+      position: relative;
+      border-bottom: 1px solid #eef1f6;
+    }
+    .steps li::before {
+      content: counter(step);
+      position: absolute; left: 0; top: 8px;
+      width: 24px; height: 24px;
+      background: #002776; color: #fff;
+      border-radius: 50%;
+      font-size: 9pt; font-weight: 700;
+      text-align: center; line-height: 24px;
+    }
+    .role-header {
+      background: #002776; color: #fff;
+      padding: 10px 14px; border-radius: 8px;
+      margin: 18px 0 12px; font-weight: 600; font-size: 12pt;
+    }
+    .role-header.acopio { background: #CF142B; }
+    .role-header.anfitrion { background: #1a3a8a; }
+    code, .kbd {
+      background: #eef1f6; padding: 1px 5px;
+      border-radius: 3px; font-size: 9pt;
+    }
+    .page-break { page-break-before: always; }
+    .footer {
+      margin-top: 20px; padding-top: 8px;
+      border-top: 1px solid #dde3ef;
+      font-size: 8pt; color: #888; text-align: center;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .box { border: 1px solid #dde3ef; border-radius: 8px; padding: 10px 12px; }
+    .flow {
+      background: #f8f9fc; border-radius: 8px;
+      padding: 12px; margin: 10px 0; text-align: center; font-size: 9.5pt;
+    }
+    .flow .step {
+      display: inline-block; background: #fff;
+      border: 1px solid #dde3ef; border-radius: 6px;
+      padding: 6px 12px; margin: 3px 0;
+    }
+    .flow .arrow { color: #CF142B; font-weight: bold; margin: 3px 0; }
+  </style>
+</head>
+<body>
+
+  <!-- PORTADA -->
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+  <img src="images/visitantes-icon.png" alt="Visitantes" style="width:72px;height:72px;border-radius:50%;display:block;margin-bottom:12px;" />
+  <h1>Manual de usuario</h1>
+  <p class="subtitle">Visitantes · Sistema de Asistencia y Gestión de Invitados · Estado Anzoátegui, Venezuela · Julio 2026</p>
+
+  <div class="callout callout-tip">
+    Este manual describe cómo usar el sistema <strong>ya implementado</strong>: panel administrativo web,
+    aplicación móvil de campo (Flutter) y prototipos web de referencia. Está dirigido a operadores
+    de refugio (anfitriones), centros de acopio y personal administrativo.
+  </div>
+
+  <div class="callout">
+    <strong>Terminología obligatoria</strong><br />
+    Las personas acogidas en refugios se denominan <strong>Invitados</strong> o <strong>Hospedados</strong>.
+    No use los términos <em>refugiado</em>, <em>damnificado</em> ni <em>afectado</em> en pantallas,
+    reportes ni comunicación con las familias.
+  </div>
+
+  <h2>Índice</h2>
+  <div class="toc">
+    <ol>
+      <li>Introducción y roles</li>
+      <li>Acceso al sistema</li>
+      <li>Flujo operativo general</li>
+      <li>Manual del administrador</li>
+      <li>Manual del anfitrión</li>
+      <li>Manual del centro de acopio</li>
+      <li>Operación sin conexión</li>
+      <li>Catálogos de referencia</li>
+      <li>Preguntas frecuentes</li>
+    </ol>
+  </div>
+
+  <!-- 1. INTRODUCCIÓN -->
+  <h2>1. Introducción y roles</h2>
+  <p>Visitantes conecta tres actores para coordinar la atención a Invitados en refugios y el despacho de insumos desde centros de acopio:</p>
+
+  <table>
+    <thead><tr><th>Rol</th><th>Interfaz</th><th>Responsabilidad</th></tr></thead>
+    <tbody>
+      <tr>
+        <td><strong>Administrador</strong></td>
+        <td>Panel web <code>/admin</code></td>
+        <td>Configura territorio, refugios, centros, usuarios; asigna requerimientos; genera reportes.</td>
+      </tr>
+      <tr>
+        <td><strong>Anfitrión</strong></td>
+        <td>App Flutter (campo)</td>
+        <td>Registra Invitados en su refugio, gestiona núcleo familiar y crea requerimientos de insumos.</td>
+      </tr>
+      <tr>
+        <td><strong>Centro de acopio</strong></td>
+        <td>App Flutter (campo)</td>
+        <td>Mantiene inventario, recibe entregas asignadas y confirma despachos al refugio.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <p>La operación de campo se realiza con la <strong>aplicación móvil Flutter</strong>. Existen prototipos web en <code>/anfitrion</code> y <code>/acopio</code> con la misma lógica, útiles como referencia o en equipos con navegador.</p>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <!-- 2. ACCESO -->
+  <h2>2. Acceso al sistema</h2>
+
+  <h3>2.1 URLs y credenciales de demostración</h3>
+  <table>
+    <thead><tr><th>Rol</th><th>Dirección</th><th>Usuario demo</th><th>Contraseña</th></tr></thead>
+    <tbody>
+      <tr><td>Administrador</td><td><code>http://localhost:8000/admin</code></td><td>admin@visitantes.test</td><td>password</td></tr>
+      <tr><td>Anfitrión (app)</td><td>App Flutter → API móvil</td><td>anfitrion@visitantes.test</td><td>password</td></tr>
+      <tr><td>Anfitrión (web)</td><td><code>/anfitrion/login</code></td><td>anfitrion@visitantes.test</td><td>password</td></tr>
+      <tr><td>Centro de acopio (app)</td><td>App Flutter → API móvil</td><td>acopio@visitantes.test</td><td>password</td></tr>
+      <tr><td>Centro de acopio (web)</td><td><code>/acopio/login</code></td><td>acopio@visitantes.test</td><td>password</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-warn">
+    En producción, el administrador le entregará su correo y contraseña personal. Cada anfitrión queda vinculado a <strong>un solo refugio</strong>; cada operador de acopio, a <strong>un solo centro</strong>.
+  </div>
+
+  <h3>2.2 Iniciar sesión — Panel administrativo</h3>
+  <ol class="steps">
+    <li>Abra el navegador y vaya a la dirección del panel (<code>/admin</code>).</li>
+    <li>Ingrese su <strong>Correo electrónico</strong> y <strong>Contraseña</strong>.</li>
+    <li>Presione <strong>Iniciar sesión</strong>. Verá el panel con el menú lateral agrupado por Territorio, Operación, Logística y Administración.</li>
+  </ol>
+
+  <h3>2.3 Iniciar sesión — App móvil (anfitrión o acopio)</h3>
+  <ol class="steps">
+    <li>Abra la aplicación <strong>Visitantes</strong> en su teléfono.</li>
+    <li>Complete <strong>Correo electrónico</strong> y <strong>Contraseña</strong>.</li>
+    <li>Presione <strong>Ingresar</strong>.</li>
+    <li>En la barra superior verá su nombre y el refugio o centro asignado. Use el ícono de sincronización para enviar datos pendientes.</li>
+  </ol>
+
+  <h3>2.4 Cerrar sesión</h3>
+  <p>En web y móvil, use el ícono de <strong>cerrar sesión</strong> (parte superior derecha). No comparta su contraseña con otros operadores.</p>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <!-- 3. FLUJO GENERAL -->
+  <h2>3. Flujo operativo general</h2>
+  <p>El ciclo completo de atención sigue estos pasos:</p>
+
+  <div class="flow">
+    <div class="step"><strong>1.</strong> Anfitrión registra Invitado y solicita insumo</div>
+    <div class="arrow">↓</div>
+    <div class="step"><strong>2.</strong> Requerimiento queda en estado <em>Pendiente</em></div>
+    <div class="arrow">↓</div>
+    <div class="step"><strong>3.</strong> Administrador asigna centro con stock cercano</div>
+    <div class="arrow">↓</div>
+    <div class="step"><strong>4.</strong> Requerimiento pasa a <em>Asignado</em></div>
+    <div class="arrow">↓</div>
+    <div class="step"><strong>5.</strong> Centro de acopio despacha y marca <em>Entregado</em></div>
+    <div class="arrow">↓</div>
+    <div class="step"><strong>6.</strong> Inventario del centro se descuenta automáticamente</div>
+  </div>
+
+  <h3>Estados de un requerimiento</h3>
+  <table>
+    <thead><tr><th>Estado</th><th>Significado</th><th>Quién actúa</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Pendiente</strong></td><td>Solicitud creada, sin centro asignado</td><td>Administrador debe asignar</td></tr>
+      <tr><td><strong>Asignado</strong></td><td>Centro de acopio designado para despachar</td><td>Operador de acopio debe entregar</td></tr>
+      <tr><td><strong>Entregado</strong></td><td>Insumo entregado al refugio; stock descontado</td><td>Proceso cerrado</td></tr>
+    </tbody>
+  </table>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <!-- 4. ADMIN -->
+  <div class="role-header">4. Manual del administrador</div>
+  <p>Acceso: panel web Filament en <code>/admin</code>. Menú lateral con cuatro grupos.</p>
+
+  <h3>4.1 Dashboard (Inicio)</h3>
+  <p>Al entrar verá tarjetas con totales: Invitados activos, refugios, centros de acopio, requerimientos pendientes e ítems con stock bajo. La tabla inferior lista los requerimientos pendientes con Invitado, refugio, ítem y anfitrión solicitante.</p>
+
+  <h3>4.2 Territorio</h3>
+  <h4>Municipios y parroquias</h4>
+  <p>Catálogo geográfico de Anzoátegui (21 municipios, 57 parroquias). Normalmente ya está cargado; use <strong>Crear</strong> o <strong>Editar</strong> solo si debe agregar o corregir datos.</p>
+
+  <h3>4.3 Operación</h3>
+  <h4>Refugios</h4>
+  <ol class="steps">
+    <li>Menú → Operación → <strong>Refugios</strong> → <strong>Crear</strong>.</li>
+    <li>Complete: Nombre, Municipio, Parroquia, Dirección exacta.</li>
+    <li>Opcional: Latitud y Longitud, o botón <strong>Fijar ubicación GPS</strong> para georreferenciar.</li>
+    <li>Guarde. El refugio quedará disponible para vincular anfitriones.</li>
+  </ol>
+
+  <h4>Centros de acopio</h4>
+  <ol class="steps">
+    <li>Menú → Operación → <strong>Centros de acopio</strong> → <strong>Crear</strong>.</li>
+    <li>Complete: Nombre, Municipio, Parroquia, Dirección, Contacto, coordenadas GPS.</li>
+    <li>Marque <strong>Activo</strong> para que aparezca en asignaciones.</li>
+    <li>Desde la ficha del centro puede ver su inventario en la pestaña relacionada.</li>
+  </ol>
+
+  <h4>Invitados</h4>
+  <ol class="steps">
+    <li>Menú → Operación → <strong>Invitados</strong>.</li>
+    <li>Use la búsqueda global (cédula, nombre, apellido) para localizar personas.</li>
+    <li><strong>Crear</strong>: secciones Identificación y Ubicación y familia; indique refugio y datos personales.</li>
+    <li>En edición, gestione el <strong>Núcleo familiar</strong> (parentesco obligatorio por familiar).</li>
+    <li>Estados posibles del Invitado: <strong>Activo</strong> o <strong>Egresado</strong>.</li>
+  </ol>
+
+  <h4>Mapa operativo</h4>
+  <p>Vista de mapa con refugios (y conteo de Invitados) y centros de acopio. Útil para planificación territorial.</p>
+
+  <h3>4.4 Logística</h3>
+  <h4>Asignar un requerimiento — Búsqueda cruzada (recomendado)</h4>
+  <ol class="steps">
+    <li>Menú → Logística → <strong>Búsqueda cruzada</strong>.</li>
+    <li>Seleccione un <strong>Requerimiento pendiente</strong> de la lista.</li>
+    <li>El sistema muestra centros con stock del mismo ítem, ordenados por proximidad al refugio del Invitado.</li>
+    <li>Revise: Centro, Ítem en stock, Disponible, Distancia (km).</li>
+    <li>Presione <strong>Asignar</strong> en la fila deseada.</li>
+    <li>Confirmación: el requerimiento pasa a <strong>Asignado</strong> y el centro de acopio lo verá en su app.</li>
+  </ol>
+
+  <div class="callout callout-warn">
+    Solo puede asignar si el centro tiene stock suficiente (cantidad disponible ≥ cantidad solicitada).
+  </div>
+
+  <h4>Asignar manualmente — Requerimientos</h4>
+  <ol class="steps">
+    <li>Menú → Logística → <strong>Requerimientos</strong> → seleccione el registro → <strong>Editar</strong>.</li>
+    <li>Cambie Estatus a <strong>Asignado</strong>.</li>
+    <li>Seleccione el <strong>Centro de acopio asignado</strong> (campo obligatorio).</li>
+    <li>Guarde.</li>
+  </ol>
+
+  <h4>Inventario global</h4>
+  <p>Consulta y edición del stock de todos los centros. Filtro <strong>Stock bajo (≤ 5)</strong> para ítems que requieren reposición. Puede crear ítems directamente desde aquí.</p>
+
+  <h3>4.5 Reportes</h3>
+  <ol class="steps">
+    <li>Menú → Logística → <strong>Reportes</strong>.</li>
+    <li>Revise el resumen operativo (refugios, centros, Invitados, requerimientos).</li>
+    <li>Descargue CSV: <strong>Invitados (jefes de familia)</strong>, <strong>Requerimientos</strong> o <strong>Inventario global</strong>.</li>
+  </ol>
+
+  <h3>4.6 Usuarios</h3>
+  <ol class="steps">
+    <li>Menú → Administración → <strong>Usuarios</strong> → <strong>Crear</strong>.</li>
+    <li>Complete nombre, correo y contraseña.</li>
+    <li>Seleccione <strong>Rol</strong>: Administrador, Anfitrión o Centro de acopio.</li>
+    <li>Si es Anfitrión: vincule el <strong>Refugio</strong>. Si es Centro de acopio: vincule el <strong>Centro</strong>.</li>
+    <li>Guarde y comunique las credenciales al operador.</li>
+  </ol>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <!-- 5. ANFITRION -->
+  <div class="role-header anfitrion">5. Manual del anfitrión</div>
+  <p>Opera desde la <strong>app Flutter</strong> vinculado a un refugio. Solo ve y gestiona Invitados de su refugio.</p>
+
+  <h3>5.1 Navegación de la app</h3>
+  <table>
+    <thead><tr><th>Pestaña</th><th>Función</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Inicio</strong></td><td>Resumen del refugio, registros pendientes de sync, cola, acciones rápidas</td></tr>
+      <tr><td><strong>Registrar</strong></td><td>Formulario para nuevo Invitado</td></tr>
+      <tr><td><strong>Invitados</strong></td><td>Listado y búsqueda por nombre o cédula</td></tr>
+      <tr><td><strong>Req.</strong></td><td>Seguimiento de requerimientos con filtros</td></tr>
+    </tbody>
+  </table>
+
+  <h3>5.2 Registrar un Invitado</h3>
+  <ol class="steps">
+    <li>Vaya a la pestaña <strong>Registrar</strong> (o acción rápida <em>Registrar Invitado</em> en Inicio).</li>
+    <li><strong>Foto testigo (opcional):</strong> presione <strong>Abrir cámara</strong>. Puede <strong>Retomar</strong> o <strong>Quitar</strong> la foto. La app comprime la imagen automáticamente (~0.8 MB).</li>
+    <li><strong>Datos del Invitado</strong> (obligatorios marcados con *):
+      <ul>
+        <li>Nombre*, Apellido*, Fecha de nacimiento*</li>
+        <li>Cédula y Teléfono (recomendados)</li>
+      </ul>
+    </li>
+    <li><strong>Núcleo familiar (opcional):</strong> presione <strong>Agregar</strong> por cada familiar.
+      <ul>
+        <li>Parentesco* (obligatorio), Nombre*, Apellido*</li>
+        <li>Cédula, Teléfono, Fecha de nacimiento (opcionales)</li>
+      </ul>
+    </li>
+    <li>Presione <strong>Guardar Invitado</strong>.</li>
+    <li>Si hay conexión: mensaje <em>"Invitado registrado en el servidor"</em>. Sin conexión: <em>"Invitado guardado localmente. Sincronice cuando tenga red."</em></li>
+  </ol>
+
+  <h3>5.3 Consultar Invitados</h3>
+  <ol class="steps">
+    <li>Pestaña <strong>Invitados</strong>.</li>
+    <li>Use el campo <em>"Buscar por nombre o cédula"</em>.</li>
+    <li>Toque un Invitado para ver su ficha: datos personales, núcleo familiar y requerimientos.</li>
+  </ol>
+
+  <h3>5.4 Crear un requerimiento de insumo</h3>
+  <ol class="steps">
+    <li>Abra la ficha del Invitado (desde listado o tras registrar).</li>
+    <li>En la sección <strong>Nuevo requerimiento</strong>:
+      <ul>
+        <li>Seleccione <strong>Categoría</strong> (ej. Vestimenta)</li>
+        <li>Seleccione <strong>Subcategoría</strong> (ej. Pantalón)</li>
+        <li>Indique <strong>Cantidad</strong></li>
+      </ul>
+    </li>
+    <li>Presione <strong>Agregar</strong>.</li>
+    <li>El requerimiento aparece con estado <strong>Pendiente</strong> hasta que el administrador lo asigne.</li>
+  </ol>
+
+  <h3>5.5 Seguimiento de requerimientos</h3>
+  <ol class="steps">
+    <li>Pestaña <strong>Req.</strong></li>
+    <li>Filtre por: <strong>Todos</strong>, <strong>Pendiente</strong>, <strong>Asignado</strong> o <strong>Entregado</strong>.</li>
+    <li>Cada tarjeta muestra: Invitado, ítem (Categoría · Subcategoría), cantidad y estado.</li>
+    <li>Cuando el centro marque la entrega, verá el estado <strong>Entregado</strong>.</li>
+  </ol>
+
+  <div class="callout callout-tip">
+    El anfitrión <strong>no asigna</strong> centros de acopio ni modifica inventario. Su rol termina en crear la solicitud y dar seguimiento.
+  </div>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <!-- 6. ACOPIO -->
+  <div class="role-header acopio">6. Manual del centro de acopio</div>
+  <p>Opera desde la <strong>app Flutter</strong> vinculado a un centro. Solo gestiona inventario y entregas de su centro.</p>
+
+  <h3>6.1 Navegación de la app</h3>
+  <table>
+    <thead><tr><th>Pestaña</th><th>Función</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Inicio</strong></td><td>Resumen: ítems en caché, entregas por sincronizar, cola</td></tr>
+      <tr><td><strong>Inventario</strong></td><td>Alta y edición de stock</td></tr>
+      <tr><td><strong>Entregas</strong></td><td>Despachos asignados y confirmación</td></tr>
+    </tbody>
+  </table>
+
+  <h3>6.2 Agregar ítem al inventario</h3>
+  <ol class="steps">
+    <li>Pestaña <strong>Inventario</strong>.</li>
+    <li>En el formulario superior seleccione <strong>Categoría</strong> y <strong>Subcategoría</strong>.</li>
+    <li>Indique <strong>Cantidad</strong> y <strong>Unidad</strong> (unidad, caja, kg, litro, paquete, bolsa).</li>
+    <li>Presione <strong>Agregar al inventario</strong>.</li>
+    <li>El ítem aparece en <strong>Stock en caché</strong> / <strong>Stock actual</strong>.</li>
+  </ol>
+
+  <h3>6.3 Ajustar cantidades de stock</h3>
+  <ol class="steps">
+    <li>En la lista de stock, toque el ícono de <strong>editar</strong> junto al ítem.</li>
+    <li>Modifique la cantidad.</li>
+    <li>Confirme con ✓ o cancele con ✗.</li>
+    <li>Si no hay red, el ajuste queda en cola hasta sincronizar.</li>
+  </ol>
+
+  <div class="callout callout-warn">
+    Cantidades ≤ 5 se muestran en color de alerta (stock bajo). Reponga pronto para poder atender asignaciones.
+  </div>
+
+  <h3>6.4 Procesar entregas asignadas</h3>
+  <ol class="steps">
+    <li>Pestaña <strong>Entregas</strong>.</li>
+    <li>La lista <strong>Entregas asignadas</strong> está ordenada por distancia al refugio destino.</li>
+    <li>Cada tarjeta muestra: ítem, cantidad, Invitado, refugio, dirección y distancia en km.</li>
+    <li>Use <strong>Cómo llegar</strong> para abrir Google Maps con la ruta.</li>
+    <li>Use <strong>Ver refugio</strong> para ver la ubicación del refugio en el mapa.</li>
+    <li>Tras entregar físicamente el insumo, presione <strong>Marcar entregado</strong> (o <strong>Confirmar entrega</strong>).</li>
+    <li>Confirme el diálogo: <em>"¿Descontar del inventario y marcar como entregado?"</em></li>
+    <li>El requerimiento pasa a <strong>Entregado</strong> y el stock del centro se reduce automáticamente.</li>
+  </ol>
+
+  <div class="callout callout-warn">
+    Solo marque entregado cuando el insumo haya sido entregado físicamente. La acción es irreversible y descuenta stock de inmediato.
+  </div>
+
+  <h3>6.5 Entregas recientes</h3>
+  <p>Al final de la pantalla de Entregas (y en el dashboard web) puede consultar las últimas entregas confirmadas como referencia.</p>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <!-- 7. OFFLINE -->
+  <h2>7. Operación sin conexión</h2>
+  <p>El sistema está diseñado para zonas con conectividad intermitente. Tanto la app Flutter como los prototipos web guardan operaciones localmente cuando no hay red.</p>
+
+  <h3>7.1 Qué funciona sin conexión</h3>
+  <table>
+    <thead><tr><th>Acción</th><th>Anfitrión</th><th>Centro de acopio</th></tr></thead>
+    <tbody>
+      <tr><td>Registrar Invitado con foto</td><td>Sí</td><td>—</td></tr>
+      <tr><td>Crear requerimiento</td><td>Sí</td><td>—</td></tr>
+      <tr><td>Agregar ítem al inventario</td><td>—</td><td>Sí</td></tr>
+      <tr><td>Ajustar cantidad de stock</td><td>—</td><td>Sí</td></tr>
+      <tr><td>Marcar entrega</td><td>—</td><td>Sí</td></tr>
+      <tr><td>Asignar requerimientos (admin)</td><td colspan="2">Requiere conexión</td></tr>
+      <tr><td>Descargar reportes CSV</td><td colspan="2">Requiere conexión</td></tr>
+    </tbody>
+  </table>
+
+  <h3>7.2 Cómo sincronizar (app móvil)</h3>
+  <ol class="steps">
+    <li>Cuando no hay red verá el banner: <em>"Sin conexión — los registros se guardan en el teléfono."</em> y el contador <em>"N en cola local"</em>.</li>
+    <li>En <strong>Inicio</strong>, revise la tarjeta <em>Registros pendientes de sync</em> y el panel de cola con detalle de cada operación.</li>
+    <li>Al recuperar señal, presione el ícono de <strong>sincronización</strong> (tooltip: <em>Sincronizar y actualizar caché</em>) en la barra superior.</li>
+    <li>Alternativamente, en Entregas puede usar <strong>pull-to-refresh</strong> (deslizar hacia abajo) para sincronizar y recargar.</li>
+    <li>Mensajes esperados: <em>"N sincronizado(s)"</em>, <em>"caché actualizada"</em> o <em>"Datos actualizados."</em></li>
+  </ol>
+
+  <h3>7.3 Tipos de operaciones en cola</h3>
+  <table>
+    <thead><tr><th>Tipo</th><th>Descripción visible</th></tr></thead>
+    <tbody>
+      <tr><td>Registro de invitado</td><td>Alta de Invitado con foto y familiares</td></tr>
+      <tr><td>Requerimiento</td><td>Solicitud de insumo creada offline</td></tr>
+      <tr><td>Inventario</td><td>Nuevo ítem agregado al stock</td></tr>
+      <tr><td>Ajuste de stock</td><td>Cambio de cantidad en inventario</td></tr>
+      <tr><td>Entrega</td><td>Confirmación de despacho pendiente de envío</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-tip">
+    Mantenga la app abierta con buena señal hasta que la cola quede en cero. No desinstale la app mientras haya registros pendientes.
+  </div>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <!-- 8. CATÁLOGOS -->
+  <h2>8. Catálogos de referencia</h2>
+
+  <h3>8.1 Parentescos (núcleo familiar)</h3>
+  <p>Cónyuge · Hijo(a) · Padre · Madre · Hermano(a) · Abuelo(a) · Nieto(a) · Tío(a) · Sobrino(a) · Cuñado(a) · Yerno / Nuera · Suegro(a) · Otro</p>
+
+  <h3>8.2 Unidades de medida</h3>
+  <p>unidad · caja · kg · litro · paquete · bolsa</p>
+
+  <h3>8.3 Categorías y subcategorías de insumos</h3>
+  <table>
+    <thead><tr><th>Categoría</th><th>Subcategorías</th></tr></thead>
+    <tbody>
+      <tr><td>Alimentos y bebidas</td><td>Agua embotellada, Alimentos no perecederos, Arroz/pasta/harina, Enlatados, Leche en polvo/fórmula, Galletas y snacks, Café/té/achocolatado</td></tr>
+      <tr><td>Higiene personal</td><td>Kit de higiene, Jabón/shampoo, Pasta dental y cepillo, Pañales, Toallas sanitarias, Papel higiénico, Toallas húmedas</td></tr>
+      <tr><td>Vestimenta</td><td>Pantalón, Camisa/blusa, Ropa interior, Calzado, Ropa de dormir, Ropa para niños, Ropa para bebé</td></tr>
+      <tr><td>Abrigo y descanso</td><td>Frazada/cobija, Colchoneta, Colchón, Sábanas, Almohada, Mosquitero, Lona/carpeta</td></tr>
+      <tr><td>Salud</td><td>Medicamentos básicos, Botiquín de primeros auxilios, Material médico desechable, Repelente/protector solar</td></tr>
+      <tr><td>Limpieza del hogar</td><td>Detergente, Cloro/desinfectante, Bolsas de basura, Escoba/trapeador</td></tr>
+      <tr><td>Bebés y niños</td><td>Pañales (bebé), Fórmula infantil, Kit escolar, Juguetes educativos</td></tr>
+      <tr><td>Equipamiento</td><td>Linterna, Pilas/baterías, Cocina/hornilla, Bidón/garrafa, Utensilios de cocina</td></tr>
+    </tbody>
+  </table>
+  <p>En listas y reportes el ítem se muestra como <strong>Categoría · Subcategoría</strong> (ej. <em>Vestimenta · Pantalón</em>).</p>
+
+  <h2>9. Preguntas frecuentes</h2>
+
+  <h4>¿Por qué no veo Invitados de otro refugio?</h4>
+  <p>Cada anfitrión está vinculado a un solo refugio. Solo puede ver y registrar Invitados de ese refugio. Esto es por diseño de seguridad.</p>
+
+  <h4>¿Por qué no puedo asignar un requerimiento?</h4>
+  <p>Verifique que haya al menos un centro con stock suficiente del ítem solicitado. Use Búsqueda cruzada para ver centros disponibles ordenados por distancia.</p>
+
+  <h4>Guardé un Invitado sin internet, ¿se perdió?</h4>
+  <p>No. Quedó en la cola local del teléfono. Sincronice cuando tenga señal usando el ícono de sync en la barra superior.</p>
+
+  <h4>Marqué entregado por error, ¿puedo revertir?</h4>
+  <p>No desde la app. Contacte al administrador para corrección manual en el panel.</p>
+
+  <h4>¿Cuál app debo usar, Flutter o la web?</h4>
+  <p>Para operación de campo use la <strong>app Flutter</strong> (producción). Las URLs <code>/anfitrion</code> y <code>/acopio</code> son prototipos web de referencia con la misma lógica.</p>
+
+  <h4>¿Cómo sé si mi stock está bajo?</h4>
+  <p>Ítems con 5 unidades o menos se resaltan en rojo/alerta. El administrador también recibe alertas en el dashboard.</p>
+
+  <div class="footer">
+    Visitantes · Manual de usuario · Anzoátegui, Venezuela · Julio 2026<br />
+    Soporte: contacte al administrador del sistema en su institución.
+  </div>
+
+</body>
+</html>

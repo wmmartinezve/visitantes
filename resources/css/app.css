@@ -1,0 +1,270 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        user-select: none;
+        line-height: 1;
+    }
+
+    .material-symbols-outlined.filled {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+}
+
+@layer components {
+    /* M3 Filled text field */
+    .m3-field {
+        @apply relative min-h-[56px] w-full;
+    }
+
+    .m3-field-icon {
+        @apply pointer-events-none absolute left-4 top-[18px] z-10 text-[22px] text-m3-on-surface-variant transition-colors;
+    }
+
+    .m3-input {
+        @apply h-14 w-full rounded-t-md border-0 border-b-2 border-m3-outline bg-m3-surface-container-highest pl-12 pr-4 pt-4 text-base text-m3-on-surface shadow-none outline-none transition-all;
+        @apply focus:border-m3-primary focus:bg-m3-surface-container-high focus:ring-0;
+        @apply placeholder:text-transparent;
+    }
+
+    .m3-input.no-icon {
+        @apply pl-4;
+    }
+
+    .m3-label {
+        @apply pointer-events-none absolute left-12 top-4 origin-[0_0] text-base text-m3-on-surface-variant transition-all duration-200;
+    }
+
+    .m3-field:has(.m3-input.no-icon) .m3-label {
+        @apply left-4;
+    }
+
+    .m3-input:focus ~ .m3-label,
+    .m3-input:not(:placeholder-shown) ~ .m3-label {
+        @apply top-1.5 scale-[0.75] text-m3-primary;
+    }
+
+    .m3-field:has(.m3-input:focus) .m3-field-icon {
+        @apply text-m3-primary;
+    }
+
+    .m3-textarea {
+        @apply min-h-[120px] w-full resize-none rounded-md border-2 border-m3-outline-variant bg-m3-surface-container-highest px-4 py-3 text-base text-m3-on-surface outline-none transition;
+        @apply focus:border-m3-primary focus:ring-0;
+    }
+
+    .m3-select {
+        @apply h-14 w-full appearance-none rounded-t-md border-0 border-b-2 border-m3-outline bg-m3-surface-container-highest pl-12 pr-10 pt-4 text-base text-m3-on-surface outline-none;
+        @apply focus:border-m3-primary focus:bg-m3-surface-container-high;
+    }
+
+    .m3-error {
+        @apply mt-1 px-4 text-xs text-m3-error;
+    }
+
+    .m3-btn-filled {
+        @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-m3-primary px-6 text-sm font-medium text-m3-on-primary shadow-m3-1 transition active:scale-[0.98] disabled:opacity-50;
+    }
+
+    .m3-btn-tonal {
+        @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-m3-secondary-container px-6 text-sm font-medium text-m3-on-secondary-container transition active:scale-[0.98] disabled:opacity-50;
+    }
+
+    .m3-btn-outlined {
+        @apply inline-flex min-h-[40px] items-center justify-center gap-2 rounded-full border border-m3-outline px-5 text-sm font-medium text-m3-primary transition active:scale-[0.98];
+    }
+
+    .m3-btn-text {
+        @apply inline-flex min-h-[40px] items-center justify-center gap-2 rounded-full px-4 text-sm font-medium text-m3-primary transition;
+    }
+
+    .m3-card {
+        @apply rounded-xl bg-white p-4 shadow-m3-1 ring-1 ring-m3-outline-variant/40;
+    }
+
+    .m3-card-filled {
+        @apply rounded-xl bg-m3-surface-container p-4;
+    }
+
+    .m3-top-bar {
+        @apply sticky top-0 z-30 bg-m3-primary px-4 pb-3 pt-4 text-m3-on-primary shadow-m3-2;
+    }
+
+    .m3-nav-bar {
+        @apply fixed bottom-0 left-0 right-0 z-30 mx-auto max-w-lg border-t border-m3-outline-variant/50 bg-m3-surface-container-highest/95 backdrop-blur-md;
+    }
+
+    .m3-nav-item {
+        @apply flex flex-1 flex-col items-center gap-0.5 py-2 text-xs font-medium text-m3-on-surface-variant transition;
+    }
+
+    .m3-nav-item.active {
+        @apply text-m3-primary;
+    }
+
+    .m3-nav-item.active .material-symbols-outlined {
+        font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        @apply text-m3-primary;
+    }
+
+    .m3-search {
+        @apply flex h-14 items-center gap-3 rounded-full bg-m3-surface-container-highest px-4 shadow-m3-1 ring-1 ring-m3-outline-variant/50;
+    }
+
+    .m3-search input {
+        @apply flex-1 border-0 bg-transparent text-base text-m3-on-surface outline-none ring-0 placeholder:text-m3-on-surface-variant;
+    }
+
+    .m3-chip {
+        @apply inline-flex items-center rounded-lg px-2.5 py-1 text-xs font-medium;
+    }
+
+    .m3-list-item {
+        @apply flex items-center gap-3 rounded-xl bg-m3-surface p-3 shadow-m3-1 ring-1 ring-m3-outline-variant/30 transition active:bg-m3-surface-container;
+    }
+
+    .m3-snackbar {
+        @apply rounded-md bg-m3-on-surface px-4 py-3 text-sm text-m3-surface shadow-m3-3;
+    }
+
+    .m3-fab {
+        @apply fixed bottom-20 right-4 z-20 flex h-14 w-14 items-center justify-center rounded-xl bg-m3-primary-container text-m3-on-primary-container shadow-m3-3;
+    }
+
+    .ve-tricolor-bar {
+        @apply flex h-1.5 w-full shrink-0;
+    }
+
+    .ve-tricolor-bar > span {
+        @apply flex-1;
+    }
+
+    .ve-tricolor-bar .ve-yellow {
+        @apply bg-ve-yellow;
+    }
+
+    .ve-tricolor-bar .ve-blue {
+        @apply bg-ve-blue;
+    }
+
+    .ve-tricolor-bar .ve-red {
+        @apply bg-ve-red;
+    }
+
+    .m3-stat-card {
+        @apply flex items-center gap-3.5 rounded-xl bg-white p-4 shadow-m3-1 ring-1 ring-m3-outline-variant/40;
+    }
+
+    .m3-stat-card-icon {
+        @apply flex h-14 w-14 shrink-0 items-center justify-center rounded-xl;
+    }
+
+    .m3-quick-action {
+        @apply flex flex-col items-center gap-2 rounded-xl bg-white p-4 shadow-m3-1 ring-1 ring-m3-outline-variant/30 transition active:bg-m3-surface-container;
+    }
+
+    .m3-quick-action-icon {
+        @apply flex h-11 w-11 items-center justify-center rounded-full;
+    }
+
+    .m3-section-header {
+        @apply mb-2 flex items-center gap-2;
+    }
+
+    .m3-section-header-accent {
+        @apply h-5 w-1 shrink-0 rounded-sm bg-m3-secondary;
+    }
+
+    .m3-empty-state {
+        @apply flex flex-col items-center px-6 py-12 text-center;
+    }
+
+    .m3-empty-state-icon {
+        @apply flex h-20 w-20 items-center justify-center rounded-full bg-m3-primary-container;
+    }
+
+    .m3-guest-card {
+        @apply flex overflow-hidden rounded-xl bg-white shadow-m3-1 ring-1 ring-m3-outline-variant/30 transition active:bg-m3-surface-container;
+    }
+
+    .m3-guest-card-accent {
+        @apply flex w-1 shrink-0 flex-col;
+    }
+
+    .m3-guest-card-accent .ve-yellow,
+    .m3-guest-card-accent .ve-blue,
+    .m3-guest-card-accent .ve-red {
+        @apply flex-1;
+    }
+
+    .m3-guest-card-accent .ve-yellow {
+        @apply bg-ve-yellow;
+    }
+
+    .m3-guest-card-accent .ve-blue {
+        @apply bg-ve-blue;
+    }
+
+    .m3-guest-card-accent .ve-red {
+        @apply bg-ve-red;
+    }
+
+    .m3-delivery-card {
+        @apply overflow-hidden rounded-xl bg-white shadow-m3-1 ring-1 ring-m3-outline-variant/40;
+    }
+
+    .m3-delivery-card-icon {
+        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-m3-tertiary-container;
+    }
+
+    .m3-distance-badge {
+        @apply inline-flex items-center gap-1 rounded-full bg-m3-primary-container px-2.5 py-1 text-xs font-semibold text-m3-primary;
+    }
+
+    .m3-requirement-card {
+        @apply flex overflow-hidden rounded-xl bg-white shadow-m3-1 ring-1 ring-m3-outline-variant/30;
+    }
+
+    .m3-filter-chip {
+        @apply shrink-0 rounded-full px-3 py-1.5 text-xs font-medium transition;
+    }
+
+    .m3-filter-chip.active {
+        @apply bg-m3-primary-container font-semibold text-m3-primary;
+    }
+
+    .m3-filter-chip:not(.active) {
+        @apply bg-m3-surface-container-high text-m3-on-surface-variant;
+    }
+
+    .m3-btn-danger {
+        @apply inline-flex min-h-[48px] items-center justify-center gap-2 rounded-full bg-m3-secondary px-6 text-sm font-medium text-m3-on-secondary shadow-m3-1 transition active:scale-[0.98] disabled:opacity-50;
+    }
+
+    .m3-login-hero {
+        @apply rounded-2xl bg-m3-primary p-5 text-center text-m3-on-primary shadow-m3-2;
+    }
+
+    .m3-login-icon {
+        @apply mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-full bg-ve-yellow ring-2 ring-white;
+    }
+
+    .m3-top-bar-brand {
+        @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-ve-yellow;
+    }
+
+    .m3-inventory-qty {
+        @apply rounded-lg px-3 py-1 text-sm font-bold;
+    }
+
+    .m3-inventory-qty.low {
+        @apply bg-m3-tertiary-container text-m3-on-tertiary-container;
+    }
+
+    .m3-inventory-qty.ok {
+        @apply bg-m3-primary-container text-m3-primary;
+    }
+}

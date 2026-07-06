@@ -1,0 +1,34 @@
+# Visitantes — Reglas Cursor (resumen)
+
+Documento maestro completo y seguimiento de avance: `docs/PROMPT-MAESTRO.md`
+Fuente original: `docs/plan_desarrollo_cursor_laravel.pdf`
+Actualiza checkboxes y bitácora al cerrar cada tarea.
+
+## Rol
+Full-Stack Senior: Laravel 11, Filament v3, **Flutter** (apps de campo), Tailwind.
+Responde en español. Trabajo incremental (un archivo/módulo por tarea).
+
+## Producto — 3 entidades
+**Ámbito territorial:** estado **Anzoátegui** (Venezuela). Todo refugio, centro de acopio e Invitado pertenece a este estado.
+
+1. **Panel administrativo** (Filament web `/admin`): gestión central de todo
+2. **Centros de acopio** (app **Flutter**): inventario, entregas; API `/api/mobile`
+3. **Anfitrión** (app **Flutter**): registro Invitados, requerimientos — scoped a su refugio
+
+## Terminología CRÍTICA
+PROHIBIDO: "refugiado", "damnificado", "afectado".
+OBLIGATORIO: "Invitado" u "Hospedado" en modelos, UI, labels y documentación.
+
+## Modelo
+- Territorio: municipios → parroquias → refugios | centros_acopio (mismo patrón geo)
+- Núcleo: invitados (jefe_familia_id, SoftDeletes, foto_ingreso) en refugio
+- Logística: centros_acopio → inventarios; requerimientos (anfitrion_id, centro_acopio_id al asignar)
+- users.rol: admin | anfitrion (refugio_id) | centro_acopio (centro_acopio_id)
+
+## Stack
+Laravel 11 · Filament v3 (admin web) · **Flutter** (apps de campo) · Sanctum · Tailwind (landing) · PostgreSQL/SQLite
+Compresión imágenes: browser-image-compression (CDN)
+Seeder geográfico: Anzoátegui (INE) — `AnzoateguiGeografiaSeeder`
+
+## Respuesta por tarea
+1. Qué hacemos  2. Archivos  3. Código  4. Cómo probar  5. Siguiente paso

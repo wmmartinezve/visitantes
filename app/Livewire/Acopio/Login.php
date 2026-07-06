@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Livewire\Acopio;
+
+use App\Enums\UserRole;
+use Illuminate\Support\Facades\Auth;
+use Livewire\Attributes\Layout;
+use Livewire\Component;
+
+#[Layout('components.m3.guest-shell')]
+class Login extends Component
+{
+    public string $email = '';
+
+    public string $password = '';
+
+    public function mount(): void
+    {
+        $user = Auth::user();
+
+        if ($user?->rol === UserRole::CentroAcopio && $user->centro_acopio_id !== null) {
+            $this->redirectRoute('acopio.dashboard', navigate: true);
+        }
+    }
+
+    public function login(): void
+    {
+        $credentials = $this->validate([
+            'email' => ['required', 'email'],
+            'password' => ['required', 'string'],
+        ]);
+
+        if (! Auth::attempt($credentials, remember: true)) {
+            $this->addError('email', 'Credenciales incorrectas.');
+
+            return;
+        }
+
+        $user = Auth::user();
+
+        if ($user === null || $user->rol !== UserRole::CentroAcopio || $user->centro_acopio_id === null) {
+            Auth::logout();
+            $this->addError('email', 'Esta cuenta no tiene acceso como centro de acopio.');
+
+            return;
+        }
+
+        session()->regenerate();
+
+        $this->redirectRoute('acopio.dashboard', navigate: true);
+    }
+
+    public function render()
+    {
+        return view('livewire.acopio.login');
+    }
+}

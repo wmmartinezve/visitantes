@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visitantes — Solución implementada</title>
+  <style>
+    @page {
+      size: A4;
+      margin: 18mm 16mm 20mm 16mm;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 10.5pt;
+      line-height: 1.45;
+      color: #1a1a2e;
+      background: #fff;
+    }
+
+    .tricolor {
+      height: 6px;
+      display: flex;
+      margin-bottom: 20px;
+    }
+    .tricolor span { flex: 1; }
+    .ve-yellow { background: #FFCC00; }
+    .ve-blue { background: #002776; }
+    .ve-red { background: #CF142B; }
+
+    h1 {
+      font-size: 22pt;
+      font-weight: 700;
+      color: #002776;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 11pt;
+      color: #555;
+      margin-bottom: 18px;
+    }
+
+    .badge {
+      display: inline-block;
+      background: #1b7a1b;
+      color: #fff;
+      font-size: 9pt;
+      font-weight: 600;
+      padding: 4px 10px;
+      border-radius: 4px;
+      margin-bottom: 14px;
+      letter-spacing: 0.02em;
+    }
+
+    h2 {
+      font-size: 13pt;
+      font-weight: 700;
+      color: #002776;
+      margin: 20px 0 10px;
+      padding-bottom: 4px;
+      border-bottom: 2px solid #FFCC00;
+    }
+
+    h3 {
+      font-size: 11pt;
+      font-weight: 600;
+      color: #002776;
+      margin: 14px 0 6px;
+    }
+
+    p { margin-bottom: 8px; }
+
+    .callout {
+      background: #eef3ff;
+      border-left: 4px solid #002776;
+      padding: 12px 14px;
+      margin: 14px 0;
+      border-radius: 0 6px 6px 0;
+    }
+
+    .callout strong { color: #002776; }
+
+    .callout-success {
+      background: #f0faf0;
+      border-left-color: #1b7a1b;
+    }
+
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin: 10px 0;
+    }
+
+    .box {
+      border: 1px solid #dde3ef;
+      border-radius: 8px;
+      padding: 12px;
+    }
+
+    .box h3 { margin-top: 0; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 8px 0 14px;
+      font-size: 9.5pt;
+    }
+
+    th {
+      background: #002776;
+      color: #fff;
+      text-align: left;
+      padding: 7px 10px;
+      font-weight: 600;
+    }
+
+    td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #e8ecf4;
+      vertical-align: top;
+    }
+
+    tr:nth-child(even) td { background: #f8f9fc; }
+
+    .flow {
+      background: #f8f9fc;
+      border-radius: 8px;
+      padding: 14px;
+      margin: 10px 0;
+      text-align: center;
+      font-size: 10pt;
+    }
+
+    .flow .step {
+      display: inline-block;
+      background: #fff;
+      border: 1px solid #dde3ef;
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin: 4px 0;
+      max-width: 90%;
+    }
+
+    .flow .arrow { color: #CF142B; font-weight: bold; margin: 4px 0; }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+      margin: 14px 0;
+    }
+
+    .stat {
+      text-align: center;
+      border: 1px solid #dde3ef;
+      border-radius: 8px;
+      padding: 10px 6px;
+    }
+
+    .stat .value {
+      font-size: 18pt;
+      font-weight: 700;
+      color: #002776;
+    }
+
+    .stat .label {
+      font-size: 8.5pt;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .entities {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin: 10px 0;
+    }
+
+    .entity {
+      border: 1px solid #dde3ef;
+      border-radius: 8px;
+      padding: 12px;
+      border-top: 3px solid #002776;
+    }
+
+    .entity:nth-child(2) { border-top-color: #CF142B; }
+    .entity:nth-child(3) { border-top-color: #FFCC00; }
+
+    .entity .role { font-weight: 700; color: #002776; margin-bottom: 4px; }
+    .entity .iface { font-size: 9pt; color: #666; margin-bottom: 6px; }
+
+    ul { margin: 6px 0 10px 18px; }
+    li { margin-bottom: 4px; }
+
+    .checklist {
+      list-style: none;
+      margin-left: 0;
+      padding: 0;
+    }
+
+    .checklist li {
+      padding: 5px 0 5px 22px;
+      position: relative;
+      border-bottom: 1px solid #eef1f6;
+    }
+
+    .checklist li::before {
+      content: "✓";
+      position: absolute;
+      left: 0;
+      color: #1b7a1b;
+      font-weight: 700;
+    }
+
+    .footer {
+      margin-top: 24px;
+      padding-top: 10px;
+      border-top: 1px solid #dde3ef;
+      font-size: 8.5pt;
+      color: #888;
+      text-align: center;
+    }
+
+    .page-break { page-break-before: always; }
+
+    .deploy-note {
+      font-size: 9pt;
+      color: #666;
+      margin-top: 8px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tricolor">
+    <span class="ve-yellow"></span>
+    <span class="ve-blue"></span>
+    <span class="ve-red"></span>
+  </div>
+
+  <img src="images/visitantes-icon.png" alt="Visitantes" style="width:72px;height:72px;border-radius:50%;display:block;margin-bottom:12px;" />
+
+  <h1>Visitantes</h1>
+  <p class="subtitle">Sistema de Asistencia y Gestión de Invitados · Estado Anzoátegui, Venezuela · Julio 2026</p>
+  <div class="badge">SOLUCIÓN IMPLEMENTADA Y OPERATIVA</div>
+
+  <div class="callout callout-success">
+    <strong>Estado actual: producto terminado, listo para demostración y despliegue</strong><br />
+    El sistema está construido de punta a punta: panel administrativo, aplicación móvil de campo (Flutter) y
+    sincronización offline. No es un prototipo conceptual ni un roadmap pendiente — es una plataforma funcional
+    con datos geográficos de Anzoátegui, flujo completo de requerimientos y pruebas automatizadas en backend.
+  </div>
+
+  <div class="callout">
+    <strong>Terminología: «Invitados», no «damnificados»</strong><br />
+    En todo el sistema — pantallas, reportes, código y documentación — las personas acogidas en refugios se denominan
+    <strong>Invitados</strong> o <strong>Hospedados</strong>. Quedan prohibidos los términos <em>refugiado</em>,
+    <em>damnificado</em> y <em>afectado</em>.
+  </div>
+
+  <h2>¿Por qué «Invitados»?</h2>
+  <div class="two-col">
+    <div class="box">
+      <h3>Evitamos</h3>
+      <p><strong>«Damnificado»</strong> y <strong>«afectado»</strong> reducen a la persona a su pérdida material.
+      <strong>«Refugiado»</strong> tiene connotación legal y mediática distinta al contexto de refugios comunales
+      en contingencia local.</p>
+    </div>
+    <div class="box">
+      <h3>Favorecemos</h3>
+      <p>Un lenguaje <strong>respetuoso y operativo</strong>, alineado con la relación refugio–anfitrión: quien registra
+      es <em>anfitrión</em>; quien recibe atención es <em>Invitado</em>. Facilita la comunicación con equipos de campo,
+      familias y autoridades <strong>sin estigma</strong>.</p>
+    </div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><div class="value">3</div><div class="label">Módulos en producción</div></div>
+    <div class="stat"><div class="value">35</div><div class="label">Tests backend OK</div></div>
+    <div class="stat"><div class="value">5</div><div class="label">Tipos de sync offline</div></div>
+    <div class="stat"><div class="value">8</div><div class="label">Categorías de insumo</div></div>
+  </div>
+
+  <h2>Qué resuelve (hoy)</h2>
+  <p>Plataforma <strong>en funcionamiento</strong> para registrar Invitados en refugios, gestionar inventarios en centros
+  de acopio y emparejar requerimientos de insumos con existencias disponibles, priorizando proximidad geográfica.</p>
+
+  <div class="flow">
+    <div class="step"><strong>Anfitrión</strong> — registra Invitado y crea Requerimiento</div>
+    <div class="arrow">↓</div>
+    <div class="step"><strong>Administrador</strong> — empareja insumo con centro (stock + proximidad)</div>
+    <div class="arrow">↓</div>
+    <div class="step"><strong>Centro de acopio</strong> — despacha, actualiza inventario, marca entrega</div>
+  </div>
+
+  <h2>Las tres entidades (implementadas)</h2>
+  <div class="entities">
+    <div class="entity">
+      <div class="role">1 · Administración</div>
+      <div class="iface">Filament v3 · /admin</div>
+      <p>Control global: catálogo geográfico, refugios, centros, Invitados, inventarios, asignaciones, reportes y usuarios.</p>
+    </div>
+    <div class="entity">
+      <div class="role">2 · Centro de acopio</div>
+      <div class="iface">App Flutter · Material 3</div>
+      <p>Inventario, entregas asignadas, rutas GPS. Operador vinculado exclusivamente a su centro de acopio.</p>
+    </div>
+    <div class="entity">
+      <div class="role">3 · Anfitrión</div>
+      <div class="iface">App Flutter · Material 3</div>
+      <p>Registro de Invitados, requerimientos, seguimiento. Vinculado exclusivamente a su refugio.</p>
+    </div>
+  </div>
+
+  <div class="page-break"></div>
+
+  <div class="tricolor">
+    <span class="ve-yellow"></span>
+    <span class="ve-blue"></span>
+    <span class="ve-red"></span>
+  </div>
+
+  <h2>Panel administrativo — entregado</h2>
+  <table>
+    <thead><tr><th>Función</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>Catálogo geográfico</td><td>21 municipios · 57 parroquias de Anzoátegui (datos oficiales INE)</td></tr>
+      <tr><td>Refugios y centros de acopio</td><td>Alta con municipio, parroquia, dirección y georreferenciación (lat/lng)</td></tr>
+      <tr><td>Gestión de Invitados</td><td>Búsqueda global (cédula, nombre), foto de ingreso, núcleo familiar, parentesco obligatorio</td></tr>
+      <tr><td>Inventario global</td><td>Stock por centro · alertas de existencias bajas (≤ 5 unidades)</td></tr>
+      <tr><td>Requerimientos</td><td>Asignación a centro de acopio · estatus Pendiente / Asignado / Entregado</td></tr>
+      <tr><td>Búsqueda cruzada de insumos</td><td>Empareja requerimiento con centros que tienen stock, ordenados por proximidad</td></tr>
+      <tr><td>Reportes y mapa</td><td>Exportación CSV · vista operativa del estado</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Anfitrión (campo) — entregado</h2>
+  <table>
+    <thead><tr><th>Función</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>Registro de Invitados</td><td>Datos personales, foto testigo comprimida (~0.8 MB), núcleo familiar</td></tr>
+      <tr><td>Parentesco obligatorio</td><td>Catálogo estandarizado para miembros del núcleo familiar</td></tr>
+      <tr><td>Requerimientos</td><td>Selección por categoría → subcategoría (ej. Vestimenta → Pantalón)</td></tr>
+      <tr><td>Seguimiento</td><td>Estado de cada solicitud: Pendiente, Asignado, Entregado</td></tr>
+      <tr><td>Modo offline</td><td>Cola local visible · sincronización manual o automática al reconectar</td></tr>
+      <tr><td>Alcance territorial</td><td>Solo Invitados del refugio asignado al anfitrión</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Centro de acopio (campo) — entregado</h2>
+  <table>
+    <thead><tr><th>Función</th><th>Estado</th></tr></thead>
+    <tbody>
+      <tr><td>Inventario</td><td>Alta y edición inline de cantidades por categoría/subcategoría</td></tr>
+      <tr><td>Entregas asignadas</td><td>Listado con distancia en km al refugio destino</td></tr>
+      <tr><td>Navegación</td><td>Enlaces «Cómo llegar» (Google Maps) y «Ver refugio»</td></tr>
+      <tr><td>Marcar entregado</td><td>Descuenta stock automáticamente del inventario del centro</td></tr>
+      <tr><td>Modo offline</td><td>Registro de inventario y entregas en cola de sincronización</td></tr>
+      <tr><td>Caché local</td><td>Catálogo geográfico + stock del centro en el dispositivo (Hive)</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Catálogo de insumos (8 categorías) — integrado</h2>
+  <table>
+    <thead><tr><th>Categoría</th><th>Ejemplos de subcategoría</th></tr></thead>
+    <tbody>
+      <tr><td>Alimentos y bebidas</td><td>Agua embotellada, enlatados, arroz/pasta/harina</td></tr>
+      <tr><td>Higiene personal</td><td>Kit de higiene, pañales, papel higiénico</td></tr>
+      <tr><td>Vestimenta</td><td>Pantalón, camisa/blusa, calzado</td></tr>
+      <tr><td>Abrigo y descanso</td><td>Frazada/cobija, colchoneta, colchón</td></tr>
+      <tr><td>Salud</td><td>Botiquín, medicamentos básicos</td></tr>
+      <tr><td>Limpieza del hogar</td><td>Detergente, cloro/desinfectante</td></tr>
+      <tr><td>Bebés y niños</td><td>Fórmula infantil, kit escolar</td></tr>
+      <tr><td>Equipamiento</td><td>Linterna, cocina/hornilla, bidón/garrafa</td></tr>
+    </tbody>
+  </table>
+  <p>Etiqueta unificada en todo el stack: <strong>«Categoría · Subcategoría»</strong>. Backend, Filament, Livewire, API móvil y Flutter comparten la misma fuente de catálogo.</p>
+
+  <div class="page-break"></div>
+
+  <div class="tricolor">
+    <span class="ve-yellow"></span>
+    <span class="ve-blue"></span>
+    <span class="ve-red"></span>
+  </div>
+
+  <h2>Operación sin conexión — implementada</h2>
+  <p>Funciona en zonas con conectividad limitada. El catálogo geográfico y el inventario local se almacenan en el
+  dispositivo (Hive). La cola de sincronización es visible en la app y puede enviarse manualmente con un toque.</p>
+
+  <table>
+    <thead><tr><th>Tipo de sync</th><th>Rol</th><th>Acción</th></tr></thead>
+    <tbody>
+      <tr><td>invitado.registro</td><td>Anfitrión</td><td>Alta de Invitado con foto y familiares</td></tr>
+      <tr><td>requerimiento.create</td><td>Anfitrión</td><td>Solicitud de insumo</td></tr>
+      <tr><td>inventario.create</td><td>Acopio</td><td>Nuevo ítem en stock</td></tr>
+      <tr><td>inventario.update_cantidad</td><td>Acopio</td><td>Ajuste de existencias</td></tr>
+      <tr><td>entrega.marcar</td><td>Acopio</td><td>Cierre de despacho y descuento de stock</td></tr>
+    </tbody>
+  </table>
+
+  <h2>Stack tecnológico (desplegado en entorno local)</h2>
+  <ul>
+    <li><strong>Backend:</strong> Laravel 11 · PHP 8.2+ · PostgreSQL (producción) / SQLite (desarrollo)</li>
+    <li><strong>Administración:</strong> Filament PHP v3 · autenticación por sesión</li>
+    <li><strong>Campo:</strong> Flutter Material 3 · Laravel Sanctum · API REST <code>/api/mobile</code></li>
+    <li><strong>Identidad visual:</strong> colores institucionales bandera de Venezuela (web y móvil)</li>
+    <li><strong>Imágenes:</strong> compresión en cliente (~0.8 MB, máx. 1280 px) en web y móvil</li>
+    <li><strong>Referencia web:</strong> prototipos Livewire en <code>/anfitrion</code> y <code>/acopio</code>; operación de campo en Flutter</li>
+  </ul>
+
+  <h2>Alcance entregado (8 fases completadas)</h2>
+  <ul class="checklist">
+    <li>Base de datos y geografía de Anzoátegui</li>
+    <li>Panel administrativo Filament completo</li>
+    <li>Apps web anfitrión y acopio con políticas de acceso</li>
+    <li>Logística: distancia entre refugio y centro, rutas en mapa</li>
+    <li>Sincronización offline con cola y endpoint <code>POST /sync</code></li>
+    <li>App Flutter móvil (anfitrión + acopio) con Material 3</li>
+    <li>Catálogo de insumos por categoría/subcategoría en todo el sistema</li>
+    <li>Compresión de fotos, parentesco obligatorio, edición de inventario offline</li>
+  </ul>
+
+  <div class="callout callout-success">
+    <strong>Demostración inmediata</strong><br />
+    Admin: admin@visitantes.test · Anfitrión: anfitrion@visitantes.test · Acopio: acopio@visitantes.test<br />
+    Contraseña: <code>password</code> · Backend: <code>php artisan serve</code> · Móvil: <code>flutter run</code>
+    <p class="deploy-note">Para puesta en marcha institucional solo resta publicar el APK firmado y desplegar el servidor con HTTPS — el software ya está listo.</p>
+  </div>
+
+  <div class="footer">
+    Visitantes · Sistema de Asistencia y Gestión de Invitados · Anzoátegui, Venezuela · Solución implementada · Julio 2026
+  </div>
+
+</body>
+</html>

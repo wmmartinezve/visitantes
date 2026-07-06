@@ -1,0 +1,118 @@
+<?php
+
+declare(strict_types=1);
+
+namespace Tests\Feature;
+
+use App\Enums\RequerimientoEstatus;
+use App\Enums\UserRole;
+use App\Models\CentroAcopio;
+use App\Models\Invitado;
+use App\Models\Parroquia;
+use App\Models\Refugio;
+use App\Models\Requerimiento;
+use App\Models\User;
+use Database\Seeders\AnzoateguiGeografiaSeeder;
+use Database\Seeders\DemoOperacionSeeder;
+use Illuminate\Foundation\Testing\RefreshDatabase;
+use Laravel\Sanctum\Sanctum;
+use Tests\TestCase;
+
+class MobileFieldApiTest extends TestCase
+{
+    use RefreshDatabase;
+
+    private function anfitrion(): User
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+        $this->seed(DemoOperacionSeeder::class);
+
+        return User::query()->where('email', 'anfitrion@visitantes.test')->firstOrFail();
+    }
+
+    public function test_lista_invitados_mobile(): void
+    {
+        Sanctum::actingAs($this->anfitrion());
+
+        $this->getJson('/api/mobile/invitados')
+            ->assertOk()
+            ->assertJsonStructure(['data']);
+    }
+
+    public function test_crear_requerimiento_mobile(): void
+    {
+        $anfitrion = $this->anfitrion();
+        Sanctum::actingAs($anfitrion);
+
+        $invitado = Invitado::query()->where('refugio_id', $anfitrion->refugio_id)->firstOrFail();
+
+        $this->postJson('/api/mobile/requerimientos', [
+            'invitado_id' => $invitado->id,
+            'categoria' => 'Alimentos y bebidas',
+            'subcategoria' => 'Agua embotellada',
+            'cantidad' => 3,
+        ])->assertCreated();
+
+        $this->assertDatabaseHas('requerimientos', [
+            'invitado_id' => $invitado->id,
+            'categoria' => 'Alimentos y bebidas',
+            'subcategoria' => 'Agua embotellada',
+            'item_solicitado' => 'Alimentos y bebidas · Agua embotellada',
+        ]);
+    }
+
+    public function test_entregas_mobile_con_distancia(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
+
+        $centro = CentroAcopio::query()->create([
+            'nombre' => 'Centro API',
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.245,
+            'longitud' => -64.655,
+            'direccion_exacta' => 'Pozuelos',
+            'activo' => true,
+        ]);
+
+        $operador = User::factory()->create([
+            'rol' => UserRole::CentroAcopio,
+            'centro_acopio_id' => $centro->id,
+        ]);
+
+        $refugio = Refugio::query()->create([
+            'nombre' => 'Refugio API',
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.214,
+            'longitud' => -64.633,
+            'direccion_exacta' => 'PLC',
+        ]);
+
+        $anfitrion = User::factory()->create(['rol' => UserRole::Anfitrion, 'refugio_id' => $refugio->id]);
+        $invitado = Invitado::query()->create([
+            'nombre' => 'Test',
+            'apellido' => 'API',
+            'fecha_nacimiento' => '1990-01-01',
+            'refugio_id' => $refugio->id,
+            'estatus' => 'activo',
+        ]);
+
+        Requerimiento::query()->create([
+            'invitado_id' => $invitado->id,
+            'anfitrion_id' => $anfitrion->id,
+            'categoria' => 'Abrigo y descanso',
+            'subcategoria' => 'Frazada / cobija',
+            'item_solicitado' => 'Abrigo y descanso · Frazada / cobija',
+            'cantidad' => 2,
+            'estatus' => RequerimientoEstatus::Asignado,
+            'centro_acopio_id' => $centro->id,
+        ]);
+
+        Sanctum::actingAs($operador);
+
+        $this->getJson('/api/mobile/entregas')
+            ->assertOk()
+            ->assertJsonPath('data.0.subcategoria', 'Frazada / cobija')
+            ->assertJsonStructure(['data' => [['distancia_km', 'ruta_url']]]);
+    }
+}
