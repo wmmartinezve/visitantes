@@ -72,7 +72,7 @@ class OfflineSyncTest extends TestCase
 
     public function test_sincroniza_registro_de_invitado_offline(): void
     {
-        Storage::fake(InvitadoFotoStorage::PRIVATE_DISK);
+        Storage::fake(InvitadoFotoStorage::privateDisk());
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();

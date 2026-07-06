@@ -107,4 +107,10 @@ return [
         'logo' => 'images/visitantes-icon.png',
         'favicon' => 'images/favicon.png',
     ],
+
+    /*
+    | Disco Laravel para fotos de ingreso de Invitados (privadas).
+    | local = storage/app/private · s3 = bucket AWS (producción Railway)
+    */
+    'invitado_fotos_disk' => env('INVITADO_FOTOS_DISK', 'local'),
 ];

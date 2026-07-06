@@ -57,7 +57,7 @@ class InvitadoResource extends Resource
                 ->schema([
                     Forms\Components\FileUpload::make('foto_ingreso')
                         ->label('Foto de ingreso')
-                        ->disk(InvitadoFotoStorage::PRIVATE_DISK)
+                        ->disk(InvitadoFotoStorage::privateDisk())
                         ->directory('invitados/fotos')
                         ->visibility('private')
                         ->image()

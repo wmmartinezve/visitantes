@@ -9,9 +9,12 @@ use Illuminate\Support\Facades\Storage;
 
 final class InvitadoFotoStorage
 {
-    public const PRIVATE_DISK = 'local';
-
     public const LEGACY_DISK = 'public';
+
+    public static function privateDisk(): string
+    {
+        return (string) config('visitantes.invitado_fotos_disk', 'local');
+    }
 
     public static function storePath(int $invitadoId, string $filename): string
     {
@@ -24,8 +27,10 @@ final class InvitadoFotoStorage
             return null;
         }
 
-        if (Storage::disk(self::PRIVATE_DISK)->exists($path)) {
-            return self::PRIVATE_DISK;
+        $privateDisk = self::privateDisk();
+
+        if (Storage::disk($privateDisk)->exists($path)) {
+            return $privateDisk;
         }
 
         if (Storage::disk(self::LEGACY_DISK)->exists($path)) {

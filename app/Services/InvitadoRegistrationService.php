@@ -75,7 +75,7 @@ class InvitadoRegistrationService
         return $foto->storeAs(
             "invitados/fotos/{$invitadoId}",
             $filename,
-            InvitadoFotoStorage::PRIVATE_DISK,
+            InvitadoFotoStorage::privateDisk(),
         );
     }
 }

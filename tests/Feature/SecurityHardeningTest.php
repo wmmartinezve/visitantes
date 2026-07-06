@@ -74,7 +74,7 @@ class SecurityHardeningTest extends TestCase
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        Storage::fake(InvitadoFotoStorage::PRIVATE_DISK);
+        Storage::fake(InvitadoFotoStorage::privateDisk());
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
         $refugio = Refugio::query()->create([
@@ -86,7 +86,7 @@ class SecurityHardeningTest extends TestCase
         ]);
 
         $path = InvitadoFotoStorage::storePath(1, 'test.jpg');
-        Storage::disk(InvitadoFotoStorage::PRIVATE_DISK)->put($path, $this->tinyJpegBytes());
+        Storage::disk(InvitadoFotoStorage::privateDisk())->put($path, $this->tinyJpegBytes());
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Foto',
@@ -105,7 +105,7 @@ class SecurityHardeningTest extends TestCase
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        Storage::fake(InvitadoFotoStorage::PRIVATE_DISK);
+        Storage::fake(InvitadoFotoStorage::privateDisk());
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
@@ -126,7 +126,7 @@ class SecurityHardeningTest extends TestCase
         ]);
 
         $path = InvitadoFotoStorage::storePath(99, 'privada.jpg');
-        Storage::disk(InvitadoFotoStorage::PRIVATE_DISK)->put($path, $this->tinyJpegBytes());
+        Storage::disk(InvitadoFotoStorage::privateDisk())->put($path, $this->tinyJpegBytes());
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Ajeno',
@@ -152,7 +152,7 @@ class SecurityHardeningTest extends TestCase
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        Storage::fake(InvitadoFotoStorage::PRIVATE_DISK);
+        Storage::fake(InvitadoFotoStorage::privateDisk());
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
         $refugio = Refugio::query()->create([
@@ -164,7 +164,7 @@ class SecurityHardeningTest extends TestCase
         ]);
 
         $path = InvitadoFotoStorage::storePath(2, 'propia.jpg');
-        Storage::disk(InvitadoFotoStorage::PRIVATE_DISK)->put($path, $this->tinyJpegBytes());
+        Storage::disk(InvitadoFotoStorage::privateDisk())->put($path, $this->tinyJpegBytes());
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Propio',

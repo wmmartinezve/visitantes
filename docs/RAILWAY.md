@@ -23,7 +23,13 @@ Backend Laravel (API móvil + panel Filament `/admin`) para **Visitantes · Anzo
 | `DATABASE_URL` | Referencia al plugin PostgreSQL |
 | `SESSION_DRIVER` | `database` |
 | `SESSION_SECURE_COOKIE` | `true` |
-| `FILESYSTEM_DISK` | `public` |
+| `FILESYSTEM_DISK` | `local` |
+| `INVITADO_FOTOS_DISK` | `s3` *(producción)* / `local` *(dev)* |
+| `AWS_DEFAULT_REGION` | `sa-east-1` |
+| `AWS_BUCKET` | `visitantes-anzoategui-prod` |
+| `AWS_ACCESS_KEY_ID` | Clave del usuario IAM `visitantes-railway` |
+| `AWS_SECRET_ACCESS_KEY` | Secret del usuario IAM |
+| `GOOGLE_MAPS_API_KEY` | Clave Maps JavaScript (mapa admin) |
 | `CACHE_STORE` | `database` |
 | `QUEUE_CONNECTION` | `database` |
 | `LOG_CHANNEL` | `stderr` |
@@ -82,14 +88,34 @@ El APK quedará en `build/app/outputs/flutter-apk/app-release.apk`.
 
 **Cambie las contraseñas** antes de uso real.
 
-## 6. Almacenamiento de fotos
+## 6. Almacenamiento de fotos (Amazon S3)
 
-Railway usa disco efímero. Las fotos de Invitados en `storage/app/public` pueden perderse al redeploy.
+Las fotos de Invitados son **privadas** y se sirven solo con autenticación (`InvitadoFotoController`).
 
-Para producción estable:
+| Entorno | Disco | Dónde viven |
+|---------|-------|-------------|
+| Local / tests | `local` | `storage/app/private/invitados/fotos/` |
+| Railway producción | `s3` | Bucket `visitantes-anzoategui-prod` (región `sa-east-1`) |
 
-- Monte un **Volume** en Railway en `/app/storage/app/public`, o
-- Configure un bucket S3 y `FILESYSTEM_DISK=s3`
+### Variables Railway (servicio web)
+
+```env
+INVITADO_FOTOS_DISK=s3
+AWS_ACCESS_KEY_ID=AKIA...
+AWS_SECRET_ACCESS_KEY=...
+AWS_DEFAULT_REGION=sa-east-1
+AWS_BUCKET=visitantes-anzoategui-prod
+```
+
+El usuario IAM debe tener permiso `s3:PutObject`, `s3:GetObject`, `s3:DeleteObject` y `s3:ListBucket` sobre el bucket y el prefijo `invitados/*`.
+
+Tras redeploy, suba un Invitado con foto y verifique en S3:
+
+```
+visitantes-anzoategui-prod/invitados/fotos/{id}/uuid.jpg
+```
+
+> **No** use `FILESYSTEM_DISK=public` en Railway: el disco del contenedor es efímero y las fotos se pierden al redeploy.
 
 ## 7. Desarrollo local (opcional)
 
