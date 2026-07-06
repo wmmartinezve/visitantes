@@ -72,10 +72,16 @@ class InvitadoRegistrationService
 
         $filename = Str::uuid().'.'.$extension;
 
-        return $foto->storeAs(
+        $path = $foto->storeAs(
             "invitados/fotos/{$invitadoId}",
             $filename,
             InvitadoFotoStorage::privateDisk(),
         );
+
+        if ($path === false) {
+            throw new \RuntimeException('Unable to write file to invitado photo storage.');
+        }
+
+        return $path;
     }
 }

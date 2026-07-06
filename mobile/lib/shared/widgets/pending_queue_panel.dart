@@ -88,6 +88,8 @@ class PendingQueuePanel extends StatelessWidget {
               ...pending.map((item) {
                 final type = item['type'] as String? ?? '';
                 final createdAt = item['created_at'] as String?;
+                final clientId = item['client_id'] as String?;
+                final hasError = item['last_error'] is String && (item['last_error'] as String).isNotEmpty;
                 return ListTile(
                   dense: compact,
                   leading: CircleAvatar(
@@ -100,13 +102,21 @@ class PendingQueuePanel extends StatelessWidget {
                   subtitle: Text(
                     [
                       '${SyncService.typeLabel(type)}${createdAt != null ? ' · ${_formatTime(createdAt)}' : ''}',
-                      if (item['last_error'] is String && (item['last_error'] as String).isNotEmpty)
-                        item['last_error'] as String,
+                      if (hasError) item['last_error'] as String,
                     ].join('\n'),
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                      color: item['last_error'] != null ? VenezuelaColors.red : null,
+                      color: hasError ? VenezuelaColors.red : null,
                     ),
                   ),
+                  trailing: hasError && clientId != null
+                      ? IconButton(
+                          tooltip: 'Descartar de la cola',
+                          icon: const Icon(Icons.delete_outline, color: VenezuelaColors.red),
+                          onPressed: () async {
+                            await sync.discardFromQueue(clientId);
+                          },
+                        )
+                      : null,
                 );
               }),
             ],

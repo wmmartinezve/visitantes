@@ -9,6 +9,12 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class OfflineSyncRecord extends Model
 {
+    protected $primaryKey = 'client_id';
+
+    public $incrementing = false;
+
+    protected $keyType = 'string';
+
     protected $fillable = [
         'client_id',
         'type',

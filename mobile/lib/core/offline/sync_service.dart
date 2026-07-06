@@ -173,6 +173,12 @@ class SyncService extends ChangeNotifier {
     });
   }
 
+  /// Elimina un ítem de la cola local (p. ej. registro fallido que se rehará online).
+  Future<void> discardFromQueue(String clientId) async {
+    await LocalDb.queue.delete(clientId);
+    notifyListeners();
+  }
+
   Future<SyncResult> syncPending() async {
     if (!await _catalog.isOnline || pendingCount == 0) {
       return SyncResult(ok: 0, failed: 0);

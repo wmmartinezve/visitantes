@@ -12,10 +12,12 @@ use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InsumoCatalog;
 use App\Support\WitnessPhotoDecoder;
+use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use InvalidArgumentException;
 use League\Flysystem\FilesystemException;
 use RuntimeException;
 
@@ -79,8 +81,27 @@ class OfflineSyncService
 
         $message = $e->getMessage();
 
-        if ($e instanceof FilesystemException || str_contains($message, 'Unable to write')) {
+        if ($e instanceof QueryException || str_contains($message, 'SQLSTATE')) {
+            if (str_contains($message, 'offline_sync_records')) {
+                return 'El servidor no está actualizado (migraciones pendientes). Contacte al administrador.';
+            }
+
+            return 'Error al guardar en la base de datos. Contacte al administrador.';
+        }
+
+        if (
+            $e instanceof FilesystemException
+            || str_contains($message, 'Unable to write')
+            || str_contains($message, 'Access Denied')
+            || str_contains($message, 'AccessDenied')
+            || str_contains($message, 'Could not connect to the endpoint')
+            || str_contains($message, 'InvalidAccessKeyId')
+        ) {
             return 'No se pudo guardar la foto en el almacenamiento. Contacte al administrador.';
+        }
+
+        if ($e instanceof InvalidArgumentException || str_contains($message, 'Formato de imagen')) {
+            return 'Formato de foto no permitido. Use JPG, PNG o WebP.';
         }
 
         if (str_contains($message, 'decodificar') || str_contains($message, 'imagen válida')) {
@@ -91,7 +112,11 @@ class OfflineSyncService
             return 'La foto supera el tamaño máximo permitido (8 MB).';
         }
 
-        if (app()->environment('local')) {
+        if (str_contains($message, 'almacenamiento') || str_contains($message, 'storage')) {
+            return 'No se pudo guardar la foto en el almacenamiento. Contacte al administrador.';
+        }
+
+        if (app()->environment('local', 'testing')) {
             return $message;
         }
 

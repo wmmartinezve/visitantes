@@ -190,6 +190,62 @@ class OfflineSyncTest extends TestCase
         );
     }
 
+    public function test_sincronizar_invitado_offline_reporta_error_de_almacenamiento(): void
+    {
+        Storage::fake(InvitadoFotoStorage::privateDisk());
+        Storage::shouldReceive('disk->putFileAs')->andReturn(false);
+
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+
+        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
+        $refugio = Refugio::query()->create([
+            'nombre' => 'Refugio Storage',
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.214,
+            'longitud' => -64.633,
+            'direccion_exacta' => 'PLC',
+        ]);
+
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'refugio_id' => $refugio->id,
+        ]);
+
+        $fotoBase64 = base64_encode(
+            base64_decode(
+                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AL+AAf/Z',
+                true,
+            ) ?: '',
+        );
+
+        $response = $this->actingAs($anfitrion)
+            ->postJson(route('api.offline.sync'), [
+                'items' => [
+                    [
+                        'client_id' => 'offline-client-storage',
+                        'type' => 'invitado.registro',
+                        'payload' => [
+                            'nombre' => 'Maria',
+                            'apellido' => 'Storage',
+                            'fecha_nacimiento' => '1990-05-10',
+                            'familiares' => [],
+                            'foto_base64' => 'data:image/jpeg;base64,'.$fotoBase64,
+                            'foto_mime' => 'image/jpeg',
+                        ],
+                    ],
+                ],
+            ]);
+
+        $response->assertOk()
+            ->assertJsonPath('results.0.status', 'error')
+            ->assertJsonPath('results.0.error', 'No se pudo guardar la foto en el almacenamiento. Contacte al administrador.');
+
+        $this->assertDatabaseMissing('invitados', [
+            'nombre' => 'Maria',
+            'apellido' => 'Storage',
+        ]);
+    }
+
     public function test_sincroniza_requerimiento_referenciando_invitado_offline(): void
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);
