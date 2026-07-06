@@ -25,7 +25,11 @@ class MobilePasswordResetController extends Controller
         $user = User::query()->where('email', $data['email'])->first();
 
         if ($user !== null && $this->canResetPassword($user)) {
-            Password::sendResetLink(['email' => $data['email']]);
+            try {
+                Password::sendResetLink(['email' => $data['email']]);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         return response()->json([

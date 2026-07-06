@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace App\Notifications;
 
-use Illuminate\Bus\Queueable;
-use Illuminate\Contracts\Queue\ShouldQueue;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
-class FieldOperatorResetPasswordNotification extends Notification implements ShouldQueue
+class FieldOperatorResetPasswordNotification extends Notification
 {
-    use Queueable;
-
     public function __construct(
         private readonly string $resetUrl,
     ) {}

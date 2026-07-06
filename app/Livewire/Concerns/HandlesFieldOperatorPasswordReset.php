@@ -36,7 +36,11 @@ trait HandlesFieldOperatorPasswordReset
         $user = User::query()->where('email', $this->email)->first();
 
         if ($user !== null && $user->rol === $this->allowedRole()) {
-            Password::sendResetLink(['email' => $this->email]);
+            try {
+                Password::sendResetLink(['email' => $this->email]);
+            } catch (\Throwable $e) {
+                report($e);
+            }
         }
 
         session()->flash('reset_status', 'Si el correo está registrado, recibirá un enlace para restablecer su contraseña.');

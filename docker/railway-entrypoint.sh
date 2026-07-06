@@ -23,5 +23,8 @@ if [ "${RUN_DEMO_SEED:-false}" = "true" ] || [ "${RUN_SEED:-false}" = "true" ]; 
   php artisan db:seed --force --no-interaction
 fi
 
+echo ">> Procesando cola pendiente (correos/jobs acumulados)"
+php artisan queue:work --stop-when-empty --max-jobs=100 --max-time=120 2>/dev/null || true
+
 echo ">> Servidor en puerto ${PORT:-8080}"
 exec php artisan serve --host=0.0.0.0 --port="${PORT:-8080}"
