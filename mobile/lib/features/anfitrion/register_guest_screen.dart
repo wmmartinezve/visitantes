@@ -1,9 +1,11 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:visitantes_mobile/config/app_config.dart';
+import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/media/photo_compression.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
@@ -13,10 +15,18 @@ import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/witness_photo_capture.dart';
 
 class RegisterGuestScreen extends StatefulWidget {
-  const RegisterGuestScreen({super.key, required this.catalog, required this.sync});
+  const RegisterGuestScreen({
+    super.key,
+    required this.catalog,
+    required this.sync,
+    required this.fieldApi,
+    this.onRegistered,
+  });
 
   final CatalogService catalog;
   final SyncService sync;
+  final FieldApi fieldApi;
+  final VoidCallback? onRegistered;
 
   @override
   State<RegisterGuestScreen> createState() => _RegisterGuestScreenState();
@@ -129,29 +139,42 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       final payload = await _buildPayload();
       final online = await widget.catalog.isOnline;
 
-      await widget.sync.enqueue('invitado.registro', payload);
-
       if (online) {
-        final result = await widget.sync.refreshAll();
+        await widget.fieldApi.registerInvitadoOnline(payload);
         _clearForm();
+        widget.onRegistered?.call();
         if (!mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.sync.ok > 0
-                  ? 'Invitado registrado en el servidor.'
-                  : 'Invitado en cola — toque sync si no se envió.',
-            ),
-          ),
+          const SnackBar(content: Text('Invitado registrado en el servidor.')),
         );
         return;
       }
 
+      await widget.sync.enqueue('invitado.registro', payload);
+
       _clearForm();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invitado guardado localmente. Sincronice cuando tenga red.')),
+        const SnackBar(content: Text('Sin conexión — invitado guardado localmente. Se sincronizará al reconectar.')),
       );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final data = e.response?.data;
+      var message = 'No se pudo registrar en el servidor.';
+      if (data is Map) {
+        if (data['message'] is String) message = data['message'] as String;
+        final errors = data['errors'];
+        if (errors is Map) {
+          for (final entry in errors.entries) {
+            final value = entry.value;
+            if (value is List && value.isNotEmpty) {
+              message = value.first.toString();
+              break;
+            }
+          }
+        }
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _saving = false);
     }

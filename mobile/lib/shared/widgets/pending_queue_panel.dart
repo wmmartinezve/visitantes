@@ -1,3 +1,6 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
@@ -67,7 +70,7 @@ class PendingQueuePanel extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            'Se enviarán al servidor al sincronizar',
+                            'Se enviarán automáticamente al detectar conexión',
                             style: TextStyle(fontSize: 12, color: VenezuelaColors.onBlueContainer.withValues(alpha: 0.85)),
                           ),
                         ],
@@ -142,16 +145,26 @@ class OfflineBanner extends StatefulWidget {
 
 class _OfflineBannerState extends State<OfflineBanner> {
   bool _online = true;
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
 
   @override
   void initState() {
     super.initState();
     _checkOnline();
     widget.sync.addListener(_onSyncChanged);
+    _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
+      final online = !results.contains(ConnectivityResult.none);
+      if (!mounted) return;
+      setState(() => _online = online);
+      if (online && widget.sync.pendingCount > 0) {
+        widget.sync.scheduleAutoSync();
+      }
+    });
   }
 
   @override
   void dispose() {
+    _connectivitySub?.cancel();
     widget.sync.removeListener(_onSyncChanged);
     super.dispose();
   }

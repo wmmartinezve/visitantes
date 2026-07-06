@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
@@ -86,6 +87,30 @@ class FieldApi {
     } catch (_) {
       return _cachedEntregas();
     }
+  }
+
+  Future<InvitadoModel> registerInvitadoOnline(Map<String, dynamic> payload) async {
+    final response = await _api.dio.post<Map<String, dynamic>>(
+      '/invitados',
+      data: payload,
+      options: Options(
+        sendTimeout: const Duration(seconds: 120),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
+    final data = response.data?['data'];
+    if (data is! Map) {
+      throw StateError('Respuesta inválida del servidor');
+    }
+    final invitado = InvitadoModel.fromJson(Map<String, dynamic>.from(data));
+    await _prependInvitadoToCache(invitado);
+    return invitado;
+  }
+
+  Future<void> _prependInvitadoToCache(InvitadoModel invitado) async {
+    final cached = _cachedInvitados();
+    final updated = [invitado, ...cached.where((i) => i.id != invitado.id)];
+    await LocalDb.meta.put('invitados_cache', updated.map(_invitadoToMap).toList());
   }
 
   Future<void> createRequerimientoOnline({

@@ -5,8 +5,12 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MobileInvitadoStoreRequest;
 use App\Http\Resources\MobileInvitadoResource;
 use App\Models\Invitado;
+use App\Services\InvitadoRegistrationService;
+use App\Support\WitnessPhotoDecoder;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\AnonymousResourceCollection;
 
@@ -50,5 +54,40 @@ class MobileInvitadoController extends Controller
         $invitado->load(['miembrosFamilia', 'requerimientos.centroAcopio']);
 
         return new MobileInvitadoResource($invitado);
+    }
+
+    public function store(
+        MobileInvitadoStoreRequest $request,
+        InvitadoRegistrationService $registration,
+    ): JsonResponse {
+        $this->authorize('create', Invitado::class);
+
+        $validated = $request->validated();
+        $user = $request->user();
+
+        $foto = null;
+        if (! empty($validated['foto_base64'])) {
+            $foto = WitnessPhotoDecoder::toUploadedFile(
+                $validated['foto_base64'],
+                $validated['foto_mime'] ?? 'image/jpeg',
+            );
+        }
+
+        $jefe = $registration->register(
+            $user,
+            [
+                'nombre' => $validated['nombre'],
+                'apellido' => $validated['apellido'],
+                'cedula' => $validated['cedula'] ?? null,
+                'telefono' => $validated['telefono'] ?? null,
+                'fecha_nacimiento' => $validated['fecha_nacimiento'],
+            ],
+            $foto,
+            $validated['familiares'] ?? [],
+        );
+
+        return (new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'refugio'])))
+            ->response()
+            ->setStatusCode(201);
     }
 }

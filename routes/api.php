@@ -26,6 +26,7 @@ Route::prefix('mobile')->name('api.mobile.')->group(function (): void {
         Route::post('/sync', OfflineSyncController::class)->name('sync');
 
         Route::get('/invitados', [MobileInvitadoController::class, 'index'])->name('invitados.index');
+        Route::post('/invitados', [MobileInvitadoController::class, 'store'])->name('invitados.store');
         Route::get('/invitados/{invitado}', [MobileInvitadoController::class, 'show'])->name('invitados.show');
         Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)->name('invitados.foto');
 

@@ -141,11 +141,11 @@ class _InventoryScreenState extends State<InventoryScreen> {
       };
 
       final online = await widget.catalog.isOnline;
-      await widget.sync.enqueue('inventario.create', payload);
-
-      if (online) {
-        await widget.sync.refreshAll();
-      }
+      await widget.sync.enqueue(
+        'inventario.create',
+        payload,
+        syncImmediately: online,
+      );
 
       setState(() {
         _categoria = null;

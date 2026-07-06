@@ -1,3 +1,7 @@
+import 'dart:async';
+
+import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
@@ -5,15 +9,24 @@ import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
 
 class SyncService extends ChangeNotifier {
-  SyncService({ApiClient? apiClient, CatalogService? catalogService})
+  SyncService({ApiClient? apiClient, CatalogService? catalogService, Connectivity? connectivity})
       : _api = apiClient ?? ApiClient(),
-        _catalog = catalogService ?? CatalogService(apiClient: apiClient);
+        _catalog = catalogService ?? CatalogService(apiClient: apiClient),
+        _connectivity = connectivity ?? Connectivity();
 
   final ApiClient _api;
   final CatalogService _catalog;
+  final Connectivity _connectivity;
   final _uuid = const Uuid();
 
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
+  Timer? _debounceTimer;
+  bool _syncInProgress = false;
+  String? _lastSyncError;
+
   int get pendingCount => LocalDb.queue.length;
+
+  String? get lastSyncError => _lastSyncError;
 
   List<Map<String, dynamic>> listPending() {
     return LocalDb.queue.values
@@ -68,7 +81,11 @@ class SyncService extends ChangeNotifier {
     return text.isEmpty ? fallback : text;
   }
 
-  Future<String> enqueue(String type, Map<String, dynamic> payload) async {
+  Future<String> enqueue(
+    String type,
+    Map<String, dynamic> payload, {
+    bool syncImmediately = false,
+  }) async {
     final clientId = _uuid.v4();
     await LocalDb.queue.put(clientId, {
       'client_id': clientId,
@@ -77,7 +94,50 @@ class SyncService extends ChangeNotifier {
       'created_at': DateTime.now().toUtc().toIso8601String(),
     });
     notifyListeners();
+
+    if (syncImmediately) {
+      await syncPending();
+    } else {
+      scheduleAutoSync();
+    }
+
     return clientId;
+  }
+
+  /// Escucha reconexión y sincroniza la cola automáticamente.
+  void startAutoSync() {
+    _connectivitySub?.cancel();
+    _connectivitySub = _connectivity.onConnectivityChanged.listen((results) {
+      if (results.contains(ConnectivityResult.none)) return;
+      scheduleAutoSync();
+    });
+    scheduleAutoSync();
+  }
+
+  void stopAutoSync() {
+    _connectivitySub?.cancel();
+    _connectivitySub = null;
+    _debounceTimer?.cancel();
+    _debounceTimer = null;
+  }
+
+  void scheduleAutoSync() {
+    _debounceTimer?.cancel();
+    _debounceTimer = Timer(const Duration(milliseconds: 900), () {
+      unawaited(_runAutoSync());
+    });
+  }
+
+  Future<void> _runAutoSync() async {
+    if (_syncInProgress || pendingCount == 0) return;
+    if (!await _catalog.isOnline) return;
+
+    _syncInProgress = true;
+    try {
+      await syncPending();
+    } finally {
+      _syncInProgress = false;
+    }
   }
 
   /// Reemplaza ajustes pendientes del mismo ítem antes de encolar uno nuevo.
@@ -110,6 +170,7 @@ class SyncService extends ChangeNotifier {
     final pending = listPending();
     var ok = 0;
     var failed = 0;
+    String? lastError;
 
     const batchSize = 10;
     for (var i = 0; i < pending.length; i += batchSize) {
@@ -127,6 +188,10 @@ class SyncService extends ChangeNotifier {
                     })
                 .toList(),
           },
+          options: Options(
+            sendTimeout: const Duration(seconds: 120),
+            receiveTimeout: const Duration(seconds: 60),
+          ),
         );
 
         final results = response.data?['results'] as List<dynamic>? ?? [];
@@ -138,10 +203,16 @@ class SyncService extends ChangeNotifier {
             ok++;
           } else {
             failed++;
+            lastError = result['error'] as String? ?? lastError;
           }
         }
-      } catch (_) {
+      } on DioException catch (e) {
         failed += batch.length;
+        lastError = _dioErrorMessage(e);
+        break;
+      } catch (e) {
+        failed += batch.length;
+        lastError = e.toString();
         break;
       }
     }
@@ -151,7 +222,31 @@ class SyncService extends ChangeNotifier {
     }
 
     notifyListeners();
-    return SyncResult(ok: ok, failed: failed);
+    _lastSyncError = lastError;
+    return SyncResult(ok: ok, failed: failed, lastError: lastError);
+  }
+
+  String _dioErrorMessage(DioException e) {
+    final data = e.response?.data;
+    if (data is Map) {
+      if (data['message'] is String) return data['message'] as String;
+      final errors = data['errors'];
+      if (errors is Map) {
+        for (final entry in errors.entries) {
+          final value = entry.value;
+          if (value is List && value.isNotEmpty) return value.first.toString();
+        }
+      }
+    }
+
+    return switch (e.type) {
+      DioExceptionType.connectionError ||
+      DioExceptionType.connectionTimeout ||
+      DioExceptionType.sendTimeout ||
+      DioExceptionType.receiveTimeout =>
+        'No se pudo conectar con el servidor. Verifique su internet.',
+      _ => 'Error al sincronizar con el servidor.',
+    };
   }
 
   /// Sincroniza la cola local y actualiza el catálogo offline.
@@ -175,9 +270,13 @@ class SyncService extends ChangeNotifier {
 }
 
 class SyncResult {
-  SyncResult({required this.ok, required this.failed});
+  SyncResult({required this.ok, required this.failed, this.lastError});
+
   final int ok;
   final int failed;
+  final String? lastError;
+
+  bool get hasErrors => failed > 0 || (lastError != null && ok == 0);
 }
 
 class RefreshAllResult {

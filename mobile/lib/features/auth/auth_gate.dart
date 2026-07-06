@@ -34,6 +34,7 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _bootstrap() async {
     final user = await _auth.restoreSession();
     if (user != null) {
+      _sync.startAutoSync();
       await _catalog.refresh(force: true);
       await _sync.syncPending();
     }
@@ -47,7 +48,9 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _handleLogin(String email, String password) async {
     try {
       final user = await _auth.login(email, password);
+      _sync.startAutoSync();
       await _catalog.refresh(force: true);
+      await _sync.syncPending();
       setState(() => _user = user);
     } on DioException catch (e) {
       final isNetwork = e.type == DioExceptionType.connectionError ||
@@ -66,6 +69,7 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _logout() async {
+    _sync.stopAutoSync();
     await _auth.logout();
     setState(() => _user = null);
   }

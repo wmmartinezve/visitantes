@@ -96,7 +96,12 @@ class _DeliveriesScreenState extends State<DeliveriesScreen> {
         await widget.fieldApi.marcarEntregadoOnline(entrega.id);
         await widget.sync.refreshAll(syncQueue: false);
       } else {
-        await widget.sync.enqueue('entrega.marcar', {'requerimiento_id': entrega.id});
+        await widget.sync.enqueue(
+          'entrega.marcar',
+          {'requerimiento_id': entrega.id},
+          syncImmediately: false,
+        );
+        widget.sync.scheduleAutoSync();
       }
       await _loadEntregas();
       if (!mounted) return;

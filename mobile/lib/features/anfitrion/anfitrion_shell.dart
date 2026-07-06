@@ -88,7 +88,12 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
     final pages = [
       _HomeTab(sync: widget.sync, user: _user, onNavigate: _goTo, onSync: _syncFromHome),
-      RegisterGuestScreen(catalog: widget.catalog, sync: widget.sync),
+      RegisterGuestScreen(
+        catalog: widget.catalog,
+        sync: widget.sync,
+        fieldApi: _fieldApi,
+        onRegistered: _bumpRefresh,
+      ),
       GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
       RequirementsListScreen(key: ValueKey('reqs-$_refreshTick'), fieldApi: _fieldApi),
     ];

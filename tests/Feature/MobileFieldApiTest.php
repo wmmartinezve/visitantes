@@ -13,9 +13,11 @@ use App\Models\Parroquia;
 use App\Models\Refugio;
 use App\Models\Requerimiento;
 use App\Models\User;
+use App\Support\InvitadoFotoStorage;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
 use Tests\TestCase;
 
@@ -38,6 +40,54 @@ class MobileFieldApiTest extends TestCase
         $this->getJson('/api/mobile/invitados')
             ->assertOk()
             ->assertJsonStructure(['data']);
+    }
+
+    public function test_anfitrion_puede_registrar_invitado_online(): void
+    {
+        Storage::fake(InvitadoFotoStorage::privateDisk());
+
+        $anfitrion = $this->anfitrion();
+        Sanctum::actingAs($anfitrion);
+
+        $fotoBase64 = base64_encode(
+            base64_decode(
+                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AL+AAf/Z',
+                true,
+            ) ?: '',
+        );
+
+        $response = $this->postJson('/api/mobile/invitados', [
+            'nombre' => 'María',
+            'apellido' => 'Online',
+            'cedula' => 'V-55555555',
+            'telefono' => '0414-5555555',
+            'fecha_nacimiento' => '1992-04-10',
+            'familiares' => [
+                [
+                    'nombre' => 'Pedro',
+                    'apellido' => 'Online',
+                    'parentesco' => 'Hijo(a)',
+                    'fecha_nacimiento' => '2018-08-20',
+                ],
+            ],
+            'foto_base64' => 'data:image/jpeg;base64,'.$fotoBase64,
+            'foto_mime' => 'image/jpeg',
+        ]);
+
+        $response->assertCreated()
+            ->assertJsonPath('data.nombre_completo', 'María Online');
+
+        $this->assertDatabaseHas('invitados', [
+            'nombre' => 'María',
+            'apellido' => 'Online',
+            'refugio_id' => $anfitrion->refugio_id,
+        ]);
+
+        $this->assertDatabaseHas('invitados', [
+            'nombre' => 'Pedro',
+            'apellido' => 'Online',
+            'parentesco' => 'Hijo(a)',
+        ]);
     }
 
     public function test_lista_invitados_incluye_jefe_y_familiares(): void

@@ -11,10 +11,9 @@ use App\Models\OfflineSyncRecord;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InsumoCatalog;
-use Illuminate\Http\UploadedFile;
+use App\Support\WitnessPhotoDecoder;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
-use Illuminate\Support\Str;
 use RuntimeException;
 
 class OfflineSyncService
@@ -108,7 +107,7 @@ class OfflineSyncService
 
         $foto = null;
         if (! empty($validated['foto_base64'])) {
-            $foto = $this->base64ToUploadedFile(
+            $foto = WitnessPhotoDecoder::toUploadedFile(
                 $validated['foto_base64'],
                 $validated['foto_mime'] ?? 'image/jpeg',
             );
@@ -261,39 +260,5 @@ class OfflineSyncService
         $this->requerimientoAsignacion->marcarEntregado($requerimiento);
 
         return $requerimiento->id;
-    }
-
-    private function base64ToUploadedFile(string $base64, string $mime): UploadedFile
-    {
-        $raw = base64_decode(preg_replace('#^data:[^;]+;base64,#', '', $base64) ?: '', true);
-
-        if ($raw === false) {
-            throw new RuntimeException('No se pudo decodificar la foto.');
-        }
-
-        if (strlen($raw) > 8 * 1024 * 1024) {
-            throw new RuntimeException('La foto supera el tamaño máximo permitido (8 MB).');
-        }
-
-        $imageInfo = @getimagesizefromstring($raw);
-
-        if ($imageInfo === false) {
-            throw new RuntimeException('El archivo no es una imagen válida.');
-        }
-
-        $extension = match ($mime) {
-            'image/png' => 'png',
-            'image/webp' => 'webp',
-            default => 'jpg',
-        };
-
-        $tmp = tempnam(sys_get_temp_dir(), 'offline_foto_');
-        if ($tmp === false) {
-            throw new RuntimeException('No se pudo crear archivo temporal.');
-        }
-
-        file_put_contents($tmp, $raw);
-
-        return new UploadedFile($tmp, Str::uuid().'.'.$extension, $mime, null, true);
     }
 }
