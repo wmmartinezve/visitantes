@@ -40,6 +40,48 @@ class MobileFieldApiTest extends TestCase
             ->assertJsonStructure(['data']);
     }
 
+    public function test_lista_invitados_incluye_jefe_y_familiares(): void
+    {
+        $anfitrion = $this->anfitrion();
+        Sanctum::actingAs($anfitrion);
+
+        $jefe = Invitado::query()->create([
+            'nombre' => 'Padre',
+            'apellido' => 'Lista',
+            'cedula' => 'V-11111111',
+            'telefono' => '0414-1111111',
+            'fecha_nacimiento' => '1985-06-15',
+            'refugio_id' => $anfitrion->refugio_id,
+            'estatus' => 'activo',
+        ]);
+
+        $hijo = Invitado::query()->create([
+            'nombre' => 'Hijo',
+            'apellido' => 'Lista',
+            'parentesco' => 'Hijo(a)',
+            'fecha_nacimiento' => '2015-03-01',
+            'refugio_id' => $anfitrion->refugio_id,
+            'jefe_familia_id' => $jefe->id,
+            'estatus' => 'activo',
+        ]);
+
+        $response = $this->getJson('/api/mobile/invitados');
+
+        $response->assertOk();
+
+        $ids = collect($response->json('data'))->pluck('id')->all();
+
+        $this->assertContains($jefe->id, $ids);
+        $this->assertContains($hijo->id, $ids);
+
+        $hijoData = collect($response->json('data'))->firstWhere('id', $hijo->id);
+
+        $this->assertFalse($hijoData['es_jefe_familia']);
+        $this->assertSame('Hijo(a)', $hijoData['parentesco']);
+        $this->assertSame($jefe->id, $hijoData['detail_invitado_id']);
+        $this->assertNotNull($hijoData['edad']);
+    }
+
     public function test_crear_requerimiento_mobile(): void
     {
         $anfitrion = $this->anfitrion();

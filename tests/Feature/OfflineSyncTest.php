@@ -140,6 +140,56 @@ class OfflineSyncTest extends TestCase
         ]);
     }
 
+    public function test_sincronizar_invitado_offline_es_idempotente(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+
+        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
+        $refugio = Refugio::query()->create([
+            'nombre' => 'Refugio Idempotente',
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.214,
+            'longitud' => -64.633,
+            'direccion_exacta' => 'PLC',
+        ]);
+
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'refugio_id' => $refugio->id,
+        ]);
+
+        $clientId = 'offline-client-dup';
+        $payload = [
+            'items' => [
+                [
+                    'client_id' => $clientId,
+                    'type' => 'invitado.registro',
+                    'payload' => [
+                        'nombre' => 'Carlos',
+                        'apellido' => 'Unico',
+                        'fecha_nacimiento' => '1990-01-01',
+                        'familiares' => [],
+                    ],
+                ],
+            ],
+        ];
+
+        $this->actingAs($anfitrion)
+            ->postJson(route('api.offline.sync'), $payload)
+            ->assertOk()
+            ->assertJsonPath('summary.ok', 1);
+
+        $this->actingAs($anfitrion)
+            ->postJson(route('api.offline.sync'), $payload)
+            ->assertOk()
+            ->assertJsonPath('summary.ok', 1);
+
+        $this->assertSame(
+            1,
+            Invitado::query()->where('nombre', 'Carlos')->where('apellido', 'Unico')->count(),
+        );
+    }
+
     public function test_sincroniza_requerimiento_referenciando_invitado_offline(): void
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);

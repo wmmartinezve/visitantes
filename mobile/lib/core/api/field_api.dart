@@ -28,8 +28,13 @@ class FieldApi {
         queryParameters: query.isEmpty ? null : {'q': query},
       );
       final list = _parseList(response.data?['data'], InvitadoModel.fromJson);
-      await LocalDb.meta.put('invitados_cache', list.map((e) => _invitadoToMap(e)).toList());
-      return list;
+      final unique = <int, InvitadoModel>{};
+      for (final invitado in list) {
+        unique[invitado.id] = invitado;
+      }
+      final deduped = unique.values.toList();
+      await LocalDb.meta.put('invitados_cache', deduped.map((e) => _invitadoToMap(e)).toList());
+      return deduped;
     } catch (_) {
       return _cachedInvitados();
     }
@@ -157,6 +162,13 @@ class FieldApi {
         'cedula': i.cedula,
         'telefono': i.telefono,
         'estatus_label': i.estatusLabel,
+        'fecha_nacimiento': i.fechaNacimiento,
+        'edad': i.edad,
+        'registrado_el': i.registradoEl,
+        'foto_url': i.fotoUrl,
+        'es_jefe_familia': i.esJefeFamilia,
+        'parentesco': i.parentesco,
+        'detail_invitado_id': i.detailInvitadoId,
       };
 
   Map<String, dynamic> _requerimientoToMap(RequerimientoModel r) => {

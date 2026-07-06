@@ -169,6 +169,7 @@ class SyncService extends ChangeNotifier {
       online: true,
       sync: syncResult,
       catalogRefreshed: catalog != null,
+      hadSyncActivity: syncResult.ok > 0,
     );
   }
 }
@@ -184,9 +185,11 @@ class RefreshAllResult {
     required this.online,
     required this.sync,
     required this.catalogRefreshed,
+    this.hadSyncActivity = false,
   });
 
   final bool online;
   final SyncResult sync;
   final bool catalogRefreshed;
+  final bool hadSyncActivity;
 }

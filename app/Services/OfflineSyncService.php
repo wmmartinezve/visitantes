@@ -7,6 +7,7 @@ namespace App\Services;
 use App\Enums\RequerimientoEstatus;
 use App\Models\Invitado;
 use App\Models\Inventario;
+use App\Models\OfflineSyncRecord;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InsumoCatalog;
@@ -76,6 +77,18 @@ class OfflineSyncService
             throw new RuntimeException('Solo anfitriones pueden registrar Invitados offline.');
         }
 
+        $existing = OfflineSyncRecord::query()
+            ->where('client_id', $clientId)
+            ->where('user_id', $user->id)
+            ->where('type', 'invitado.registro')
+            ->first();
+
+        if ($existing !== null) {
+            $idMap[$clientId] = (int) $existing->server_id;
+
+            return (int) $existing->server_id;
+        }
+
         $validated = Validator::make($payload, [
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
@@ -115,6 +128,13 @@ class OfflineSyncService
         );
 
         $idMap[$clientId] = $jefe->id;
+
+        OfflineSyncRecord::query()->create([
+            'client_id' => $clientId,
+            'type' => 'invitado.registro',
+            'server_id' => $jefe->id,
+            'user_id' => $user->id,
+        ]);
 
         return $jefe->id;
     }

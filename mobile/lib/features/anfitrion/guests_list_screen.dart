@@ -1,15 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
+import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/features/anfitrion/guest_detail_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/guest_card.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 
 class GuestsListScreen extends StatefulWidget {
-  const GuestsListScreen({super.key, required this.fieldApi});
+  const GuestsListScreen({super.key, required this.fieldApi, required this.sync});
 
   final FieldApi fieldApi;
+  final SyncService sync;
 
   @override
   State<GuestsListScreen> createState() => _GuestsListScreenState();
@@ -23,11 +25,13 @@ class _GuestsListScreenState extends State<GuestsListScreen> {
   @override
   void initState() {
     super.initState();
+    widget.sync.addListener(_load);
     _load();
   }
 
   @override
   void dispose() {
+    widget.sync.removeListener(_load);
     _search.dispose();
     super.dispose();
   }
@@ -83,7 +87,7 @@ class _GuestsListScreenState extends State<GuestsListScreen> {
                                 await Navigator.of(context).push(
                                   MaterialPageRoute<void>(
                                     builder: (_) => GuestDetailScreen(
-                                      invitadoId: inv.id,
+                                      invitadoId: inv.navigationId,
                                       fieldApi: widget.fieldApi,
                                     ),
                                   ),

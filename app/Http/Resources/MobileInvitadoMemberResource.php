@@ -25,6 +25,7 @@ class MobileInvitadoMemberResource extends JsonResource
             'cedula' => $this->cedula,
             'telefono' => $this->telefono,
             'fecha_nacimiento' => $this->fecha_nacimiento?->format('Y-m-d'),
+            'edad' => $this->fecha_nacimiento?->age,
         ];
     }
 }

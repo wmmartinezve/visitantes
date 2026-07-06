@@ -20,21 +20,26 @@ class MobileInvitadoController extends Controller
         $busqueda = trim((string) $request->query('q', ''));
 
         $query = Invitado::query()
-            ->with(['miembrosFamilia'])
-            ->where('refugio_id', $user->refugio_id)
-            ->whereNull('jefe_familia_id');
+            ->with(['jefeFamilia'])
+            ->where('refugio_id', $user->refugio_id);
 
         if ($busqueda !== '') {
             $term = '%'.$busqueda.'%';
             $query->where(function ($q) use ($term): void {
                 $q->where('nombre', 'like', $term)
                     ->orWhere('apellido', 'like', $term)
-                    ->orWhere('cedula', 'like', $term);
+                    ->orWhere('cedula', 'like', $term)
+                    ->orWhere('parentesco', 'like', $term);
             });
         }
 
         return MobileInvitadoResource::collection(
-            $query->latest()->limit(100)->get(),
+            $query
+                ->orderByRaw('COALESCE(jefe_familia_id, id)')
+                ->orderByRaw('CASE WHEN jefe_familia_id IS NULL THEN 0 ELSE 1 END')
+                ->latest('id')
+                ->limit(200)
+                ->get(),
         );
     }
 

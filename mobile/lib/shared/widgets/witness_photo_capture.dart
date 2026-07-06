@@ -98,24 +98,34 @@ class WitnessPhotoCapture extends StatelessWidget {
                 children: [
                   Icon(Icons.verified_user_outlined, size: 16, color: VenezuelaColors.blue.withValues(alpha: 0.8)),
                   const SizedBox(width: 6),
-                  const Text('Foto testigo de ingreso', style: TextStyle(fontWeight: FontWeight.w600)),
+                  Expanded(
+                    child: Text(
+                      'Foto testigo de ingreso',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
                 ],
               ),
               const SizedBox(height: 4),
               Text(
                 'Toque para abrir la cámara',
                 style: Theme.of(context).textTheme.bodySmall,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
               Text(
                 'Opcional · evidencia visual del Invitado',
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Theme.of(context).colorScheme.onSurfaceVariant.withValues(alpha: 0.8),
                     ),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
               ),
             ],
           ),
         ),
-        Icon(Icons.chevron_right, color: VenezuelaColors.blue.withValues(alpha: 0.7)),
       ],
     );
   }

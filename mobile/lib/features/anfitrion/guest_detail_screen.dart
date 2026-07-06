@@ -7,6 +7,8 @@ import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/insumo_picker.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
+import 'package:visitantes_mobile/shared/widgets/invitado_avatar.dart';
+import 'package:visitantes_mobile/shared/widgets/invitado_foto_preview.dart';
 import 'package:visitantes_mobile/shared/widgets/requirement_card.dart';
 
 class GuestDetailScreen extends StatefulWidget {
@@ -110,7 +112,6 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final inv = _invitado;
-    final initial = inv != null && inv.nombreCompleto.isNotEmpty ? inv.nombreCompleto[0].toUpperCase() : '?';
 
     return BrandedDetailScaffold(
       title: inv?.nombreCompleto ?? 'Invitado',
@@ -122,6 +123,13 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (inv != null) ...[
+                    if (inv.fotoUrl != null && inv.fotoUrl!.isNotEmpty) ...[
+                      InvitadoFotoPreview(
+                        fotoUrl: inv.fotoUrl!,
+                        nombreCompleto: inv.nombreCompleto,
+                      ),
+                      const SizedBox(height: 16),
+                    ],
                     Card(
                       clipBehavior: Clip.antiAlias,
                       child: IntrinsicHeight(
@@ -134,11 +142,10 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                                 padding: const EdgeInsets.all(16),
                                 child: Row(
                                   children: [
-                                    CircleAvatar(
-                                      radius: 32,
-                                      backgroundColor: VenezuelaColors.blueContainer,
-                                      foregroundColor: VenezuelaColors.blue,
-                                      child: Text(initial, style: const TextStyle(fontSize: 24, fontWeight: FontWeight.w700)),
+                                    InvitadoAvatar(
+                                      nombreCompleto: inv.nombreCompleto,
+                                      fotoUrl: inv.fotoUrl,
+                                      radius: 40,
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
@@ -147,6 +154,8 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                                         children: [
                                           Text(inv.nombreCompleto, style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600)),
                                           const SizedBox(height: 4),
+                                          if (inv.edadLabel != null) _DetailLine(icon: Icons.cake_outlined, text: inv.edadLabel!),
+                                          if (inv.registradoEl != null) _DetailLine(icon: Icons.event_outlined, text: 'Registro: ${inv.registradoEl}'),
                                           _DetailLine(icon: Icons.badge_outlined, text: inv.cedula ?? 'Sin cédula'),
                                           _DetailLine(icon: Icons.phone_outlined, text: inv.telefono ?? 'Sin teléfono'),
                                         ],
@@ -174,7 +183,11 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                             ),
                             title: Text(m.nombreCompleto),
                             subtitle: Text(
-                              [if (m.parentesco != null && m.parentesco!.isNotEmpty) m.parentesco, m.cedula ?? 'Sin cédula']
+                              [
+                                if (m.parentesco != null && m.parentesco!.isNotEmpty) m.parentesco,
+                                if (m.edad != null) '${m.edad} años',
+                                m.cedula ?? 'Sin cédula',
+                              ]
                                   .whereType<String>()
                                   .join(' · '),
                             ),
