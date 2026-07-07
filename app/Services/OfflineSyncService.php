@@ -17,8 +17,8 @@ use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
+use App\Support\StorageErrorMessage;
 use InvalidArgumentException;
-use League\Flysystem\FilesystemException;
 use RuntimeException;
 
 class OfflineSyncService
@@ -90,16 +90,12 @@ class OfflineSyncService
         }
 
         if (
-            $e instanceof FilesystemException
-            || str_contains($message, 'Unable to write')
-            || str_contains($message, 'Access Denied')
-            || str_contains($message, 'AccessDenied')
-            || str_contains($message, 'Could not connect to the endpoint')
-            || str_contains($message, 'InvalidAccessKeyId')
-            || str_contains($message, 'AwsS3V3')
-            || str_contains($message, 'Driver [s3]')
+            str_contains($message, 'InvalidAccessKeyId')
+            || str_contains($message, 'SignatureDoesNotMatch')
+            || str_contains($message, 'NoSuchBucket')
+            || StorageErrorMessage::isStorageFailure($e)
         ) {
-            return 'No se pudo guardar la foto en el almacenamiento. Contacte al administrador.';
+            return StorageErrorMessage::for($e);
         }
 
         if ($e instanceof InvalidArgumentException || str_contains($message, 'Formato de imagen')) {

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use Illuminate\Contracts\Filesystem\Filesystem;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 
 final class InvitadoFotoStorage
@@ -50,5 +51,24 @@ final class InvitadoFotoStorage
     public static function exists(?string $path): bool
     {
         return self::diskForPath($path) !== null;
+    }
+
+    public static function storeUploadedFile(UploadedFile $foto, int $invitadoId, string $filename): string
+    {
+        $disk = self::privateDisk();
+        $directory = "invitados/fotos/{$invitadoId}";
+
+        $path = \Illuminate\Support\Facades\Storage::disk($disk)->putFileAs(
+            $directory,
+            $foto,
+            $filename,
+            ['ACL' => ''],
+        );
+
+        if ($path === false) {
+            throw new \RuntimeException('Unable to write file to invitado photo storage.');
+        }
+
+        return $path;
     }
 }

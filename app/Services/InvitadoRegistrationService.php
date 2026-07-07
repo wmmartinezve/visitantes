@@ -10,7 +10,6 @@ use App\Models\User;
 use App\Support\InvitadoFotoStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 
 class InvitadoRegistrationService
@@ -72,16 +71,10 @@ class InvitadoRegistrationService
 
         $filename = Str::uuid().'.'.$extension;
 
-        $path = $foto->storeAs(
-            "invitados/fotos/{$invitadoId}",
+        return InvitadoFotoStorage::storeUploadedFile(
+            $foto,
+            $invitadoId,
             $filename,
-            InvitadoFotoStorage::privateDisk(),
         );
-
-        if ($path === false) {
-            throw new \RuntimeException('Unable to write file to invitado photo storage.');
-        }
-
-        return $path;
     }
 }

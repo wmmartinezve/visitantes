@@ -1,5 +1,7 @@
 <?php
 
+use App\Support\InvitadoFotoStorage;
+use App\Support\StorageErrorMessage;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -28,21 +30,12 @@ return Application::configure(basePath: dirname(__DIR__))
                 return null;
             }
 
-            $message = $e->getMessage();
-            $storageFailure = str_contains($message, 'AwsS3V3')
-                || str_contains($message, 'Unable to write')
-                || str_contains($message, 'Access Denied')
-                || str_contains($message, 'AccessDenied')
-                || str_contains($message, 'AccessControlListNotSupported')
-                || str_contains($message, 'Driver [s3]')
-                || $e instanceof \League\Flysystem\FilesystemException;
-
-            if ($storageFailure) {
-                return response()->json([
-                    'message' => 'No se pudo guardar la foto en el almacenamiento. Contacte al administrador.',
-                ], 503);
+            if (! StorageErrorMessage::isStorageFailure($e)) {
+                return null;
             }
 
-            return null;
+            return response()->json([
+                'message' => StorageErrorMessage::for($e),
+            ], 503);
         });
     })->create();
