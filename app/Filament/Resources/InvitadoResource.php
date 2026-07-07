@@ -55,13 +55,21 @@ class InvitadoResource extends Resource
         return $form->schema([
             Forms\Components\Section::make('Identificación')
                 ->schema([
-                    Forms\Components\FileUpload::make('foto_ingreso')
+                    Forms\Components\ViewField::make('foto_preview')
                         ->label('Foto de ingreso')
+                        ->view('filament.forms.components.invitado-foto-preview')
+                        ->visible(fn (?Invitado $record): bool => $record !== null)
+                        ->columnSpanFull(),
+                    Forms\Components\FileUpload::make('foto_ingreso')
+                        ->label(fn (?Invitado $record): string => $record?->foto_ingreso ? 'Reemplazar foto' : 'Foto de ingreso')
                         ->disk(InvitadoFotoStorage::privateDisk())
-                        ->directory('invitados/fotos')
-                        ->visibility('private')
+                        ->directory(fn (?Invitado $record): string => $record
+                            ? 'invitados/fotos/'.$record->id
+                            : 'invitados/fotos/pendientes')
+                        ->fetchFileInformation(false)
                         ->image()
-                        ->avatar()
+                        ->maxSize(8192)
+                        ->visible(fn (?Invitado $record): bool => $record === null || $record->esJefeDeFamilia())
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('nombre')
                         ->label('Nombre')
@@ -140,10 +148,12 @@ class InvitadoResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\ImageColumn::make('foto_ingreso')
+                Tables\Columns\ImageColumn::make('foto_url')
                     ->label('Foto')
+                    ->state(fn (Invitado $record): ?string => $record->fotoUrl())
                     ->checkFileExistence(false)
                     ->url(fn (Invitado $record): ?string => $record->fotoUrl())
+                    ->openUrlInNewTab()
                     ->circular()
                     ->defaultImageUrl(fn (): string => 'https://ui-avatars.com/api/?background=002776&color=fff&name=I'),
                 Tables\Columns\TextColumn::make('nombre')
@@ -200,6 +210,7 @@ class InvitadoResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with('jefeFamilia')
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

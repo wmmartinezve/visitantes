@@ -32,11 +32,7 @@ class MobileInvitadoResource extends JsonResource
             'detail_invitado_id' => $this->jefe_familia_id ?? $this->id,
             'estatus' => $this->estatus?->value,
             'estatus_label' => $this->estatus?->label(),
-            'foto_url' => match (true) {
-                $this->jefe_familia_id === null => $this->fotoUrl('api.mobile.invitados.foto'),
-                $this->relationLoaded('jefeFamilia') => $this->jefeFamilia?->fotoUrl('api.mobile.invitados.foto'),
-                default => null,
-            },
+            'foto_url' => $this->fotoUrl('api.mobile.invitados.foto'),
             'miembros_familia' => MobileInvitadoMemberResource::collection(
                 $this->whenLoaded('miembrosFamilia'),
             ),

@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\InvitadoEstatus;
-use App\Support\InvitadoFotoStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -66,12 +65,33 @@ class Invitado extends Model
         return trim("{$this->nombre} {$this->apellido}");
     }
 
-    public function fotoUrl(string $routeName = 'invitados.foto'): ?string
+    public function invitadoConFoto(): ?self
     {
-        if ($this->foto_ingreso === null || ! InvitadoFotoStorage::exists($this->foto_ingreso)) {
+        if (! blank($this->foto_ingreso)) {
+            return $this;
+        }
+
+        if ($this->jefe_familia_id === null) {
             return null;
         }
 
-        return route($routeName, $this);
+        $jefe = $this->relationLoaded('jefeFamilia')
+            ? $this->jefeFamilia
+            : $this->jefeFamilia()->first();
+
+        if ($jefe === null || blank($jefe->foto_ingreso)) {
+            return null;
+        }
+
+        return $jefe;
+    }
+
+    public function fotoUrl(string $routeName = 'invitados.foto'): ?string
+    {
+        $invitadoConFoto = $this->invitadoConFoto();
+
+        return $invitadoConFoto !== null
+            ? route($routeName, $invitadoConFoto)
+            : null;
     }
 }
