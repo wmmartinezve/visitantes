@@ -61,6 +61,39 @@ class MobileFieldApiTest extends TestCase
             ->assertJsonPath('data.0.apellido', 'Rivas');
     }
 
+    public function test_anfitrion_puede_agregar_foto_a_invitado_sin_foto(): void
+    {
+        Storage::fake(InvitadoFotoStorage::privateDisk());
+
+        $anfitrion = $this->anfitrion();
+        Sanctum::actingAs($anfitrion);
+
+        $invitado = Invitado::query()->create([
+            'nombre' => 'Sin',
+            'apellido' => 'Foto',
+            'fecha_nacimiento' => '1990-01-01',
+            'refugio_id' => $anfitrion->refugio_id,
+            'estatus' => 'activo',
+        ]);
+
+        $fotoBase64 = base64_encode(
+            base64_decode(
+                '/9j/4AAQSkZJRgABAQEASABIAAD/2wBDAAEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/2wBDAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQH/wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAr/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/8QAFAEBAAAAAAAAAAAAAAAAAAAAAP/EABQRAQAAAAAAAAAAAAAAAAAAAAD/2gAMAwEAAhEDEQA/AL+AAf/Z',
+                true,
+            ) ?: '',
+        );
+
+        $this->postJson("/api/mobile/invitados/{$invitado->id}/foto", [
+            'foto_base64' => 'data:image/jpeg;base64,'.$fotoBase64,
+            'foto_mime' => 'image/jpeg',
+        ])
+            ->assertOk()
+            ->assertJsonPath('data.foto_url', fn ($url) => is_string($url) && $url !== '');
+
+        $invitado->refresh();
+        $this->assertNotNull($invitado->foto_ingreso);
+    }
+
     public function test_anfitrion_puede_registrar_invitado_online(): void
     {
         Storage::fake(InvitadoFotoStorage::privateDisk());

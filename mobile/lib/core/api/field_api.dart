@@ -118,6 +118,24 @@ class FieldApi {
     await LocalDb.meta.put('invitados_cache', updated.map(_invitadoToMap).toList());
   }
 
+  Future<InvitadoModel> uploadInvitadoFoto(int invitadoId, Map<String, dynamic> payload) async {
+    final response = await _api.dio.post<Map<String, dynamic>>(
+      '/invitados/$invitadoId/foto',
+      data: payload,
+      options: Options(
+        sendTimeout: const Duration(seconds: 120),
+        receiveTimeout: const Duration(seconds: 60),
+      ),
+    );
+    final data = response.data?['data'];
+    if (data is! Map) {
+      throw StateError('Respuesta inválida del servidor');
+    }
+    final invitado = InvitadoModel.fromJson(Map<String, dynamic>.from(data));
+    await _prependInvitadoToCache(invitado);
+    return invitado;
+  }
+
   Future<void> createRequerimientoOnline({
     required int invitadoId,
     required String categoria,

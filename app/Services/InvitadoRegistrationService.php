@@ -10,7 +10,9 @@ use App\Models\User;
 use App\Support\InvitadoFotoStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use InvalidArgumentException;
 
 class InvitadoRegistrationService
 {
@@ -54,6 +56,29 @@ class InvitadoRegistrationService
                     'estatus' => InvitadoEstatus::Activo,
                     'jefe_familia_id' => $jefe->id,
                 ]);
+            }
+
+            return $jefe->fresh(['miembrosFamilia', 'refugio']);
+        });
+    }
+
+    public function attachFoto(Invitado $jefe, UploadedFile $foto): Invitado
+    {
+        if (! $jefe->esJefeDeFamilia()) {
+            throw new InvalidArgumentException('Solo el jefe de familia puede tener foto testigo.');
+        }
+
+        return DB::transaction(function () use ($jefe, $foto): Invitado {
+            $previous = $jefe->foto_ingreso;
+            $path = $this->storeFoto($foto, $jefe->id);
+
+            $jefe->update(['foto_ingreso' => $path]);
+
+            if ($previous !== null && $previous !== $path) {
+                $disk = InvitadoFotoStorage::diskForPath($previous);
+                if ($disk !== null) {
+                    Storage::disk($disk)->delete($previous);
+                }
             }
 
             return $jefe->fresh(['miembrosFamilia', 'refugio']);

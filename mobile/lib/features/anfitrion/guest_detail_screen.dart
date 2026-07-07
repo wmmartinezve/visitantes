@@ -1,6 +1,11 @@
+import 'dart:convert';
+
+import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
+import 'package:visitantes_mobile/core/media/photo_compression.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
@@ -37,6 +42,7 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
   String? _subcategoria;
   final _cantidad = TextEditingController(text: '1');
   bool _saving = false;
+  bool _uploadingFoto = false;
 
   CatalogService get _catalog => widget.catalog ?? CatalogService();
   SyncService get _sync => widget.sync ?? SyncService();
@@ -79,6 +85,51 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
         ),
       ),
     );
+  }
+
+  Future<void> _addFoto() async {
+    final inv = _invitado;
+    if (inv == null || !inv.esJefeFamilia) return;
+
+    if (!await _catalog.isOnline) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Se requiere conexión para subir la foto testigo.')),
+      );
+      return;
+    }
+
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 100);
+    if (file == null || !mounted) return;
+
+    setState(() => _uploadingFoto = true);
+
+    try {
+      final raw = await file.readAsBytes();
+      final compressed = await PhotoCompression.compressWitnessPhoto(raw);
+
+      final updated = await widget.fieldApi.uploadInvitadoFoto(widget.invitadoId, {
+        'foto_base64': 'data:image/jpeg;base64,${base64Encode(compressed.bytes)}',
+        'foto_mime': 'image/jpeg',
+      });
+
+      if (!mounted) return;
+      setState(() => _invitado = updated);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Foto testigo guardada.')),
+      );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final data = e.response?.data;
+      var message = 'No se pudo subir la foto.';
+      if (data is Map && data['message'] is String) {
+        message = data['message'] as String;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } finally {
+      if (mounted) setState(() => _uploadingFoto = false);
+    }
   }
 
   Future<void> _addRequerimiento() async {
@@ -145,6 +196,12 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                     InvitadoFotoPreview(
                       fotoUrl: inv.fotoUrl,
                       nombreCompleto: inv.nombreCompleto,
+                      uploading: _uploadingFoto,
+                      onAddFoto: inv.esJefeFamilia &&
+                              (inv.fotoUrl == null || inv.fotoUrl!.isEmpty) &&
+                              !_uploadingFoto
+                          ? _addFoto
+                          : null,
                     ),
                     const SizedBox(height: 16),
                     Card(

@@ -8,11 +8,15 @@ class InvitadoFotoPreview extends StatelessWidget {
     this.fotoUrl,
     required this.nombreCompleto,
     this.height = 220,
+    this.onAddFoto,
+    this.uploading = false,
   });
 
   final String? fotoUrl;
   final String nombreCompleto;
   final double height;
+  final VoidCallback? onAddFoto;
+  final bool uploading;
 
   @override
   Widget build(BuildContext context) {
@@ -90,7 +94,12 @@ class InvitadoFotoPreview extends StatelessWidget {
                   );
                 },
               )
-            : _Placeholder(initial: initial, label: 'Sin foto de ingreso'),
+            : _Placeholder(
+                initial: initial,
+                label: uploading ? 'Subiendo foto…' : 'Sin foto de ingreso',
+                onAddFoto: uploading ? null : onAddFoto,
+                uploading: uploading,
+              ),
       ),
     );
   }
@@ -167,24 +176,49 @@ class InvitadoFotoFullScreen extends StatelessWidget {
 }
 
 class _Placeholder extends StatelessWidget {
-  const _Placeholder({required this.initial, required this.label});
+  const _Placeholder({
+    required this.initial,
+    required this.label,
+    this.onAddFoto,
+    this.uploading = false,
+  });
 
   final String initial;
   final String label;
+  final VoidCallback? onAddFoto;
+  final bool uploading;
 
   @override
   Widget build(BuildContext context) {
+    final content = Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (uploading)
+          const Padding(
+            padding: EdgeInsets.only(bottom: 12),
+            child: CircularProgressIndicator(),
+          )
+        else
+          Text(initial, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: VenezuelaColors.blue)),
+        const SizedBox(height: 8),
+        Text(label, style: TextStyle(fontSize: 13, color: VenezuelaColors.blue.withValues(alpha: 0.85))),
+        if (onAddFoto != null) ...[
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: onAddFoto,
+            icon: const Icon(Icons.photo_camera_outlined, size: 20),
+            label: const Text('Agregar foto testigo'),
+            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+          ),
+        ],
+      ],
+    );
+
     return Container(
       color: VenezuelaColors.blueContainer,
       alignment: Alignment.center,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(initial, style: const TextStyle(fontSize: 48, fontWeight: FontWeight.w700, color: VenezuelaColors.blue)),
-          const SizedBox(height: 8),
-          Text(label, style: TextStyle(fontSize: 13, color: VenezuelaColors.blue.withValues(alpha: 0.85))),
-        ],
-      ),
+      padding: const EdgeInsets.all(16),
+      child: content,
     );
   }
 }

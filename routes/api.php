@@ -28,6 +28,7 @@ Route::prefix('mobile')->name('api.mobile.')->group(function (): void {
         Route::get('/invitados', [MobileInvitadoController::class, 'index'])->name('invitados.index');
         Route::post('/invitados', [MobileInvitadoController::class, 'store'])->name('invitados.store');
         Route::get('/invitados/{invitado}', [MobileInvitadoController::class, 'show'])->name('invitados.show');
+        Route::post('/invitados/{invitado}/foto', [MobileInvitadoController::class, 'updateFoto'])->name('invitados.foto.store');
         Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)->name('invitados.foto');
 
         Route::get('/requerimientos', [MobileRequerimientoController::class, 'index'])->name('requerimientos.index');

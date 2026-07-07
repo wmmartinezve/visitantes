@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Requests\MobileInvitadoFotoRequest;
 use App\Http\Requests\MobileInvitadoStoreRequest;
 use App\Http\Resources\MobileInvitadoResource;
 use App\Models\Invitado;
@@ -89,5 +90,22 @@ class MobileInvitadoController extends Controller
         return (new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'refugio'])))
             ->response()
             ->setStatusCode(201);
+    }
+
+    public function updateFoto(
+        MobileInvitadoFotoRequest $request,
+        Invitado $invitado,
+        InvitadoRegistrationService $registration,
+    ): MobileInvitadoResource {
+        $validated = $request->validated();
+
+        $foto = WitnessPhotoDecoder::toUploadedFile(
+            $validated['foto_base64'],
+            $validated['foto_mime'],
+        );
+
+        $jefe = $registration->attachFoto($invitado, $foto);
+
+        return new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'refugio']));
     }
 }
