@@ -28,16 +28,24 @@ class ProbeInvitadoS3Command extends Command
         }
 
         $key = (string) config('filesystems.disks.s3.key');
+        $secret = (string) config('filesystems.disks.s3.secret');
         $bucket = (string) config('filesystems.disks.s3.bucket');
         $region = (string) config('filesystems.disks.s3.region');
 
         $this->line("Disco: {$disk}");
         $this->line('Bucket: '.($bucket !== '' ? $bucket : '(vacío)'));
         $this->line('Región: '.($region !== '' ? $region : '(vacía)'));
-        $this->line('Access Key: '.($key !== '' ? substr($key, 0, 8).'…' : '(vacía)'));
+        $this->line('Access Key: '.($key !== '' ? substr($key, 0, 8).'… ('.strlen($key).' chars)' : '(vacía)'));
+        $this->line('Secret: '.($secret !== '' ? strlen($secret).' caracteres' : '(vacío)'));
 
-        if ($key === '' || $bucket === '' || $region === '') {
+        if ($key === '' || $secret === '' || $bucket === '' || $region === '') {
             $this->error('Faltan variables AWS en el entorno o en config:cache.');
+
+            return self::FAILURE;
+        }
+
+        if (strlen($secret) !== 40) {
+            $this->error('AWS_SECRET_ACCESS_KEY debe tener 40 caracteres. Parece truncado al copiar/pegar en Railway.');
 
             return self::FAILURE;
         }
