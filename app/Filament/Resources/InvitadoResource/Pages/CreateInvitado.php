@@ -9,6 +9,8 @@ use Filament\Resources\Pages\CreateRecord;
 
 class CreateInvitado extends CreateRecord
 {
+    use HandlesInvitadoFotoUpload;
+
     protected static string $resource = InvitadoResource::class;
 
     protected function mutateFormDataBeforeCreate(array $data): array
@@ -17,8 +19,13 @@ class CreateInvitado extends CreateRecord
             $data['jefe_familia_id'] = null;
         }
 
-        unset($data['es_jefe_familia']);
+        unset($data['es_jefe_familia'], $data['foto_reemplazo']);
 
         return $data;
+    }
+
+    protected function afterCreate(): void
+    {
+        $this->persistFotoReemplazo($this->getRecord());
     }
 }

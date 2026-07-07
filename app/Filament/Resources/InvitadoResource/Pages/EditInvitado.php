@@ -10,6 +10,8 @@ use Filament\Resources\Pages\EditRecord;
 
 class EditInvitado extends EditRecord
 {
+    use HandlesInvitadoFotoUpload;
+
     protected static string $resource = InvitadoResource::class;
 
     protected function getHeaderActions(): array
@@ -27,8 +29,15 @@ class EditInvitado extends EditRecord
             $data['jefe_familia_id'] = null;
         }
 
-        unset($data['es_jefe_familia']);
+        unset($data['es_jefe_familia'], $data['foto_reemplazo']);
 
         return $data;
+    }
+
+    protected function afterSave(): void
+    {
+        $this->persistFotoReemplazo($this->getRecord());
+        $this->record->unsetRelation('jefeFamilia');
+        $this->record->load('jefeFamilia');
     }
 }

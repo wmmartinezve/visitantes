@@ -46,7 +46,7 @@
     <div class="rounded-lg border border-warning-300 bg-warning-50 p-3 dark:border-warning-600 dark:bg-warning-950/30">
         <p class="text-sm text-warning-800 dark:text-warning-200">
             Hay una ruta de foto registrada, pero el archivo no está en el almacenamiento (S3).
-            Use <strong>Reemplazar foto</strong> abajo o vuelva a subirla desde la app móvil.
+            Use el campo de subida abajo o vuelva a subirla desde la app móvil.
         </p>
     </div>
 @else

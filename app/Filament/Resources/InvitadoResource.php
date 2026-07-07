@@ -60,16 +60,24 @@ class InvitadoResource extends Resource
                         ->view('filament.forms.components.invitado-foto-preview')
                         ->visible(fn (?Invitado $record): bool => $record !== null)
                         ->columnSpanFull(),
-                    Forms\Components\FileUpload::make('foto_ingreso')
-                        ->label(fn (?Invitado $record): string => $record?->foto_ingreso ? 'Reemplazar foto' : 'Foto de ingreso')
+                    Forms\Components\FileUpload::make('foto_reemplazo')
+                        ->label(function (?Invitado $record): string {
+                            if ($record === null) {
+                                return 'Foto de ingreso';
+                            }
+
+                            if (! $record->esJefeDeFamilia()) {
+                                return 'Subir o reemplazar foto del jefe de familia';
+                            }
+
+                            return $record->foto_ingreso ? 'Reemplazar foto' : 'Foto de ingreso';
+                        })
                         ->disk(InvitadoFotoStorage::privateDisk())
-                        ->directory(fn (?Invitado $record): string => $record
-                            ? 'invitados/fotos/'.$record->id
-                            : 'invitados/fotos/pendientes')
+                        ->directory(fn (?Invitado $record): string => InvitadoFotoStorage::fotoUploadDirectory($record))
                         ->fetchFileInformation(false)
                         ->image()
                         ->maxSize(8192)
-                        ->visible(fn (?Invitado $record): bool => $record === null || $record->esJefeDeFamilia())
+                        ->visible(fn (?Invitado $record, Get $get): bool => $record !== null || ($get('es_jefe_familia') ?? true))
                         ->columnSpanFull(),
                     Forms\Components\TextInput::make('nombre')
                         ->label('Nombre')

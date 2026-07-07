@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\Invitado;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
@@ -95,5 +96,36 @@ final class InvitadoFotoStorage
         }
 
         return $path;
+    }
+
+    public static function finalizeUploadedPath(string $uploadedPath, int $invitadoId): string
+    {
+        $finalPath = self::storePath($invitadoId, basename($uploadedPath));
+
+        if ($uploadedPath === $finalPath) {
+            return $finalPath;
+        }
+
+        $disk = self::privateDisk();
+        $filesystem = Storage::disk($disk);
+
+        if ($filesystem->exists($uploadedPath)) {
+            $filesystem->move($uploadedPath, $finalPath);
+        }
+
+        return $finalPath;
+    }
+
+    public static function fotoUploadDirectory(?Invitado $record): string
+    {
+        if ($record === null) {
+            return 'invitados/fotos/pendientes';
+        }
+
+        $targetId = $record->esJefeDeFamilia()
+            ? $record->id
+            : ($record->jefe_familia_id ?? $record->id);
+
+        return 'invitados/fotos/'.$targetId;
     }
 }
