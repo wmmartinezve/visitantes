@@ -29,14 +29,10 @@ final class InvitadoFotoStorage
             return null;
         }
 
-        $privateDisk = self::privateDisk();
-
-        if (Storage::disk($privateDisk)->exists($path)) {
-            return $privateDisk;
-        }
-
-        if (Storage::disk(self::LEGACY_DISK)->exists($path)) {
-            return self::LEGACY_DISK;
+        foreach (array_unique([self::privateDisk(), 'local', self::LEGACY_DISK]) as $disk) {
+            if (Storage::disk($disk)->exists($path)) {
+                return $disk;
+            }
         }
 
         return null;
@@ -63,16 +59,20 @@ final class InvitadoFotoStorage
             return null;
         }
 
-        if (self::privateDisk() === 's3') {
+        $disk = self::diskForPath($path);
+
+        if ($disk === null) {
+            return null;
+        }
+
+        if ($disk === 's3') {
             try {
                 return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(30));
             } catch (\Throwable $exception) {
                 report($exception);
-            }
-        }
 
-        if (! self::exists($path)) {
-            return null;
+                return null;
+            }
         }
 
         return URL::temporarySignedRoute($routeName, now()->addMinutes(30), $routeParameter);
@@ -90,7 +90,7 @@ final class InvitadoFotoStorage
             ['ACL' => ''],
         );
 
-        if ($path === false) {
+        if ($path === false || ! Storage::disk($disk)->exists($path)) {
             throw new \RuntimeException('Unable to write file to invitado photo storage.');
         }
 
