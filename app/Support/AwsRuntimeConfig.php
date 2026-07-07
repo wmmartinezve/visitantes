@@ -28,7 +28,7 @@ final class AwsRuntimeConfig
                 continue;
             }
 
-            $overrides[$configKey] = trim($value);
+            $overrides[$configKey] = self::normalizeCredential($value, $env === 'AWS_SECRET_ACCESS_KEY');
         }
 
         if ($overrides === []) {
@@ -40,5 +40,23 @@ final class AwsRuntimeConfig
         if (app()->bound('filesystem')) {
             Storage::forgetDisk('s3');
         }
+    }
+
+    private static function normalizeCredential(string $value, bool $isSecret): string
+    {
+        $value = trim($value);
+
+        if (
+            (str_starts_with($value, '"') && str_ends_with($value, '"'))
+            || (str_starts_with($value, "'") && str_ends_with($value, "'"))
+        ) {
+            $value = trim($value, "\"'");
+        }
+
+        if ($isSecret) {
+            $value = str_replace(["\r", "\n", ' '], '', $value);
+        }
+
+        return $value;
     }
 }

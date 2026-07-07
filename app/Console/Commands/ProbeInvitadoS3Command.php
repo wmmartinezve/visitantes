@@ -7,6 +7,7 @@ namespace App\Console\Commands;
 use App\Support\AwsRuntimeConfig;
 use App\Support\InvitadoFotoStorage;
 use App\Support\StorageErrorMessage;
+use Aws\Sts\StsClient;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -55,6 +56,25 @@ class ProbeInvitadoS3Command extends Command
         }
 
         $testPath = 'invitados/fotos/_probe/'.Str::uuid().'.txt';
+
+        try {
+            $sts = new StsClient([
+                'version' => 'latest',
+                'region' => $region,
+                'credentials' => [
+                    'key' => $key,
+                    'secret' => $secret,
+                ],
+            ]);
+            $identity = $sts->getCallerIdentity();
+            $this->info('STS OK → '.($identity['Arn'] ?? 'identidad verificada'));
+        } catch (Throwable $e) {
+            $this->error('El Access Key y el Secret NO forman un par válido en AWS.');
+            $this->line(StorageErrorMessage::for($e));
+            $this->warn('Borrá AWS_ACCESS_KEY_ID y AWS_SECRET_ACCESS_KEY en Railway y pegá ambos desde el mismo archivo .csv.');
+
+            return self::FAILURE;
+        }
 
         try {
             Storage::disk('s3')->put($testPath, 'probe-'.now()->toIso8601String(), ['ACL' => '']);
