@@ -2,7 +2,7 @@
     /** @var \App\Models\Invitado|null $record */
     $record = $getRecord();
     $invitadoConFoto = $record?->invitadoConFoto();
-    $url = $invitadoConFoto?->fotoUrl();
+    $url = $record?->fotoDisplayUrl();
     $esFotoDelJefe = $invitadoConFoto !== null
         && $record !== null
         && $invitadoConFoto->id !== $record->id;

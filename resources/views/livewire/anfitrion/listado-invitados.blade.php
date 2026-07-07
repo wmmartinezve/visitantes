@@ -23,7 +23,7 @@
                 :nombre="$invitado->nombreCompleto()"
                 :subtitulo="($invitado->cedula ?: 'Sin cédula') . ' · ' . $invitado->miembrosFamilia->count() . ' familiar(es)'"
                 :initial="strtoupper(substr($invitado->nombre, 0, 1))"
-                :foto="$invitado->fotoUrl()"
+                :foto="$invitado->fotoDisplayUrl()"
                 :estatus="$invitado->estatus?->value"
                 :estatus-label="$invitado->estatus?->label()"
             />

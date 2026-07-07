@@ -98,7 +98,17 @@ class SecurityHardeningTest extends TestCase
         ]);
 
         $this->get(route('invitados.foto', $invitado))
-            ->assertRedirect('/');
+            ->assertForbidden();
+
+        $signedUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'invitados.foto',
+            now()->addMinutes(5),
+            $invitado,
+        );
+
+        $this->get($signedUrl)
+            ->assertOk()
+            ->assertHeader('content-type', 'image/jpeg');
     }
 
     public function test_anfitrion_no_puede_ver_foto_de_otro_refugio(): void

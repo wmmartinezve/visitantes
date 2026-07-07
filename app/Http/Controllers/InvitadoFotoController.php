@@ -14,7 +14,9 @@ class InvitadoFotoController extends Controller
 {
     public function __invoke(Request $request, Invitado $invitado): StreamedResponse
     {
-        Gate::authorize('view', $invitado);
+        if (! $request->hasValidSignature()) {
+            Gate::authorize('view', $invitado);
+        }
 
         abort_unless($invitado->foto_ingreso, 404);
 

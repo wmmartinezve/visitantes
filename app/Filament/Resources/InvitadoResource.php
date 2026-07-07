@@ -150,9 +150,9 @@ class InvitadoResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('foto_url')
                     ->label('Foto')
-                    ->state(fn (Invitado $record): ?string => $record->fotoUrl())
+                    ->state(fn (Invitado $record): ?string => $record->fotoDisplayUrl())
                     ->checkFileExistence(false)
-                    ->url(fn (Invitado $record): ?string => $record->fotoUrl())
+                    ->url(fn (Invitado $record): ?string => $record->fotoDisplayUrl())
                     ->openUrlInNewTab()
                     ->circular()
                     ->defaultImageUrl(fn (): string => 'https://ui-avatars.com/api/?background=002776&color=fff&name=I'),

@@ -7,6 +7,7 @@ namespace App\Support;
 use Illuminate\Contracts\Filesystem\Filesystem;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\URL;
 
 final class InvitadoFotoStorage
 {
@@ -51,6 +52,30 @@ final class InvitadoFotoStorage
     public static function exists(?string $path): bool
     {
         return self::diskForPath($path) !== null;
+    }
+
+    /**
+     * URL apta para etiquetas <img> (presigned S3 o ruta firmada sin depender de cookies).
+     */
+    public static function displayUrl(string $path, object $routeParameter, string $routeName = 'invitados.foto'): ?string
+    {
+        if ($path === '') {
+            return null;
+        }
+
+        if (self::privateDisk() === 's3') {
+            try {
+                return Storage::disk('s3')->temporaryUrl($path, now()->addMinutes(30));
+            } catch (\Throwable $exception) {
+                report($exception);
+            }
+        }
+
+        if (! self::exists($path)) {
+            return null;
+        }
+
+        return URL::temporarySignedRoute($routeName, now()->addMinutes(30), $routeParameter);
     }
 
     public static function storeUploadedFile(UploadedFile $foto, int $invitadoId, string $filename): string

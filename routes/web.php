@@ -42,10 +42,8 @@ Route::middleware(['auth'])->prefix('admin')->group(function (): void {
         ->name('filament.admin.dashboard.export-pdf');
 });
 
-Route::middleware(['auth'])->group(function (): void {
-    Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)
-        ->name('invitados.foto');
-});
+Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)
+    ->name('invitados.foto');
 
 Route::middleware(['auth', 'field_operator'])->prefix('api/offline')->name('api.offline.')->group(function (): void {
     Route::get('/catalog', OfflineCatalogController::class)->name('catalog');
