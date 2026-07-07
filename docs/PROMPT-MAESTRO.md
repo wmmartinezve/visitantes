@@ -505,6 +505,7 @@ En Filament, usar `getGloballySearchableAttributes()` en `InvitadoResource` inde
 | 2026-07-06 | 8 | **App Flutter** en `mobile/` — Sanctum API, login por rol, registro Invitado e inventario con cola offline Hive. |
 | 2026-07-06 | — | Las apps Livewire `/anfitrion` y `/acopio` quedan como prototipo; producción de campo = Flutter. |
 | 2026-07-06 | — | Fix login admin (BD vacía tras tests, PHPUnit en `:memory:`). Comando `visitantes:ensure-demo-users`. |
+| 2026-07-07 | 2 | Filament Invitados: fotos S3 vía URL autenticada (`/invitados/{id}/foto`); familiares heredan foto del jefe de familia. |
 
 ---
 
