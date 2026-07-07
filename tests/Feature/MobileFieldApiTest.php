@@ -42,6 +42,25 @@ class MobileFieldApiTest extends TestCase
             ->assertJsonStructure(['data']);
     }
 
+    public function test_busqueda_invitados_mobile_es_insensitive(): void
+    {
+        $anfitrion = $this->anfitrion();
+        Sanctum::actingAs($anfitrion);
+
+        Invitado::query()->create([
+            'nombre' => 'Manuel',
+            'apellido' => 'Rivas',
+            'fecha_nacimiento' => '1978-01-01',
+            'refugio_id' => $anfitrion->refugio_id,
+            'estatus' => 'activo',
+        ]);
+
+        $this->getJson('/api/mobile/invitados?q=manuel')
+            ->assertOk()
+            ->assertJsonPath('data.0.nombre', 'Manuel')
+            ->assertJsonPath('data.0.apellido', 'Rivas');
+    }
+
     public function test_anfitrion_puede_registrar_invitado_online(): void
     {
         Storage::fake(InvitadoFotoStorage::privateDisk());

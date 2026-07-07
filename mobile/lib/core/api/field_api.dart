@@ -19,14 +19,16 @@ class FieldApi {
   }
 
   Future<List<InvitadoModel>> fetchInvitados({String query = ''}) async {
+    final trimmedQuery = query.trim();
+
     if (!await _catalog.isOnline) {
-      return _cachedInvitados();
+      return _filterInvitados(_cachedInvitados(), trimmedQuery);
     }
 
     try {
       final response = await _api.dio.get<Map<String, dynamic>>(
         '/invitados',
-        queryParameters: query.isEmpty ? null : {'q': query},
+        queryParameters: trimmedQuery.isEmpty ? null : {'q': trimmedQuery},
       );
       final list = _parseList(response.data?['data'], InvitadoModel.fromJson);
       final unique = <int, InvitadoModel>{};
@@ -34,10 +36,13 @@ class FieldApi {
         unique[invitado.id] = invitado;
       }
       final deduped = unique.values.toList();
-      await LocalDb.meta.put('invitados_cache', deduped.map((e) => _invitadoToMap(e)).toList());
+      // Solo actualizar caché con el listado completo; no sobrescribir con resultados filtrados.
+      if (trimmedQuery.isEmpty) {
+        await LocalDb.meta.put('invitados_cache', deduped.map((e) => _invitadoToMap(e)).toList());
+      }
       return deduped;
     } catch (_) {
-      return _cachedInvitados();
+      return _filterInvitados(_cachedInvitados(), trimmedQuery);
     }
   }
 
@@ -161,6 +166,21 @@ class FieldApi {
         .whereType<Map>()
         .map((e) => InvitadoModel.fromJson(Map<String, dynamic>.from(e)))
         .toList();
+  }
+
+  List<InvitadoModel> _filterInvitados(List<InvitadoModel> list, String query) {
+    if (query.isEmpty) return list;
+
+    final q = query.toLowerCase();
+
+    return list.where((invitado) {
+      if (invitado.nombreCompleto.toLowerCase().contains(q)) return true;
+      if (invitado.cedula?.toLowerCase().contains(q) ?? false) return true;
+      if (invitado.parentesco?.toLowerCase().contains(q) ?? false) return true;
+      if (invitado.telefono?.toLowerCase().contains(q) ?? false) return true;
+
+      return false;
+    }).toList();
   }
 
   List<RequerimientoModel> _cachedRequerimientos() {

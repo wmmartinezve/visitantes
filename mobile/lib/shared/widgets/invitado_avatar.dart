@@ -10,6 +10,7 @@ class InvitadoAvatar extends StatelessWidget {
     this.radius = 24,
     this.backgroundColor = VenezuelaColors.blueContainer,
     this.foregroundColor = VenezuelaColors.blue,
+    this.onTap,
   });
 
   final String nombreCompleto;
@@ -17,6 +18,7 @@ class InvitadoAvatar extends StatelessWidget {
   final double radius;
   final Color backgroundColor;
   final Color foregroundColor;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -31,7 +33,7 @@ class InvitadoAvatar extends StatelessWidget {
       );
     }
 
-    return CircleAvatar(
+    final avatar = CircleAvatar(
       radius: radius,
       backgroundColor: backgroundColor,
       child: ClipOval(
@@ -60,6 +62,10 @@ class InvitadoAvatar extends StatelessWidget {
         ),
       ),
     );
+
+    if (onTap == null) return avatar;
+
+    return GestureDetector(onTap: onTap, child: avatar);
   }
 
   Future<Map<String, String>> _authHeaders() async {

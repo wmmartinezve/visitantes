@@ -46,6 +46,8 @@ class _GuestsListScreenState extends State<GuestsListScreen> {
     });
   }
 
+  bool get _isSearching => _search.text.trim().isNotEmpty;
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -68,11 +70,13 @@ class _GuestsListScreenState extends State<GuestsListScreen> {
                   onRefresh: _load,
                   child: _invitados.isEmpty
                       ? ListView(
-                          children: const [
+                          children: [
                             EmptyState(
                               icon: Icons.groups_outlined,
-                              title: 'No hay Invitados registrados',
-                              message: 'Use la pestaña Registrar para agregar el primer Invitado.',
+                              title: _isSearching ? 'Sin resultados' : 'No hay Invitados registrados',
+                              message: _isSearching
+                                  ? 'No se encontró ningún Invitado para "${_search.text.trim()}".'
+                                  : 'Use la pestaña Registrar para agregar el primer Invitado.',
                             ),
                           ],
                         )

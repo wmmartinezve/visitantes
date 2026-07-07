@@ -28,12 +28,12 @@ class MobileInvitadoController extends Controller
             ->where('refugio_id', $user->refugio_id);
 
         if ($busqueda !== '') {
-            $term = '%'.$busqueda.'%';
+            $term = '%'.mb_strtolower($busqueda).'%';
             $query->where(function ($q) use ($term): void {
-                $q->where('nombre', 'like', $term)
-                    ->orWhere('apellido', 'like', $term)
-                    ->orWhere('cedula', 'like', $term)
-                    ->orWhere('parentesco', 'like', $term);
+                $q->whereRaw('LOWER(nombre) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(apellido) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(cedula) LIKE ?', [$term])
+                    ->orWhereRaw('LOWER(parentesco) LIKE ?', [$term]);
             });
         }
 

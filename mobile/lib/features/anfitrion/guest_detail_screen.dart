@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
@@ -62,6 +63,24 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
     });
   }
 
+  Future<void> _openFotoFullScreen(BuildContext context, String fotoUrl, String nombre) async {
+    final token = await ApiClient().tokenStorage.read();
+    final headers = token != null && token.isNotEmpty ? {'Authorization': 'Bearer $token'} : <String, String>{};
+
+    if (!context.mounted) return;
+
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (context) => InvitadoFotoFullScreen(
+          fotoUrl: fotoUrl,
+          headers: headers,
+          title: nombre,
+        ),
+      ),
+    );
+  }
+
   Future<void> _addRequerimiento() async {
     if (_categoria == null || _categoria!.isEmpty || _subcategoria == null || _subcategoria!.isEmpty) {
       return;
@@ -123,13 +142,11 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                 padding: const EdgeInsets.all(16),
                 children: [
                   if (inv != null) ...[
-                    if (inv.fotoUrl != null && inv.fotoUrl!.isNotEmpty) ...[
-                      InvitadoFotoPreview(
-                        fotoUrl: inv.fotoUrl!,
-                        nombreCompleto: inv.nombreCompleto,
-                      ),
-                      const SizedBox(height: 16),
-                    ],
+                    InvitadoFotoPreview(
+                      fotoUrl: inv.fotoUrl,
+                      nombreCompleto: inv.nombreCompleto,
+                    ),
+                    const SizedBox(height: 16),
                     Card(
                       clipBehavior: Clip.antiAlias,
                       child: IntrinsicHeight(
@@ -146,6 +163,9 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                                       nombreCompleto: inv.nombreCompleto,
                                       fotoUrl: inv.fotoUrl,
                                       radius: 40,
+                                      onTap: inv.fotoUrl != null && inv.fotoUrl!.isNotEmpty
+                                          ? () => _openFotoFullScreen(context, inv.fotoUrl!, inv.nombreCompleto)
+                                          : null,
                                     ),
                                     const SizedBox(width: 16),
                                     Expanded(
