@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Support\AwsRuntimeConfig;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
@@ -31,6 +32,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        AwsRuntimeConfig::applyS3DiskFromEnvironment();
+
         App::setLocale(config('app.locale', 'es'));
         Carbon::setLocale(config('app.locale', 'es'));
 

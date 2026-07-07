@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Console\Commands;
 
+use App\Support\AwsRuntimeConfig;
 use App\Support\InvitadoFotoStorage;
 use App\Support\StorageErrorMessage;
 use Illuminate\Console\Command;
@@ -19,6 +20,8 @@ class ProbeInvitadoS3Command extends Command
 
     public function handle(): int
     {
+        AwsRuntimeConfig::applyS3DiskFromEnvironment();
+
         $disk = InvitadoFotoStorage::privateDisk();
 
         if ($disk !== 's3') {
@@ -35,8 +38,9 @@ class ProbeInvitadoS3Command extends Command
         $this->line("Disco: {$disk}");
         $this->line('Bucket: '.($bucket !== '' ? $bucket : '(vacío)'));
         $this->line('Región: '.($region !== '' ? $region : '(vacía)'));
-        $this->line('Access Key: '.($key !== '' ? substr($key, 0, 8).'… ('.strlen($key).' chars)' : '(vacía)'));
+        $this->line('Access Key: '.($key !== '' ? substr($key, 0, 8).'…'.substr($key, -4).' ('.strlen($key).' chars)' : '(vacía)'));
         $this->line('Secret: '.($secret !== '' ? strlen($secret).' caracteres' : '(vacío)'));
+        $this->line('Config cache: '.($this->laravel->configurationIsCached() ? 'sí (env runtime sobrescribe credenciales)' : 'no'));
 
         if ($key === '' || $secret === '' || $bucket === '' || $region === '') {
             $this->error('Faltan variables AWS en el entorno o en config:cache.');
