@@ -8,10 +8,12 @@ use App\Enums\RequerimientoEstatus;
 use App\Enums\ActivityAction;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
+use App\Models\Refugio;
 use App\Models\Requerimiento;
 use App\Support\GeoDistance;
 use App\Support\InsumoCatalog;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection as EloquentCollection;
 use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 use RuntimeException;
@@ -65,6 +67,114 @@ class RequerimientoAsignacionService
             ->values();
     }
 
+    /**
+     * @return Collection<int, array{centro: CentroAcopio, inventario: Inventario, distancia_km: ?float, cantidad: int}>
+     */
+    public function buscarCentrosConStockConsolidado(
+        Refugio $refugio,
+        ?string $categoria,
+        ?string $subcategoria,
+        string $itemSolicitado,
+        int $cantidadTotal,
+    ): Collection {
+        $inventarios = $this->inventarioQueryForInsumo($categoria, $subcategoria, $itemSolicitado)
+            ->with(['centroAcopio.parroquia'])
+            ->whereHas('centroAcopio', fn ($q) => $q->where('activo', true))
+            ->where('cantidad', '>=', $cantidadTotal)
+            ->get();
+
+        return $inventarios
+            ->map(function (Inventario $inventario) use ($refugio): array {
+                $centro = $inventario->centroAcopio;
+                $distancia = null;
+
+                if ($centro !== null) {
+                    $distancia = GeoDistance::kilometers(
+                        (float) $refugio->latitud,
+                        (float) $refugio->longitud,
+                        (float) $centro->latitud,
+                        (float) $centro->longitud,
+                    );
+                }
+
+                return [
+                    'centro' => $centro,
+                    'inventario' => $inventario,
+                    'distancia_km' => $distancia,
+                    'cantidad' => $inventario->cantidad,
+                ];
+            })
+            ->sortBy([
+                fn (array $row) => $row['distancia_km'] ?? PHP_FLOAT_MAX,
+                fn (array $row) => -$row['cantidad'],
+            ])
+            ->values();
+    }
+
+    /**
+     * @param  EloquentCollection<int, Requerimiento>|list<Requerimiento>  $requerimientos
+     */
+    public function asignarLote(EloquentCollection|array $requerimientos, int $centroAcopioId): int
+    {
+        $coleccion = $requerimientos instanceof EloquentCollection
+            ? $requerimientos
+            : new EloquentCollection($requerimientos);
+
+        if ($coleccion->isEmpty()) {
+            return 0;
+        }
+
+        $coleccion->loadMissing('invitado.refugio');
+
+        $pendientes = $coleccion->filter(
+            fn (Requerimiento $r): bool => $r->estatus === RequerimientoEstatus::Pendiente,
+        );
+
+        if ($pendientes->count() !== $coleccion->count()) {
+            throw new RuntimeException('Solo se pueden asignar requerimientos en estatus pendiente.');
+        }
+
+        /** @var Requerimiento $referencia */
+        $referencia = $pendientes->first();
+        $refugioIds = $pendientes
+            ->map(fn (Requerimiento $r): ?int => $r->invitado?->refugio_id)
+            ->unique()
+            ->filter()
+            ->values();
+
+        if ($refugioIds->count() !== 1) {
+            throw new RuntimeException('El lote debe pertenecer a un único refugio.');
+        }
+
+        $cantidadTotal = (int) $pendientes->sum('cantidad');
+
+        $tieneStock = $this->inventarioQueryForInsumo(
+            $referencia->categoria,
+            $referencia->subcategoria,
+            (string) $referencia->item_solicitado,
+        )
+            ->where('centro_acopio_id', $centroAcopioId)
+            ->where('cantidad', '>=', $cantidadTotal)
+            ->exists();
+
+        if (! $tieneStock) {
+            throw new RuntimeException(
+                "El centro no tiene stock suficiente para el envío consolidado (se requieren {$cantidadTotal} unidades).",
+            );
+        }
+
+        return DB::transaction(function () use ($pendientes, $centroAcopioId): int {
+            $asignados = 0;
+
+            foreach ($pendientes as $requerimiento) {
+                $this->asignarSinValidarStock($requerimiento, $centroAcopioId);
+                $asignados++;
+            }
+
+            return $asignados;
+        });
+    }
+
     public function asignar(Requerimiento $requerimiento, int $centroAcopioId): Requerimiento
     {
         $centro = CentroAcopio::query()->findOrFail($centroAcopioId);
@@ -78,10 +188,15 @@ class RequerimientoAsignacionService
             throw new RuntimeException('El centro seleccionado no tiene stock suficiente para este ítem.');
         }
 
+        return $this->asignarSinValidarStock($requerimiento, $centro->id);
+    }
+
+    private function asignarSinValidarStock(Requerimiento $requerimiento, int $centroAcopioId): Requerimiento
+    {
         $before = $this->activityLog->snapshot($requerimiento);
 
         $requerimiento->update([
-            'centro_acopio_id' => $centro->id,
+            'centro_acopio_id' => $centroAcopioId,
             'estatus' => RequerimientoEstatus::Asignado,
         ]);
 
@@ -163,15 +278,25 @@ class RequerimientoAsignacionService
     /** @return Builder<Inventario> */
     private function inventarioQueryForRequerimiento(Requerimiento $requerimiento): Builder
     {
+        return $this->inventarioQueryForInsumo(
+            $requerimiento->categoria,
+            $requerimiento->subcategoria,
+            (string) $requerimiento->item_solicitado,
+        );
+    }
+
+    /** @return Builder<Inventario> */
+    private function inventarioQueryForInsumo(?string $categoria, ?string $subcategoria, string $itemSolicitado): Builder
+    {
         $query = Inventario::query();
 
-        if ($requerimiento->categoria && $requerimiento->subcategoria) {
+        if ($categoria && $subcategoria) {
             return $query
-                ->where('categoria', $requerimiento->categoria)
-                ->where('subcategoria', $requerimiento->subcategoria);
+                ->where('categoria', $categoria)
+                ->where('subcategoria', $subcategoria);
         }
 
-        $pair = InsumoCatalog::guessFromLabel((string) $requerimiento->item_solicitado);
+        $pair = InsumoCatalog::guessFromLabel($itemSolicitado);
 
         if ($pair !== null) {
             return $query
@@ -179,7 +304,7 @@ class RequerimientoAsignacionService
                 ->where('subcategoria', $pair['subcategoria']);
         }
 
-        $item = mb_strtolower(trim($requerimiento->item_solicitado));
+        $item = mb_strtolower(trim($itemSolicitado));
 
         return $query->whereRaw('LOWER(item_nombre) LIKE ?', ['%'.$item.'%']);
     }
