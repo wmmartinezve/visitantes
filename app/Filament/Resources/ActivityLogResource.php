@@ -150,14 +150,36 @@ class ActivityLogResource extends Resource
                     ->infolist([
                         \Filament\Infolists\Components\TextEntry::make('created_at')->label('Fecha')->dateTime('d/m/Y H:i:s'),
                         \Filament\Infolists\Components\TextEntry::make('user.name')->label('Usuario')->placeholder('Sistema'),
-                        \Filament\Infolists\Components\TextEntry::make('action')->label('Acción')->formatStateUsing(fn ($state) => $state?->label()),
-                        \Filament\Infolists\Components\TextEntry::make('channel')->label('Origen')->formatStateUsing(fn ($state) => $state?->label()),
+                        \Filament\Infolists\Components\TextEntry::make('user_role')
+                            ->label('Rol')
+                            ->formatStateUsing(fn (?string $state): string => match ($state) {
+                                'admin' => 'Administrador',
+                                'anfitrion' => 'Anfitrión',
+                                'centro_acopio' => 'Centro de acopio',
+                                default => $state ?? '—',
+                            }),
+                        \Filament\Infolists\Components\TextEntry::make('action')
+                            ->label('Acción')
+                            ->formatStateUsing(fn ($state): string => match (true) {
+                                $state instanceof ActivityAction => $state->label(),
+                                is_string($state) => ActivityAction::tryFrom($state)?->label() ?? $state,
+                                default => '—',
+                            }),
+                        \Filament\Infolists\Components\TextEntry::make('channel')
+                            ->label('Origen')
+                            ->formatStateUsing(fn ($state): string => match (true) {
+                                $state instanceof ActivityChannel => $state->label(),
+                                is_string($state) => ActivityChannel::tryFrom($state)?->label() ?? $state,
+                                default => '—',
+                            }),
+                        \Filament\Infolists\Components\TextEntry::make('subject_label')
+                            ->label('Referencia')
+                            ->state(fn (ActivityLog $record): string => $record->subjectLabel()),
                         \Filament\Infolists\Components\TextEntry::make('description')->label('Descripción')->columnSpanFull(),
                         \Filament\Infolists\Components\TextEntry::make('properties')
                             ->label('Datos')
-                            ->formatStateUsing(fn (?array $state): string => $state !== null
-                                ? json_encode($state, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE)
-                                : '—')
+                            ->state(fn (ActivityLog $record): ?string => self::formatPropertiesForDisplay($record->properties))
+                            ->placeholder('—')
                             ->columnSpanFull()
                             ->extraAttributes(['class' => 'font-mono text-xs whitespace-pre-wrap']),
                     ]),
@@ -170,5 +192,15 @@ class ActivityLogResource extends Resource
         return [
             'index' => Pages\ListActivityLogs::route('/'),
         ];
+    }
+
+    /** @param  array<string, mixed>|null  $properties */
+    public static function formatPropertiesForDisplay(?array $properties): ?string
+    {
+        if ($properties === null || $properties === []) {
+            return null;
+        }
+
+        return json_encode($properties, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) ?: null;
     }
 }
