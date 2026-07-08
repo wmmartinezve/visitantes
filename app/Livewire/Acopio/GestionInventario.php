@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Acopio;
 
 use App\Models\Inventario;
+use App\Services\ActivityLogService;
 use App\Support\InsumoCatalog;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -42,13 +43,15 @@ class GestionInventario extends Component
 
         InsumoCatalog::assertPair($validated['categoria'], $validated['subcategoria']);
 
-        Inventario::query()->create([
+        $item = Inventario::query()->create([
             'centro_acopio_id' => auth()->user()->centro_acopio_id,
             'categoria' => $validated['categoria'],
             'subcategoria' => $validated['subcategoria'],
             'cantidad' => $validated['cantidad'],
             'unidad_medida' => $validated['unidad_medida'],
         ]);
+
+        app(ActivityLogService::class)->created($item, 'Ítem agregado al inventario (web acopio)');
 
         $this->reset(['categoria', 'subcategoria', 'cantidad', 'unidad_medida']);
         $this->unidad_medida = 'unidad';
@@ -73,7 +76,13 @@ class GestionInventario extends Component
 
         $item = $this->findItem((int) $this->editandoId);
         $this->authorize('update', $item);
+
+        $logger = app(ActivityLogService::class);
+        $before = $logger->snapshot($item);
         $item->update(['cantidad' => $this->editCantidad]);
+        $item->refresh();
+        $diff = $logger->diff($before, $logger->snapshot($item));
+        $logger->updated($item, $diff['old'], $diff['new'], 'Cantidad actualizada (web acopio)');
 
         $this->cancelarEdicion();
 
@@ -89,6 +98,7 @@ class GestionInventario extends Component
     {
         $item = $this->findItem($id);
         $this->authorize('delete', $item);
+        app(ActivityLogService::class)->deleted($item);
         $item->delete();
 
         session()->flash('status', 'Ítem eliminado del inventario.');

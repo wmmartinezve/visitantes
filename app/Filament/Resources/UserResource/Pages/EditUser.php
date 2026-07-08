@@ -4,25 +4,41 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\UserResource\Pages;
 
+use App\Enums\ActivityAction;
+use App\Enums\ActivityChannel;
+use App\Filament\Concerns\LogsFilamentRecordActivity;
 use App\Filament\Resources\UserResource;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 use Illuminate\Database\Eloquent\Model;
 
 class EditUser extends EditRecord
 {
+    use LogsFilamentRecordActivity;
+
     protected static string $resource = UserResource::class;
+
+    protected bool $passwordWasChanged = false;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
+            Actions\DeleteAction::make()
+                ->after(fn () => $this->logFilamentDeleted($this->getRecord())),
         ];
+    }
+
+    protected function beforeSave(): void
+    {
+        $this->captureActivityBeforeSave($this->getRecord());
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
     {
+        $this->passwordWasChanged = filled($data['password'] ?? null);
+
         return CreateUser::normalizeRoleFields($data);
     }
 
@@ -48,5 +64,19 @@ class EditUser extends EditRecord
         $record->save();
 
         return $record;
+    }
+
+    protected function afterSave(): void
+    {
+        $this->logFilamentUpdated($this->getRecord());
+
+        if ($this->passwordWasChanged) {
+            app(ActivityLogService::class)->log(
+                ActivityAction::PasswordChanged,
+                $this->getRecord(),
+                'Contraseña actualizada desde panel admin',
+                channel: ActivityChannel::Admin,
+            );
+        }
     }
 }

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\InvitadoResource\Pages;
 
+use App\Filament\Concerns\LogsFilamentRecordActivity;
 use App\Filament\Resources\InvitadoResource;
 use Filament\Resources\Pages\CreateRecord;
 
 class CreateInvitado extends CreateRecord
 {
     use HandlesInvitadoFotoUpload;
+    use LogsFilamentRecordActivity;
 
     protected static string $resource = InvitadoResource::class;
 
@@ -26,6 +28,7 @@ class CreateInvitado extends CreateRecord
 
     protected function afterCreate(): void
     {
+        $this->logFilamentCreated($this->getRecord());
         $this->persistFotoReemplazo($this->getRecord());
     }
 }

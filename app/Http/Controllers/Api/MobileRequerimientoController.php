@@ -9,6 +9,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\MobileRequerimientoResource;
 use App\Models\Invitado;
 use App\Models\Requerimiento;
+use App\Services\ActivityLogService;
 use App\Support\InsumoCatalog;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -66,6 +67,8 @@ class MobileRequerimientoController extends Controller
             'cantidad' => $validated['cantidad'],
             'estatus' => RequerimientoEstatus::Pendiente,
         ]);
+
+        app(ActivityLogService::class)->created($requerimiento, 'Requerimiento creado (app móvil)');
 
         $requerimiento->load(['invitado', 'centroAcopio']);
 

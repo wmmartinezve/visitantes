@@ -4,7 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\InvitadoResource\Pages;
 
+use App\Enums\ActivityAction;
+use App\Enums\ActivityChannel;
 use App\Models\Invitado;
+use App\Services\ActivityLogService;
 use App\Support\InvitadoFotoStorage;
 use Illuminate\Support\Facades\Storage;
 
@@ -34,6 +37,17 @@ trait HandlesInvitadoFotoUpload
         $previous = $target->foto_ingreso;
 
         $target->update(['foto_ingreso' => $finalPath]);
+
+        app(ActivityLogService::class)->log(
+            ActivityAction::FotoAttached,
+            $target->fresh(),
+            'Foto testigo de ingreso (panel admin)',
+            [
+                'old' => ['foto_ingreso' => $previous],
+                'new' => ['foto_ingreso' => $finalPath],
+            ],
+            channel: ActivityChannel::Admin,
+        );
 
         if ($previous !== null && $previous !== $finalPath) {
             $disk = InvitadoFotoStorage::diskForPath($previous);

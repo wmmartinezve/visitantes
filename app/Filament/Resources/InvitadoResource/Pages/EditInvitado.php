@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\InvitadoResource\Pages;
 
+use App\Filament\Concerns\LogsFilamentRecordActivity;
 use App\Filament\Resources\InvitadoResource;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -11,16 +12,25 @@ use Filament\Resources\Pages\EditRecord;
 class EditInvitado extends EditRecord
 {
     use HandlesInvitadoFotoUpload;
+    use LogsFilamentRecordActivity;
 
     protected static string $resource = InvitadoResource::class;
 
     protected function getHeaderActions(): array
     {
         return [
-            Actions\DeleteAction::make(),
-            Actions\ForceDeleteAction::make(),
-            Actions\RestoreAction::make(),
+            Actions\DeleteAction::make()
+                ->after(fn () => $this->logFilamentDeleted($this->getRecord())),
+            Actions\ForceDeleteAction::make()
+                ->after(fn () => $this->logFilamentDeleted($this->getRecord(), force: true)),
+            Actions\RestoreAction::make()
+                ->after(fn () => $this->logFilamentRestored($this->getRecord())),
         ];
+    }
+
+    protected function beforeSave(): void
+    {
+        $this->captureActivityBeforeSave($this->getRecord());
     }
 
     protected function mutateFormDataBeforeSave(array $data): array
@@ -36,6 +46,7 @@ class EditInvitado extends EditRecord
 
     protected function afterSave(): void
     {
+        $this->logFilamentUpdated($this->getRecord());
         $this->persistFotoReemplazo($this->getRecord());
         $this->record->unsetRelation('jefeFamilia');
         $this->record->load('jefeFamilia');

@@ -5,8 +5,10 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\InvitadoEstatus;
+use App\Enums\ActivityAction;
 use App\Models\Invitado;
 use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Support\InvitadoFotoStorage;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
@@ -16,6 +18,10 @@ use InvalidArgumentException;
 
 class InvitadoRegistrationService
 {
+    public function __construct(
+        private readonly ActivityLogService $activityLog,
+    ) {}
+
     /**
      * @param  array<string, mixed>  $jefeData
      * @param  list<array<string, mixed>>  $familiares
@@ -34,10 +40,21 @@ class InvitadoRegistrationService
                 'jefe_familia_id' => null,
             ]);
 
+            $this->activityLog->created(
+                $jefe,
+                'Jefe de familia registrado',
+            );
+
             if ($foto !== null) {
-                $jefe->update([
-                    'foto_ingreso' => $this->storeFoto($foto, $jefe->id),
-                ]);
+                $path = $this->storeFoto($foto, $jefe->id);
+                $jefe->update(['foto_ingreso' => $path]);
+
+                $this->activityLog->log(
+                    ActivityAction::FotoAttached,
+                    $jefe->fresh(),
+                    'Foto testigo de ingreso',
+                    ['new' => ['foto_ingreso' => $path]],
+                );
             }
 
             foreach ($familiares as $familiar) {
@@ -45,7 +62,7 @@ class InvitadoRegistrationService
                     continue;
                 }
 
-                Invitado::query()->create([
+                $miembro = Invitado::query()->create([
                     'nombre' => $familiar['nombre'],
                     'apellido' => $familiar['apellido'],
                     'parentesco' => $familiar['parentesco'] ?? null,
@@ -56,6 +73,11 @@ class InvitadoRegistrationService
                     'estatus' => InvitadoEstatus::Activo,
                     'jefe_familia_id' => $jefe->id,
                 ]);
+
+                $this->activityLog->created(
+                    $miembro,
+                    'Familiar registrado',
+                );
             }
 
             return $jefe->fresh(['miembrosFamilia', 'refugio']);
@@ -73,6 +95,16 @@ class InvitadoRegistrationService
             $path = $this->storeFoto($foto, $jefe->id);
 
             $jefe->update(['foto_ingreso' => $path]);
+
+            $this->activityLog->log(
+                ActivityAction::FotoAttached,
+                $jefe->fresh(),
+                'Foto testigo de ingreso',
+                [
+                    'old' => ['foto_ingreso' => $previous],
+                    'new' => ['foto_ingreso' => $path],
+                ],
+            );
 
             if ($previous !== null && $previous !== $path) {
                 $disk = InvitadoFotoStorage::diskForPath($previous);

@@ -4,12 +4,14 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\ActivityChannel;
 use App\Enums\RequerimientoEstatus;
 use App\Models\Invitado;
 use App\Models\Inventario;
 use App\Models\OfflineSyncRecord;
 use App\Models\Requerimiento;
 use App\Models\User;
+use App\Support\ActivityLogContext;
 use App\Support\InsumoCatalog;
 use App\Support\WitnessPhotoDecoder;
 use Illuminate\Database\QueryException;
@@ -26,6 +28,7 @@ class OfflineSyncService
     public function __construct(
         private readonly InvitadoRegistrationService $invitadoRegistration,
         private readonly RequerimientoAsignacionService $requerimientoAsignacion,
+        private readonly ActivityLogService $activityLog,
     ) {}
 
     /**
@@ -34,41 +37,48 @@ class OfflineSyncService
      */
     public function sync(User $user, array $items): array
     {
-        $results = [];
-        $idMap = [];
+        return ActivityLogContext::using(
+            ActivityChannel::OfflineSync,
+            function () use ($user, $items): array {
+                $results = [];
+                $idMap = [];
 
-        foreach ($items as $item) {
-            $clientId = (string) ($item['client_id'] ?? '');
-            $type = (string) ($item['type'] ?? '');
-            $payload = (array) ($item['payload'] ?? []);
+                foreach ($items as $item) {
+                    $clientId = (string) ($item['client_id'] ?? '');
+                    ActivityLogContext::setClientId($clientId !== '' ? $clientId : null);
 
-            try {
-                $serverId = match ($type) {
-                    'invitado.registro' => $this->syncInvitadoRegistro($user, $payload, $clientId, $idMap),
-                    'requerimiento.create' => $this->syncRequerimientoCreate($user, $payload, $idMap),
-                    'inventario.create' => $this->syncInventarioCreate($user, $payload),
-                    'inventario.update_cantidad' => $this->syncInventarioUpdate($user, $payload),
-                    'entrega.marcar' => $this->syncEntregaMarcar($user, $payload),
-                    default => throw new RuntimeException("Tipo de sincronización desconocido: {$type}"),
-                };
+                    $type = (string) ($item['type'] ?? '');
+                    $payload = (array) ($item['payload'] ?? []);
 
-                $results[] = [
-                    'client_id' => $clientId,
-                    'status' => 'ok',
-                    'server_id' => $serverId,
-                ];
-            } catch (\Throwable $e) {
-                report($e);
+                    try {
+                        $serverId = match ($type) {
+                            'invitado.registro' => $this->syncInvitadoRegistro($user, $payload, $clientId, $idMap),
+                            'requerimiento.create' => $this->syncRequerimientoCreate($user, $payload, $idMap),
+                            'inventario.create' => $this->syncInventarioCreate($user, $payload),
+                            'inventario.update_cantidad' => $this->syncInventarioUpdate($user, $payload),
+                            'entrega.marcar' => $this->syncEntregaMarcar($user, $payload),
+                            default => throw new RuntimeException("Tipo de sincronización desconocido: {$type}"),
+                        };
 
-                $results[] = [
-                    'client_id' => $clientId,
-                    'status' => 'error',
-                    'error' => $this->syncErrorMessage($e),
-                ];
-            }
-        }
+                        $results[] = [
+                            'client_id' => $clientId,
+                            'status' => 'ok',
+                            'server_id' => $serverId,
+                        ];
+                    } catch (\Throwable $e) {
+                        report($e);
 
-        return $results;
+                        $results[] = [
+                            'client_id' => $clientId,
+                            'status' => 'error',
+                            'error' => $this->syncErrorMessage($e),
+                        ];
+                    }
+                }
+
+                return $results;
+            },
+        );
     }
 
     private function syncErrorMessage(\Throwable $e): string
@@ -238,6 +248,8 @@ class OfflineSyncService
             'estatus' => RequerimientoEstatus::Pendiente,
         ]);
 
+        $this->activityLog->created($req, 'Requerimiento creado (sync offline)');
+
         return $req->id;
     }
 
@@ -269,6 +281,8 @@ class OfflineSyncService
             'unidad_medida' => $validated['unidad_medida'],
         ]);
 
+        $this->activityLog->created($item, 'Ítem de inventario creado (sync offline)');
+
         return $item->id;
     }
 
@@ -291,7 +305,12 @@ class OfflineSyncService
             ->whereKey($validated['inventario_id'])
             ->firstOrFail();
 
+        $before = $this->activityLog->snapshot($item);
         $item->update(['cantidad' => $validated['cantidad']]);
+        $item->refresh();
+
+        $diff = $this->activityLog->diff($before, $this->activityLog->snapshot($item));
+        $this->activityLog->updated($item, $diff['old'], $diff['new'], 'Cantidad de inventario actualizada (sync offline)');
 
         return $item->id;
     }

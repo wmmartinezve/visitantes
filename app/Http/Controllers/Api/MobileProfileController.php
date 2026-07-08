@@ -6,6 +6,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MobileUserResource;
+use App\Enums\ActivityAction;
+use App\Services\ActivityLogService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
@@ -23,7 +25,18 @@ class MobileProfileController extends Controller
             'email' => ['required', 'email', 'max:255', Rule::unique('users', 'email')->ignore($user->id)],
         ]);
 
+        $before = app(ActivityLogService::class)->snapshot($user);
         $user->update($data);
+        $user->refresh();
+
+        $diff = app(ActivityLogService::class)->diff($before, app(ActivityLogService::class)->snapshot($user));
+        app(ActivityLogService::class)->log(
+            ActivityAction::ProfileUpdated,
+            $user,
+            'Perfil actualizado (app móvil)',
+            $diff,
+        );
+
         $user->load(['refugio', 'centroAcopio']);
 
         return new MobileUserResource($user);
@@ -36,9 +49,16 @@ class MobileProfileController extends Controller
             'password' => ['required', 'confirmed', Password::defaults()],
         ]);
 
-        $request->user()->update([
+        $user = $request->user();
+        $user->update([
             'password' => Hash::make($data['password']),
         ]);
+
+        app(ActivityLogService::class)->log(
+            ActivityAction::PasswordChanged,
+            $user,
+            'Contraseña actualizada (app móvil)',
+        );
 
         return response()->json([
             'message' => 'Contraseña actualizada correctamente.',

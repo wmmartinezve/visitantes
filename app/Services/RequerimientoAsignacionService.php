@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\RequerimientoEstatus;
+use App\Enums\ActivityAction;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Requerimiento;
@@ -17,6 +18,10 @@ use RuntimeException;
 
 class RequerimientoAsignacionService
 {
+    public function __construct(
+        private readonly ActivityLogService $activityLog,
+    ) {}
+
     /**
      * @return Collection<int, array{centro: CentroAcopio, inventario: Inventario, distancia_km: ?float, cantidad: int}>
      */
@@ -73,10 +78,23 @@ class RequerimientoAsignacionService
             throw new RuntimeException('El centro seleccionado no tiene stock suficiente para este ítem.');
         }
 
+        $before = $this->activityLog->snapshot($requerimiento);
+
         $requerimiento->update([
             'centro_acopio_id' => $centro->id,
             'estatus' => RequerimientoEstatus::Asignado,
         ]);
+
+        $requerimiento->refresh();
+
+        $diff = $this->activityLog->diff($before, $this->activityLog->snapshot($requerimiento));
+
+        $this->activityLog->log(
+            ActivityAction::Asignado,
+            $requerimiento,
+            'Requerimiento asignado a centro de acopio',
+            $diff,
+        );
 
         return $requerimiento->fresh(['centroAcopio', 'invitado']);
     }
@@ -105,11 +123,38 @@ class RequerimientoAsignacionService
                 throw new RuntimeException('Stock insuficiente para completar la entrega.');
             }
 
+            $cantidadAnterior = $inventario->cantidad;
+            $requerimientoBefore = $this->activityLog->snapshot($requerimiento);
+
             $inventario->decrement('cantidad', $requerimiento->cantidad);
 
             $requerimiento->update([
                 'estatus' => RequerimientoEstatus::Entregado,
             ]);
+
+            $requerimiento->refresh();
+            $inventario->refresh();
+
+            $this->activityLog->log(
+                ActivityAction::Entregado,
+                $requerimiento,
+                'Requerimiento marcado como entregado',
+                $this->activityLog->diff($requerimientoBefore, $this->activityLog->snapshot($requerimiento)),
+            );
+
+            $this->activityLog->log(
+                ActivityAction::StockDecremented,
+                $inventario,
+                'Inventario descontado por entrega',
+                [
+                    'old' => ['cantidad' => $cantidadAnterior],
+                    'new' => ['cantidad' => $inventario->cantidad],
+                    'meta' => [
+                        'requerimiento_id' => $requerimiento->id,
+                        'cantidad_entregada' => $requerimiento->cantidad,
+                    ],
+                ],
+            );
 
             return $requerimiento->fresh();
         });
