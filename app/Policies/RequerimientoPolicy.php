@@ -24,7 +24,7 @@ class RequerimientoPolicy
 
         if ($user->isAnfitrion()) {
             return $requerimiento->invitado !== null
-                && $user->refugio_id === $requerimiento->invitado->refugio_id;
+                && $user->hogar_solidario_id === $requerimiento->invitado->hogar_solidario_id;
         }
 
         if ($user->isCentroAcopio()) {
@@ -46,8 +46,8 @@ class RequerimientoPolicy
         }
 
         return $user->isAnfitrion()
-            && $user->refugio_id !== null
-            && $user->refugio_id === $invitado->refugio_id;
+            && $user->hogar_solidario_id !== null
+            && $user->hogar_solidario_id === $invitado->hogar_solidario_id;
     }
 
     public function assign(User $user, Requerimiento $requerimiento): bool

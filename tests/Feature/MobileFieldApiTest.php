@@ -9,13 +9,16 @@ use App\Enums\UserRole;
 use App\Http\Controllers\Api\MobileEntregaController;
 use App\Models\CentroAcopio;
 use App\Models\Invitado;
+use App\Models\Estado;
+use App\Models\Municipio;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InvitadoFotoStorage;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
+use Database\Seeders\VenezuelaEstadosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
@@ -27,6 +30,7 @@ class MobileFieldApiTest extends TestCase
 
     private function anfitrion(): User
     {
+        $this->seed(VenezuelaEstadosSeeder::class);
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $this->seed(DemoOperacionSeeder::class);
 
@@ -51,7 +55,7 @@ class MobileFieldApiTest extends TestCase
             'nombre' => 'Manuel',
             'apellido' => 'Rivas',
             'fecha_nacimiento' => '1978-01-01',
-            'refugio_id' => $anfitrion->refugio_id,
+            'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
             'estatus' => 'activo',
         ]);
 
@@ -72,7 +76,7 @@ class MobileFieldApiTest extends TestCase
             'nombre' => 'Sin',
             'apellido' => 'Foto',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $anfitrion->refugio_id,
+            'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
             'estatus' => 'activo',
         ]);
 
@@ -114,6 +118,7 @@ class MobileFieldApiTest extends TestCase
             'cedula' => 'V-55555555',
             'telefono' => '0414-5555555',
             'fecha_nacimiento' => '1992-04-10',
+            ...$this->procedenciaDemo(),
             'familiares' => [
                 [
                     'nombre' => 'Pedro',
@@ -132,7 +137,7 @@ class MobileFieldApiTest extends TestCase
         $this->assertDatabaseHas('invitados', [
             'nombre' => 'María',
             'apellido' => 'Online',
-            'refugio_id' => $anfitrion->refugio_id,
+            'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
         ]);
 
         $this->assertDatabaseHas('invitados', [
@@ -153,7 +158,7 @@ class MobileFieldApiTest extends TestCase
             'cedula' => 'V-11111111',
             'telefono' => '0414-1111111',
             'fecha_nacimiento' => '1985-06-15',
-            'refugio_id' => $anfitrion->refugio_id,
+            'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
             'estatus' => 'activo',
         ]);
 
@@ -162,7 +167,7 @@ class MobileFieldApiTest extends TestCase
             'apellido' => 'Lista',
             'parentesco' => 'Hijo(a)',
             'fecha_nacimiento' => '2015-03-01',
-            'refugio_id' => $anfitrion->refugio_id,
+            'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
             'jefe_familia_id' => $jefe->id,
             'estatus' => 'activo',
         ]);
@@ -189,7 +194,7 @@ class MobileFieldApiTest extends TestCase
         $anfitrion = $this->anfitrion();
         Sanctum::actingAs($anfitrion);
 
-        $invitado = Invitado::query()->where('refugio_id', $anfitrion->refugio_id)->firstOrFail();
+        $invitado = Invitado::query()->where('hogar_solidario_id', $anfitrion->hogar_solidario_id)->firstOrFail();
 
         $this->postJson('/api/mobile/requerimientos', [
             'invitado_id' => $invitado->id,
@@ -225,20 +230,20 @@ class MobileFieldApiTest extends TestCase
             'centro_acopio_id' => $centro->id,
         ]);
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio API',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario API',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
             'direccion_exacta' => 'PLC',
         ]);
 
-        $anfitrion = User::factory()->create(['rol' => UserRole::Anfitrion, 'refugio_id' => $refugio->id]);
+        $anfitrion = User::factory()->create(['rol' => UserRole::Anfitrion, 'hogar_solidario_id' => $refugio->id]);
         $invitado = Invitado::query()->create([
             'nombre' => 'Test',
             'apellido' => 'API',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 
@@ -266,8 +271,8 @@ class MobileFieldApiTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio API',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario API',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -278,7 +283,7 @@ class MobileFieldApiTest extends TestCase
             'nombre' => 'Test',
             'apellido' => 'API',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 

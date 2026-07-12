@@ -20,9 +20,14 @@ class Parroquia extends Model
         return $this->belongsTo(Municipio::class);
     }
 
-    public function refugios(): HasMany
+    public function comunas(): HasMany
     {
-        return $this->hasMany(Refugio::class);
+        return $this->hasMany(Comuna::class);
+    }
+
+    public function hogaresSolidarios(): HasMany
+    {
+        return $this->hasMany(HogarSolidario::class);
     }
 
     public function centrosAcopio(): HasMany

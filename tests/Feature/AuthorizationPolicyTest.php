@@ -10,7 +10,7 @@ use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
@@ -31,16 +31,16 @@ class AuthorizationPolicyTest extends TestCase
     {
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugioPropio = Refugio::query()->create([
-            'nombre' => 'Refugio Propio',
+        $refugioPropio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Propio',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.026,
             'longitud' => -69.256,
             'direccion_exacta' => 'Dir',
         ]);
 
-        $refugioAjeno = Refugio::query()->create([
-            'nombre' => 'Refugio Ajeno',
+        $refugioAjeno = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Ajeno',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.030,
             'longitud' => -69.260,
@@ -49,14 +49,14 @@ class AuthorizationPolicyTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugioPropio->id,
+            'hogar_solidario_id' => $refugioPropio->id,
         ]);
 
         $invitadoAjeno = Invitado::query()->create([
             'nombre' => 'Ajeno',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1980-01-01',
-            'refugio_id' => $refugioAjeno->id,
+            'hogar_solidario_id' => $refugioAjeno->id,
             'estatus' => 'activo',
         ]);
 
@@ -110,8 +110,8 @@ class AuthorizationPolicyTest extends TestCase
     {
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.026,
             'longitud' => -69.256,
@@ -145,13 +145,13 @@ class AuthorizationPolicyTest extends TestCase
             'nombre' => 'Ana',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 
         $requerimientoAjeno = Requerimiento::query()->create([
             'invitado_id' => $invitado->id,
-            'anfitrion_id' => User::factory()->create(['rol' => UserRole::Anfitrion, 'refugio_id' => $refugio->id])->id,
+            'anfitrion_id' => User::factory()->create(['rol' => UserRole::Anfitrion, 'hogar_solidario_id' => $refugio->id])->id,
             'item_solicitado' => 'Colchonetas',
             'cantidad' => 2,
             'estatus' => RequerimientoEstatus::Asignado,
@@ -167,8 +167,8 @@ class AuthorizationPolicyTest extends TestCase
     {
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.026,
             'longitud' => -69.256,
@@ -181,13 +181,13 @@ class AuthorizationPolicyTest extends TestCase
             'nombre' => 'Ana',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 
         $requerimiento = Requerimiento::query()->create([
             'invitado_id' => $invitado->id,
-            'anfitrion_id' => User::factory()->create(['rol' => UserRole::Anfitrion, 'refugio_id' => $refugio->id])->id,
+            'anfitrion_id' => User::factory()->create(['rol' => UserRole::Anfitrion, 'hogar_solidario_id' => $refugio->id])->id,
             'item_solicitado' => 'Agua',
             'cantidad' => 1,
             'estatus' => RequerimientoEstatus::Pendiente,

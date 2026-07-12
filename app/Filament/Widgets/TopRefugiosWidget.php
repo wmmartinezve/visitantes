@@ -4,7 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Widgets;
 
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Support\OperacionFiltros;
 use Filament\Tables;
 use Filament\Tables\Table;
@@ -26,7 +26,7 @@ class TopRefugiosWidget extends BaseWidget
 
         return $table
             ->query(function () use ($filtros): Builder {
-                return Refugio::query()
+                return HogarSolidario::query()
                     ->when($filtros->refugioId, fn (Builder $q) => $q->whereKey($filtros->refugioId))
                     ->when($filtros->parroquiaId, fn (Builder $q) => $q->where('parroquia_id', $filtros->parroquiaId))
                     ->when($filtros->municipioId, fn (Builder $q) => $q->whereHas(
@@ -39,7 +39,7 @@ class TopRefugiosWidget extends BaseWidget
             })
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')
-                    ->label('Refugio'),
+                    ->label('HogarSolidario'),
                 Tables\Columns\TextColumn::make('parroquia.nombre')
                     ->label('Parroquia'),
                 Tables\Columns\TextColumn::make('activos_count')

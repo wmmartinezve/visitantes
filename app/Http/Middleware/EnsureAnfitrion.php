@@ -19,7 +19,7 @@ class EnsureAnfitrion
             return redirect()->route('anfitrion.login');
         }
 
-        if ($user->rol !== UserRole::Anfitrion || $user->refugio_id === null) {
+        if ($user->rol !== UserRole::Anfitrion || $user->hogar_solidario_id === null) {
             abort(403, 'Acceso restringido a anfitriones con refugio asignado.');
         }
 

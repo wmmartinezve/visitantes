@@ -22,12 +22,18 @@ class MobileUserResource extends JsonResource
             'email' => $this->email,
             'rol' => $this->rol->value,
             'rol_label' => $this->rol->label(),
-            'refugio_id' => $this->refugio_id,
+            'hogar_solidario_id' => $this->hogar_solidario_id,
+            'refugio_id' => $this->hogar_solidario_id,
             'centro_acopio_id' => $this->centro_acopio_id,
-            'refugio' => $this->whenLoaded('refugio', fn () => [
-                'id' => $this->refugio?->id,
-                'nombre' => $this->refugio?->nombre,
-                'direccion_exacta' => $this->refugio?->direccion_exacta,
+            'hogar_solidario' => $this->whenLoaded('hogarSolidario', fn () => [
+                'id' => $this->hogarSolidario?->id,
+                'nombre' => $this->hogarSolidario?->nombre,
+                'direccion_exacta' => $this->hogarSolidario?->direccion_exacta,
+            ]),
+            'refugio' => $this->whenLoaded('hogarSolidario', fn () => [
+                'id' => $this->hogarSolidario?->id,
+                'nombre' => $this->hogarSolidario?->nombre,
+                'direccion_exacta' => $this->hogarSolidario?->direccion_exacta,
             ]),
             'centro_acopio' => $this->whenLoaded('centroAcopio', fn () => new MobileCentroAcopioResource($this->centroAcopio)),
         ];

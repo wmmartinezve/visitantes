@@ -29,7 +29,7 @@ class MobileRequerimientoController extends Controller
             ->latest();
 
         if ($user->isAnfitrion()) {
-            $query->whereHas('invitado', fn ($q) => $q->where('refugio_id', $user->refugio_id));
+            $query->whereHas('invitado', fn ($q) => $q->where('hogar_solidario_id', $user->hogar_solidario_id));
         } elseif ($user->isCentroAcopio()) {
             $query->where('centro_acopio_id', $user->centro_acopio_id);
         }

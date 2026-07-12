@@ -7,7 +7,7 @@ namespace App\Filament\Resources;
 use App\Enums\UserRole;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\CentroAcopio;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -61,9 +61,9 @@ class UserResource extends Resource
                 ->default(UserRole::Admin->value)
                 ->required()
                 ->live(),
-            Forms\Components\Select::make('refugio_id')
-                ->label('Refugio asignado')
-                ->options(fn (): array => Refugio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
+            Forms\Components\Select::make('hogar_solidario_id')
+                ->label('HogarSolidario asignado')
+                ->options(fn (): array => HogarSolidario::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
                 ->searchable()
                 ->visible(fn (Get $get): bool => $get('rol') === UserRole::Anfitrion->value)
                 ->required(fn (Get $get): bool => $get('rol') === UserRole::Anfitrion->value),
@@ -91,7 +91,7 @@ class UserResource extends Resource
                     ->badge()
                     ->formatStateUsing(fn (?UserRole $state): string => $state?->label() ?? '—'),
                 Tables\Columns\TextColumn::make('refugio.nombre')
-                    ->label('Refugio')
+                    ->label('HogarSolidario')
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('centroAcopio.nombre')
                     ->label('Centro de acopio')

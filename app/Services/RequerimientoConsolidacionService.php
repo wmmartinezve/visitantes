@@ -7,7 +7,7 @@ namespace App\Services;
 use App\Enums\RequerimientoEstatus;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Support\GeoDistance;
 use App\Support\InsumoCatalog;
@@ -22,7 +22,7 @@ class RequerimientoConsolidacionService
      * Agrupa requerimientos por refugio + ítem para planificar envíos consolidados.
      *
      * @return Collection<int, array{
-     *     refugio_id: int,
+     *     hogar_solidario_id: int,
      *     refugio_nombre: string,
      *     parroquia_nombre: string|null,
      *     categoria: string|null,
@@ -42,7 +42,7 @@ class RequerimientoConsolidacionService
             ->with(['invitado.refugio.parroquia'])
             ->where('estatus', $estatus)
             ->when($refugioId !== null, function (Builder $query) use ($refugioId): void {
-                $query->whereHas('invitado', fn (Builder $q) => $q->where('refugio_id', $refugioId));
+                $query->whereHas('invitado', fn (Builder $q) => $q->where('hogar_solidario_id', $refugioId));
             })
             ->orderBy('id')
             ->get()
@@ -50,7 +50,7 @@ class RequerimientoConsolidacionService
 
         return $requerimientos
             ->groupBy(function (Requerimiento $requerimiento): string {
-                $refugioId = (int) $requerimiento->invitado->refugio_id;
+                $refugioId = (int) $requerimiento->invitado->hogar_solidario_id;
 
                 return implode('|', [
                     (string) $refugioId,
@@ -64,7 +64,7 @@ class RequerimientoConsolidacionService
                 $refugio = $primero->invitado->refugio;
 
                 return [
-                    'refugio_id' => (int) $refugio->id,
+                    'hogar_solidario_id' => (int) $refugio->id,
                     'refugio_nombre' => $refugio->nombre,
                     'parroquia_nombre' => $refugio->parroquia?->nombre,
                     'categoria' => $primero->categoria,

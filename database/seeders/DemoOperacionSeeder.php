@@ -7,11 +7,13 @@ namespace Database\Seeders;
 use App\Enums\InvitadoEstatus;
 use App\Enums\RequerimientoEstatus;
 use App\Enums\UserRole;
+use App\Enums\TipoViviendaHogar;
 use App\Models\CentroAcopio;
+use App\Models\Comuna;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InsumoCatalog;
@@ -26,8 +28,8 @@ class DemoOperacionSeeder extends Seeder
             return;
         }
 
-        $refugioPlc = $this->refugio(
-            'Refugio Comunal Puerto La Cruz Centro',
+        $refugioPlc = $this->hogarSolidario(
+            'Hogar Solidario Puerto La Cruz Centro',
             $plc,
             10.21380000,
             -64.63280000,
@@ -50,7 +52,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Anfitrión Demo (Puerto La Cruz)',
                 'password' => 'password',
                 'rol' => UserRole::Anfitrion,
-                'refugio_id' => $refugioPlc->id,
+                'hogar_solidario_id' => $refugioPlc->id,
                 'centro_acopio_id' => null,
             ],
         );
@@ -61,7 +63,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Operador Acopio Demo',
                 'password' => 'password',
                 'rol' => UserRole::CentroAcopio,
-                'refugio_id' => null,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => $centroPlc->id,
             ],
         );
@@ -70,7 +72,7 @@ class DemoOperacionSeeder extends Seeder
             [
                 'nombre' => 'Carlos',
                 'apellido' => 'Demo',
-                'refugio_id' => $refugioPlc->id,
+                'hogar_solidario_id' => $refugioPlc->id,
             ],
             [
                 'cedula' => 'V-12345678',
@@ -109,8 +111,8 @@ class DemoOperacionSeeder extends Seeder
             return;
         }
 
-        $refugio = $this->refugio(
-            'Refugio Comunal Barcelona Norte',
+        $refugio = $this->hogarSolidario(
+            'Hogar Solidario Barcelona Norte',
             $parroquia,
             10.13640000,
             -64.68640000,
@@ -155,7 +157,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Anfitrión Demo (Barcelona)',
                 'password' => 'password',
                 'rol' => UserRole::Anfitrion,
-                'refugio_id' => $refugio->id,
+                'hogar_solidario_id' => $refugio->id,
                 'centro_acopio_id' => null,
             ],
         );
@@ -164,7 +166,7 @@ class DemoOperacionSeeder extends Seeder
             [
                 'nombre' => 'María',
                 'apellido' => 'Rivas',
-                'refugio_id' => $refugio->id,
+                'hogar_solidario_id' => $refugio->id,
             ],
             [
                 'cedula' => 'V-87654321',
@@ -199,8 +201,8 @@ class DemoOperacionSeeder extends Seeder
             return;
         }
 
-        $refugio = $this->refugio(
-            'Refugio Comunal El Tigre Sur',
+        $refugio = $this->hogarSolidario(
+            'Hogar Solidario El Tigre Sur',
             $parroquia,
             8.88920000,
             -64.24560000,
@@ -233,7 +235,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Anfitrión Demo (El Tigre)',
                 'password' => 'password',
                 'rol' => UserRole::Anfitrion,
-                'refugio_id' => $refugio->id,
+                'hogar_solidario_id' => $refugio->id,
                 'centro_acopio_id' => null,
             ],
         );
@@ -244,7 +246,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Operador Acopio El Tigre',
                 'password' => 'password',
                 'rol' => UserRole::CentroAcopio,
-                'refugio_id' => null,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => $centro->id,
             ],
         );
@@ -257,8 +259,8 @@ class DemoOperacionSeeder extends Seeder
             return;
         }
 
-        $refugio = $this->refugio(
-            'Refugio Comunal Lechería Costa',
+        $refugio = $this->hogarSolidario(
+            'Hogar Solidario Lechería Costa',
             $parroquia,
             10.18530000,
             -64.67920000,
@@ -303,12 +305,24 @@ class DemoOperacionSeeder extends Seeder
         return Parroquia::query()->where('nombre', $nombre)->first();
     }
 
-    private function refugio(string $nombre, Parroquia $parroquia, float $lat, float $lng, string $direccion): Refugio
+    private function hogarSolidario(string $nombre, Parroquia $parroquia, float $lat, float $lng, string $direccion): HogarSolidario
     {
-        return Refugio::query()->firstOrCreate(
+        $comuna = Comuna::query()->firstOrCreate(
+            ['parroquia_id' => $parroquia->id, 'nombre' => 'Comuna demo '.$parroquia->nombre],
+        );
+
+        return HogarSolidario::query()->firstOrCreate(
             ['nombre' => $nombre],
             [
                 'parroquia_id' => $parroquia->id,
+                'comuna_id' => $comuna->id,
+                'tipo_vivienda' => TipoViviendaHogar::Casa,
+                'responsable_nombre' => 'Responsable demo',
+                'responsable_cedula' => 'V-10000000',
+                'responsable_telefono' => '0414-0000000',
+                'habitantes' => [
+                    ['nombre' => 'María Demo', 'parentesco' => 'Cónyuge'],
+                ],
                 'latitud' => $lat,
                 'longitud' => $lng,
                 'direccion_exacta' => $direccion,

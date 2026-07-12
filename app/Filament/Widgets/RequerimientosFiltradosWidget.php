@@ -36,7 +36,7 @@ class RequerimientosFiltradosWidget extends BaseWidget
                         }
 
                         if ($filtros->refugioId) {
-                            $query->whereHas('invitado', fn (Builder $q) => $q->where('refugio_id', $filtros->refugioId));
+                            $query->whereHas('invitado', fn (Builder $q) => $q->where('hogar_solidario_id', $filtros->refugioId));
                         } elseif ($filtros->parroquiaId) {
                             $query->whereHas('invitado.refugio', fn (Builder $q) => $q->where('parroquia_id', $filtros->parroquiaId));
                         } elseif ($filtros->municipioId) {
@@ -52,7 +52,7 @@ class RequerimientosFiltradosWidget extends BaseWidget
                     ->label('Invitado')
                     ->formatStateUsing(fn ($state, Requerimiento $record): string => $record->invitado?->nombreCompleto() ?? '—'),
                 Tables\Columns\TextColumn::make('invitado.refugio.nombre')
-                    ->label('Refugio'),
+                    ->label('HogarSolidario'),
                 Tables\Columns\TextColumn::make('item_solicitado')
                     ->label('Ítem'),
                 Tables\Columns\TextColumn::make('cantidad')

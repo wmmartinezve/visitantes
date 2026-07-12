@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Filament\Resources;
 
 use App\Enums\InvitadoEstatus;
+use App\Enums\SituacionJefeFamilia;
+use App\Filament\Support\ProcedenciaSelectFields;
 use App\Filament\Resources\InvitadoResource\Pages;
 use App\Filament\Resources\InvitadoResource\RelationManagers\MiembrosFamiliaRelationManager;
 use App\Models\Invitado;
@@ -45,7 +47,7 @@ class InvitadoResource extends Resource
     {
         /** @var Invitado $record */
         return [
-            'Refugio' => $record->refugio?->nombre ?? '—',
+            'Hogar solidario' => $record->hogarSolidario?->nombre ?? '—',
             'Estatus' => $record->estatus?->label() ?? '—',
         ];
     }
@@ -108,11 +110,31 @@ class InvitadoResource extends Resource
                 ])
                 ->columns(2),
 
+            Forms\Components\Section::make('Procedencia y situación laboral')
+                ->schema([
+                    ...ProcedenciaSelectFields::make(),
+                    Forms\Components\Select::make('situacion_jefe')
+                        ->label('Situación del jefe de familia')
+                        ->options(collect(SituacionJefeFamilia::cases())->mapWithKeys(
+                            fn (SituacionJefeFamilia $s): array => [$s->value => $s->label()]
+                        ))
+                        ->visible(fn (?Invitado $record, Get $get): bool => $record === null
+                            ? ($get('es_jefe_familia') ?? true)
+                            : $record->esJefeDeFamilia())
+                        ->required(fn (?Invitado $record, Get $get): bool => $record === null
+                            ? ($get('es_jefe_familia') ?? true)
+                            : $record->esJefeDeFamilia()),
+                ])
+                ->columns(2)
+                ->visible(fn (?Invitado $record, Get $get): bool => $record === null
+                    ? ($get('es_jefe_familia') ?? true)
+                    : $record->esJefeDeFamilia()),
+
             Forms\Components\Section::make('Ubicación y familia')
                 ->schema([
-                    Forms\Components\Select::make('refugio_id')
-                        ->label('Refugio')
-                        ->relationship('refugio', 'nombre')
+                    Forms\Components\Select::make('hogar_solidario_id')
+                        ->label('Hogar solidario')
+                        ->relationship('hogarSolidario', 'nombre')
                         ->searchable()
                         ->preload()
                         ->required()
@@ -128,14 +150,14 @@ class InvitadoResource extends Resource
                     Forms\Components\Select::make('jefe_familia_id')
                         ->label('Jefe de familia')
                         ->options(function (Get $get): array {
-                            $refugioId = $get('refugio_id');
+                            $refugioId = $get('hogar_solidario_id');
 
                             if (! $refugioId) {
                                 return [];
                             }
 
                             return Invitado::query()
-                                ->where('refugio_id', $refugioId)
+                                ->where('hogar_solidario_id', $refugioId)
                                 ->whereNull('jefe_familia_id')
                                 ->orderBy('apellido')
                                 ->get()
@@ -176,7 +198,7 @@ class InvitadoResource extends Resource
                     ->label('Cédula')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('refugio.nombre')
-                    ->label('Refugio')
+                    ->label('HogarSolidario')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('estatus')
                     ->label('Estatus')
@@ -193,8 +215,8 @@ class InvitadoResource extends Resource
                     ->sortable(),
             ])
             ->filters([
-                Tables\Filters\SelectFilter::make('refugio_id')
-                    ->label('Refugio')
+                Tables\Filters\SelectFilter::make('hogar_solidario_id')
+                    ->label('HogarSolidario')
                     ->relationship('refugio', 'nombre'),
                 Tables\Filters\SelectFilter::make('estatus')
                     ->label('Estatus')

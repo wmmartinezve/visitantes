@@ -10,7 +10,7 @@ use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Services\RequerimientoAsignacionService;
@@ -80,8 +80,8 @@ class AcopioAppTest extends TestCase
         $operador = $this->createOperador();
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Test',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Test',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -90,14 +90,14 @@ class AcopioAppTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Ana',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 
@@ -143,8 +143,8 @@ class AcopioAppTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Cerca',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Cerca',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -191,13 +191,13 @@ class AcopioAppTest extends TestCase
             'nombre' => 'Pedro',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1985-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 
         $requerimiento = Requerimiento::query()->create([
             'invitado_id' => $invitado->id,
-            'anfitrion_id' => User::factory()->create(['rol' => UserRole::Anfitrion, 'refugio_id' => $refugio->id])->id,
+            'anfitrion_id' => User::factory()->create(['rol' => UserRole::Anfitrion, 'hogar_solidario_id' => $refugio->id])->id,
             'categoria' => 'Alimentos y bebidas',
             'subcategoria' => 'Agua embotellada',
             'item_solicitado' => 'Alimentos y bebidas · Agua embotellada',

@@ -10,7 +10,7 @@ use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Services\RequerimientoAsignacionService;
@@ -42,8 +42,8 @@ class SecurityHardeningTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Rate Limit',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Rate Limit',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -53,7 +53,7 @@ class SecurityHardeningTest extends TestCase
         User::factory()->create([
             'email' => 'attacker@example.com',
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         for ($i = 0; $i < 5; $i++) {
@@ -77,8 +77,8 @@ class SecurityHardeningTest extends TestCase
         Storage::fake(InvitadoFotoStorage::privateDisk());
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Foto',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Foto',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -92,7 +92,7 @@ class SecurityHardeningTest extends TestCase
             'nombre' => 'Foto',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
             'foto_ingreso' => $path,
         ]);
@@ -119,16 +119,16 @@ class SecurityHardeningTest extends TestCase
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugioA = Refugio::query()->create([
-            'nombre' => 'Refugio A',
+        $refugioA = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario A',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
             'direccion_exacta' => 'A',
         ]);
 
-        $refugioB = Refugio::query()->create([
-            'nombre' => 'Refugio B',
+        $refugioB = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario B',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.220,
             'longitud' => -64.640,
@@ -140,16 +140,16 @@ class SecurityHardeningTest extends TestCase
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Ajeno',
-            'apellido' => 'Refugio',
+            'apellido' => 'HogarSolidario',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugioB->id,
+            'hogar_solidario_id' => $refugioB->id,
             'estatus' => 'activo',
             'foto_ingreso' => $path,
         ]);
 
         $anfitrionA = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugioA->id,
+            'hogar_solidario_id' => $refugioA->id,
         ]);
 
         Sanctum::actingAs($anfitrionA);
@@ -165,8 +165,8 @@ class SecurityHardeningTest extends TestCase
         Storage::fake(InvitadoFotoStorage::privateDisk());
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Propio',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Propio',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -178,16 +178,16 @@ class SecurityHardeningTest extends TestCase
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Propio',
-            'apellido' => 'Refugio',
+            'apellido' => 'HogarSolidario',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
             'foto_ingreso' => $path,
         ]);
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         Sanctum::actingAs($anfitrion);
@@ -211,8 +211,8 @@ class SecurityHardeningTest extends TestCase
             'activo' => true,
         ]);
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Idempotente',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Idempotente',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -221,14 +221,14 @@ class SecurityHardeningTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Entrega',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 

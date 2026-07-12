@@ -7,7 +7,7 @@ namespace App\Support;
 use App\Models\CentroAcopio;
 use App\Models\Municipio;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use Carbon\CarbonImmutable;
 
 final readonly class OperacionFiltros
@@ -38,7 +38,7 @@ final readonly class OperacionFiltros
             hasta: $hasta->endOfDay(),
             municipioId: self::parseInt($raw['municipio_id'] ?? null),
             parroquiaId: self::parseInt($raw['parroquia_id'] ?? null),
-            refugioId: self::parseInt($raw['refugio_id'] ?? null),
+            refugioId: self::parseInt($raw['hogar_solidario_id'] ?? null),
             centroAcopioId: self::parseInt($raw['centro_acopio_id'] ?? null),
         );
     }
@@ -53,7 +53,7 @@ final readonly class OperacionFiltros
             'hasta' => $this->hasta->toDateString(),
             'municipio_id' => $this->municipioId,
             'parroquia_id' => $this->parroquiaId,
-            'refugio_id' => $this->refugioId,
+            'hogar_solidario_id' => $this->refugioId,
             'centro_acopio_id' => $this->centroAcopioId,
         ];
     }
@@ -76,7 +76,7 @@ final readonly class OperacionFiltros
         }
 
         if ($this->refugioId) {
-            $etiquetas[] = 'Refugio: '.(Refugio::query()->find($this->refugioId)?->nombre ?? '—');
+            $etiquetas[] = 'HogarSolidario: '.(HogarSolidario::query()->find($this->refugioId)?->nombre ?? '—');
         }
 
         if ($this->centroAcopioId) {

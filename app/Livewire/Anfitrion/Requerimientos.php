@@ -18,11 +18,11 @@ class Requerimientos extends Component
     {
         $this->authorize('viewAny', Requerimiento::class);
 
-        $refugioId = auth()->user()->refugio_id;
+        $refugioId = auth()->user()->hogar_solidario_id;
 
         $query = Requerimiento::query()
             ->with(['invitado', 'centroAcopio'])
-            ->whereHas('invitado', fn ($q) => $q->where('refugio_id', $refugioId))
+            ->whereHas('invitado', fn ($q) => $q->where('hogar_solidario_id', $refugioId))
             ->latest();
 
         if ($this->filtro !== 'todos') {
@@ -35,15 +35,15 @@ class Requerimientos extends Component
             'requerimientos' => $requerimientos,
             'conteos' => [
                 'pendiente' => Requerimiento::query()
-                    ->whereHas('invitado', fn ($q) => $q->where('refugio_id', $refugioId))
+                    ->whereHas('invitado', fn ($q) => $q->where('hogar_solidario_id', $refugioId))
                     ->where('estatus', RequerimientoEstatus::Pendiente)
                     ->count(),
                 'asignado' => Requerimiento::query()
-                    ->whereHas('invitado', fn ($q) => $q->where('refugio_id', $refugioId))
+                    ->whereHas('invitado', fn ($q) => $q->where('hogar_solidario_id', $refugioId))
                     ->where('estatus', RequerimientoEstatus::Asignado)
                     ->count(),
                 'entregado' => Requerimiento::query()
-                    ->whereHas('invitado', fn ($q) => $q->where('refugio_id', $refugioId))
+                    ->whereHas('invitado', fn ($q) => $q->where('hogar_solidario_id', $refugioId))
                     ->where('estatus', RequerimientoEstatus::Entregado)
                     ->count(),
             ],

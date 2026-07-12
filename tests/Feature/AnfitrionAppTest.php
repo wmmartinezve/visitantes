@@ -7,7 +7,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\User;
 use App\Services\InvitadoRegistrationService;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
@@ -25,8 +25,8 @@ class AnfitrionAppTest extends TestCase
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Test',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Test',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -35,7 +35,7 @@ class AnfitrionAppTest extends TestCase
 
         return User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
     }
 
@@ -72,7 +72,7 @@ class AnfitrionAppTest extends TestCase
         $this->assertDatabaseHas('invitados', [
             'nombre' => 'María',
             'apellido' => 'Pérez',
-            'refugio_id' => $anfitrion->refugio_id,
+            'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
         ]);
 
         $jefe = Invitado::query()->where('nombre', 'María')->firstOrFail();
@@ -89,7 +89,7 @@ class AnfitrionAppTest extends TestCase
         $anfitrion = $this->createAnfitrion();
 
         $otraParroquia = Parroquia::query()->where('nombre', '!=', 'Puerto La Cruz')->firstOrFail();
-        $otroRefugio = Refugio::query()->create([
+        $otroRefugio = HogarSolidario::query()->create([
             'nombre' => 'Otro refugio',
             'parroquia_id' => $otraParroquia->id,
             'latitud' => 10.0,
@@ -101,7 +101,7 @@ class AnfitrionAppTest extends TestCase
             'nombre' => 'Ajeno',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1980-01-01',
-            'refugio_id' => $otroRefugio->id,
+            'hogar_solidario_id' => $otroRefugio->id,
             'estatus' => 'activo',
         ]);
 
@@ -121,8 +121,9 @@ class AnfitrionAppTest extends TestCase
             'cedula' => 'V123',
             'telefono' => '0414',
             'fecha_nacimiento' => '1988-02-02',
+            ...$this->procedenciaDemo(),
         ], null, []);
 
-        $this->assertSame($anfitrion->refugio_id, $jefe->refugio_id);
+        $this->assertSame($anfitrion->hogar_solidario_id, $jefe->hogar_solidario_id);
     }
 }

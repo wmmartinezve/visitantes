@@ -9,7 +9,7 @@ use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\User;
 use App\Support\InvitadoFotoStorage;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
@@ -76,8 +76,8 @@ class OfflineSyncTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Offline',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Offline',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -86,7 +86,7 @@ class OfflineSyncTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $clientId = 'offline-client-1';
@@ -109,6 +109,7 @@ class OfflineSyncTest extends TestCase
                             'cedula' => 'V-99999999',
                             'telefono' => '0414-0000000',
                             'fecha_nacimiento' => '1990-05-10',
+                            ...$this->procedenciaDemo(),
                             'familiares' => [
                                 [
                                     'nombre' => 'Ana',
@@ -131,7 +132,7 @@ class OfflineSyncTest extends TestCase
         $this->assertDatabaseHas('invitados', [
             'nombre' => 'Juan',
             'apellido' => 'Offline',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $this->assertDatabaseHas('invitados', [
@@ -145,8 +146,8 @@ class OfflineSyncTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Idempotente',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Idempotente',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -155,7 +156,7 @@ class OfflineSyncTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $clientId = 'offline-client-dup';
@@ -169,6 +170,7 @@ class OfflineSyncTest extends TestCase
                         'apellido' => 'Unico',
                         'fecha_nacimiento' => '1990-01-01',
                         'familiares' => [],
+                        ...$this->procedenciaDemo(),
                     ],
                 ],
             ],
@@ -198,8 +200,8 @@ class OfflineSyncTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Storage',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Storage',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -208,7 +210,7 @@ class OfflineSyncTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $fotoBase64 = base64_encode(
@@ -229,6 +231,7 @@ class OfflineSyncTest extends TestCase
                             'apellido' => 'Storage',
                             'fecha_nacimiento' => '1990-05-10',
                             'familiares' => [],
+                            ...$this->procedenciaDemo(),
                             'foto_base64' => 'data:image/jpeg;base64,'.$fotoBase64,
                             'foto_mime' => 'image/jpeg',
                         ],
@@ -251,8 +254,8 @@ class OfflineSyncTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Sync',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Sync',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -261,7 +264,7 @@ class OfflineSyncTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $invitadoClientId = 'inv-offline-1';
@@ -277,6 +280,7 @@ class OfflineSyncTest extends TestCase
                             'apellido' => 'Sync',
                             'fecha_nacimiento' => '1988-01-01',
                             'familiares' => [],
+                            ...$this->procedenciaDemo(),
                         ],
                     ],
                     [

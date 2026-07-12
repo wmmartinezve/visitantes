@@ -1,6 +1,6 @@
 # Visitantes — Prompt Maestro
 
-> **Última actualización:** 2026-07-06 (3 entidades · ámbito Anzoátegui)  
+> **Última actualización:** 2026-07-12 (Hogares Solidarios · procedencia INE)  
 > **Ámbito territorial:** estado **Anzoátegui**, Venezuela  
 > **Estado general:** 🟡 Fase 8 — App Flutter móvil (reemplaza Livewire/PWA de campo)  
 > **Documento vivo:** actualiza checkboxes, fechas y notas al cerrar cada tarea.  
@@ -41,7 +41,7 @@ Actúa como desarrollador **Full-Stack Senior** experto en:
 
 ## 2. Visión del producto
 
-**Sistema de Asistencia y Gestión de Invitados** para contingencias en Venezuela. Permite registrar ciudadanos bajo atención en refugios, gestionar inventarios en centros de acopio y emparejar requerimientos de insumos con existencias disponibles.
+**Sistema de Asistencia y Gestión de Invitados** para contingencias en Venezuela. Permite registrar ciudadanos bajo atención en **hogares solidarios** (familiares o amigos que los reciben), gestionar inventarios en centros de acopio y emparejar requerimientos de insumos con existencias disponibles.
 
 ### 2.1 Las tres entidades del sistema
 
@@ -49,27 +49,27 @@ El ecosistema se compone de **tres actores operativos** con interfaces y respons
 
 | # | Entidad | Interfaz | Responsabilidad principal |
 |---|---------|----------|---------------------------|
-| **1** | **Panel administrativo** | Filament v3 (web) | Gestión central de todo: catálogo geográfico, refugios, centros de acopio, invitados, inventarios globales, asignación de requerimientos, reportes y usuarios |
+| **1** | **Panel administrativo** | Filament v3 (web) | Gestión central de todo: catálogo geográfico, hogares solidarios, centros de acopio, invitados, inventarios globales, asignación de requerimientos, reportes y usuarios |
 | **2** | **Centros de acopio** | App móvil/responsiva (Livewire) | Operación en almacén: registrar y actualizar inventario del centro, consultar existencias, recibir asignaciones. El centro debe registrarse con **municipio, parroquia, dirección y georreferenciación** |
-| **3** | **Anfitrión** | App móvil/responsiva (Livewire) | Operación en refugio: registrar **Invitados** (y núcleo familiar), dar seguimiento a hospedados y **gestionar sus requerimientos** (agua, ropa, alimentos, etc.) |
+| **3** | **Anfitrión** | App móvil/responsiva (Livewire) | Operación en hogar solidario: registrar **Invitados** (y núcleo familiar), dar seguimiento a hospedados y **gestionar sus requerimientos** (agua, ropa, alimentos, etc.) |
 
 **Flujo operativo resumido:**
 
 ```
-Anfitrión (refugio) registra Invitado → crea Requerimiento
+Anfitrión (hogar solidario) registra Invitado → crea Requerimiento
         ↓
 Panel administrativo empareja Requerimiento con Centro de acopio (por stock y proximidad)
         ↓
 Centro de acopio despacha / actualiza inventario desde su app
 ```
 
-> Un **anfitrión** está vinculado a un **refugio** concreto. Un operador de **centro de acopio** está vinculado a un **centro de acopio** concreto. El **administrador** no opera en campo; gobierna desde el panel.
+> Un **anfitrión** está vinculado a un **hogar solidario** concreto. Un operador de **centro de acopio** está vinculado a un **centro de acopio** concreto. El **administrador** no opera en campo; gobierna desde el panel.
 
 ### 2.2 Enfoque arquitectónico y modular
 
 La aplicación se segmenta en **4 fases incrementales**. Toda la gestión geográfica (Municipios y Parroquias de Venezuela) se maneja mediante tablas normalizadas y editables desde el **panel administrativo**, alimentando selectores dinámicos en la **app de anfitrión** y en la **app de centros de acopio**.
 
-Tanto **refugios** como **centros de acopio** comparten el mismo patrón territorial: `municipio → parroquia → dirección exacta → latitud/longitud`.
+Tanto **hogares solidarios** como **centros de acopio** comparten el patrón territorial: `municipio → parroquia → comuna → dirección exacta → latitud/longitud`. Los Invitados registran **procedencia** (`estado → municipio → parroquia`, catálogo INE) y **situación laboral del jefe de familia** al momento de la tragedia.
 
 ### 2.3 Regla CRÍTICA de terminología
 

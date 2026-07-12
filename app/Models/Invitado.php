@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Models;
 
 use App\Enums\InvitadoEstatus;
+use App\Enums\SituacionJefeFamilia;
 use App\Support\InvitadoFotoStorage;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -24,7 +25,11 @@ class Invitado extends Model
         'fecha_nacimiento',
         'telefono',
         'foto_ingreso',
-        'refugio_id',
+        'hogar_solidario_id',
+        'procedencia_estado_id',
+        'procedencia_municipio_id',
+        'procedencia_parroquia_id',
+        'situacion_jefe',
         'estatus',
     ];
 
@@ -33,6 +38,7 @@ class Invitado extends Model
         return [
             'fecha_nacimiento' => 'date',
             'estatus' => InvitadoEstatus::class,
+            'situacion_jefe' => SituacionJefeFamilia::class,
         ];
     }
 
@@ -46,9 +52,30 @@ class Invitado extends Model
         return $this->hasMany(self::class, 'jefe_familia_id');
     }
 
+    public function hogarSolidario(): BelongsTo
+    {
+        return $this->belongsTo(HogarSolidario::class);
+    }
+
+    /** @deprecated Use hogarSolidario() */
     public function refugio(): BelongsTo
     {
-        return $this->belongsTo(Refugio::class);
+        return $this->hogarSolidario();
+    }
+
+    public function procedenciaEstado(): BelongsTo
+    {
+        return $this->belongsTo(Estado::class, 'procedencia_estado_id');
+    }
+
+    public function procedenciaMunicipio(): BelongsTo
+    {
+        return $this->belongsTo(Municipio::class, 'procedencia_municipio_id');
+    }
+
+    public function procedenciaParroquia(): BelongsTo
+    {
+        return $this->belongsTo(Parroquia::class, 'procedencia_parroquia_id');
     }
 
     public function requerimientos(): HasMany

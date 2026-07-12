@@ -79,7 +79,7 @@ class MiembrosFamiliaRelationManager extends RelationManager
                     ->mutateFormDataUsing(function (array $data): array {
                         /** @var Invitado $owner */
                         $owner = $this->getOwnerRecord();
-                        $data['refugio_id'] = $owner->refugio_id;
+                        $data['hogar_solidario_id'] = $owner->hogar_solidario_id;
                         $data['jefe_familia_id'] = $owner->id;
 
                         return $data;

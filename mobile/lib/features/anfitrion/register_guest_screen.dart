@@ -43,6 +43,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   Uint8List? _fotoPreview;
   String? _fotoSizeLabel;
   bool _loadingPhoto = false;
+  int? _procedenciaEstadoId;
+  int? _procedenciaMunicipioId;
+  int? _procedenciaParroquiaId;
+  String? _situacionJefe;
   bool _saving = false;
   final List<_FamiliarForm> _familiares = [];
 
@@ -106,6 +110,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       'cedula': _cedula.text.trim().isEmpty ? null : _cedula.text.trim(),
       'telefono': _telefono.text.trim().isEmpty ? null : _telefono.text.trim(),
       'fecha_nacimiento': _fechaNacimiento.text.trim(),
+      if (_procedenciaEstadoId != null) 'procedencia_estado_id': _procedenciaEstadoId,
+      if (_procedenciaMunicipioId != null) 'procedencia_municipio_id': _procedenciaMunicipioId,
+      if (_procedenciaParroquiaId != null) 'procedencia_parroquia_id': _procedenciaParroquiaId,
+      if (_situacionJefe != null) 'situacion_jefe': _situacionJefe,
       'familiares': _familiares
           .where((f) =>
               f.nombre.text.trim().isNotEmpty &&
@@ -189,6 +197,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     _cedula.clear();
     _telefono.clear();
     _fechaNacimiento.clear();
+    _procedenciaEstadoId = null;
+    _procedenciaMunicipioId = null;
+    _procedenciaParroquiaId = null;
+    _situacionJefe = null;
     for (final f in _familiares) {
       f.dispose();
     }
@@ -211,6 +223,46 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       target.text =
           '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
     }
+  }
+
+  List<Map<String, dynamic>> get _estados {
+    final raw = widget.catalog.cachedCatalog?['estados'] as List<dynamic>? ?? [];
+    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  }
+
+  List<Map<String, dynamic>> get _municipiosProcedencia {
+    if (_procedenciaEstadoId == null) return [];
+    final raw = widget.catalog.cachedCatalog?['municipios'] as List<dynamic>? ?? [];
+    return raw
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .where((m) => m['estado_id'] == _procedenciaEstadoId)
+        .toList();
+  }
+
+  List<Map<String, dynamic>> get _parroquiasProcedencia {
+    if (_procedenciaMunicipioId == null) return [];
+    final raw = widget.catalog.cachedCatalog?['parroquias'] as List<dynamic>? ?? [];
+    return raw
+        .map((e) => Map<String, dynamic>.from(e as Map))
+        .where((p) => p['municipio_id'] == _procedenciaMunicipioId)
+        .toList();
+  }
+
+  List<Map<String, String>> get _situacionesJefe {
+    final raw = widget.catalog.cachedCatalog?['situaciones_jefe'] as List<dynamic>?;
+    if (raw != null && raw.isNotEmpty) {
+      return raw
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => {'value': e['value'].toString(), 'label': e['label'].toString()})
+          .toList();
+    }
+    return const [
+      {'value': 'trabajando', 'label': 'Trabajando'},
+      {'value': 'desempleado', 'label': 'Desempleado'},
+      {'value': 'pensionado', 'label': 'Pensionado'},
+      {'value': 'estudiante', 'label': 'Estudiante'},
+      {'value': 'otro', 'label': 'Otro'},
+    ];
   }
 
   List<String> get _parentescos {
@@ -284,6 +336,74 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                     icon: const Icon(Icons.event_outlined, color: VenezuelaColors.blue),
                     onPressed: () => _pickDate(_fechaNacimiento),
                   ),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          FormSectionCard(
+            title: 'Procedencia y situación laboral',
+            icon: Icons.map_outlined,
+            child: Column(
+              children: [
+                M3SelectField(
+                  label: 'Estado de procedencia',
+                  icon: Icons.public_outlined,
+                  value: _procedenciaEstadoId == null
+                      ? null
+                      : _estados.firstWhere((e) => e['id'] == _procedenciaEstadoId)['nombre'] as String?,
+                  items: _estados.map((e) => e['nombre'] as String).toList(),
+                  onChanged: (v) => setState(() {
+                    _procedenciaEstadoId = v == null
+                        ? null
+                        : _estados.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+                    _procedenciaMunicipioId = null;
+                    _procedenciaParroquiaId = null;
+                  }),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
+                ),
+                M3SelectField(
+                  label: 'Municipio de procedencia',
+                  icon: Icons.location_city_outlined,
+                  value: _procedenciaMunicipioId == null
+                      ? null
+                      : _municipiosProcedencia.firstWhere((e) => e['id'] == _procedenciaMunicipioId)['nombre'] as String?,
+                  items: _municipiosProcedencia.map((e) => e['nombre'] as String).toList(),
+                  onChanged: (v) => setState(() {
+                    _procedenciaMunicipioId = v == null
+                        ? null
+                        : _municipiosProcedencia.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+                    _procedenciaParroquiaId = null;
+                  }),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
+                ),
+                M3SelectField(
+                  label: 'Parroquia de procedencia',
+                  icon: Icons.place_outlined,
+                  value: _procedenciaParroquiaId == null
+                      ? null
+                      : _parroquiasProcedencia.firstWhere((e) => e['id'] == _procedenciaParroquiaId)['nombre'] as String?,
+                  items: _parroquiasProcedencia.map((e) => e['nombre'] as String).toList(),
+                  onChanged: (v) => setState(() {
+                    _procedenciaParroquiaId = v == null
+                        ? null
+                        : _parroquiasProcedencia.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+                  }),
+                  validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
+                ),
+                M3SelectField(
+                  label: 'Situación del jefe de familia',
+                  icon: Icons.work_outline,
+                  value: _situacionJefe == null
+                      ? null
+                      : _situacionesJefe.firstWhere((e) => e['value'] == _situacionJefe)['label'],
+                  items: _situacionesJefe.map((e) => e['label']!).toList(),
+                  onChanged: (v) => setState(() {
+                    _situacionJefe = v == null
+                        ? null
+                        : _situacionesJefe.firstWhere((e) => e['label'] == v)['value'];
+                  }),
                   validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
                 ),
               ],

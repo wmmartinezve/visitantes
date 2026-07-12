@@ -27,7 +27,7 @@ class DemoDatabaseSeeder extends Seeder
                 'name' => 'Administrador',
                 'password' => Hash::make('password'),
                 'rol' => UserRole::Admin,
-                'refugio_id' => null,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => null,
             ],
         );

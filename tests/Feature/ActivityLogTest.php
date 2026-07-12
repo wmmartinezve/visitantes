@@ -14,7 +14,7 @@ use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Services\InvitadoRegistrationService;
@@ -43,6 +43,7 @@ class ActivityLogTest extends TestCase
                 'nombre' => 'Jose',
                 'apellido' => 'Perez',
                 'fecha_nacimiento' => '1990-01-01',
+                ...$this->procedenciaDemo(),
             ],
             UploadedFile::fake()->image('foto.jpg'),
             [[
@@ -84,7 +85,7 @@ class ActivityLogTest extends TestCase
             'nombre' => 'Invitado',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => InvitadoEstatus::Activo,
         ]);
 
@@ -150,6 +151,7 @@ class ActivityLogTest extends TestCase
                     'apellido' => 'Sync',
                     'fecha_nacimiento' => '1988-05-05',
                     'familiares' => [],
+                    ...$this->procedenciaDemo(),
                 ],
             ]],
         ]);
@@ -163,12 +165,12 @@ class ActivityLogTest extends TestCase
         ]);
     }
 
-    /** @return array{0: User, 1: Refugio} */
+    /** @return array{0: User, 1: HogarSolidario} */
     private function anfitrionConRefugio(): array
     {
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Bitácora',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Bitácora',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -177,7 +179,7 @@ class ActivityLogTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         return [$anfitrion, $refugio];

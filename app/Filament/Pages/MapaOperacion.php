@@ -7,7 +7,7 @@ namespace App\Filament\Pages;
 use App\Models\CentroAcopio;
 use App\Models\Municipio;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -127,7 +127,7 @@ class MapaOperacion extends Page implements HasForms
             ->with(['parroquia.municipio'])
             ->withCount('invitados')
             ->get()
-            ->map(fn (Refugio $refugio): array => [
+            ->map(fn (HogarSolidario $refugio): array => [
                 'id' => $refugio->id,
                 'nombre' => $refugio->nombre,
                 'lat' => (float) $refugio->latitud,
@@ -160,10 +160,10 @@ class MapaOperacion extends Page implements HasForms
         ];
     }
 
-    /** @return Builder<Refugio> */
+    /** @return Builder<HogarSolidario> */
     private function refugiosQuery(): Builder
     {
-        $query = Refugio::query();
+        $query = HogarSolidario::query();
         $this->aplicarFiltroTerritorial($query);
 
         return $query;
@@ -178,7 +178,7 @@ class MapaOperacion extends Page implements HasForms
         return $query;
     }
 
-    /** @param  Builder<Refugio>|Builder<CentroAcopio>  $query */
+    /** @param  Builder<HogarSolidario>|Builder<CentroAcopio>  $query */
     private function aplicarFiltroTerritorial(Builder $query): void
     {
         $parroquiaId = filled($this->data['parroquia_id'] ?? null)

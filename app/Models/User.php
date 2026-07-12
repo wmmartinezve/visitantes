@@ -40,9 +40,15 @@ class User extends Authenticatable implements FilamentUser
         ];
     }
 
+    public function hogarSolidario(): BelongsTo
+    {
+        return $this->belongsTo(HogarSolidario::class);
+    }
+
+    /** @deprecated Use hogarSolidario() */
     public function refugio(): BelongsTo
     {
-        return $this->belongsTo(Refugio::class);
+        return $this->hogarSolidario();
     }
 
     public function centroAcopio(): BelongsTo

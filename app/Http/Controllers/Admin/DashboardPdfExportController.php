@@ -21,7 +21,7 @@ class DashboardPdfExportController extends Controller
             'hasta',
             'municipio_id',
             'parroquia_id',
-            'refugio_id',
+            'hogar_solidario_id',
             'centro_acopio_id',
         ]));
 

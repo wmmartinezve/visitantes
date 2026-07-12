@@ -11,7 +11,7 @@ use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Services\RequerimientoAsignacionService;
@@ -38,11 +38,11 @@ class RequerimientoConsolidacionTest extends TestCase
         $invitados = collect([
             Invitado::query()->create([
                 'nombre' => 'A', 'apellido' => 'Uno', 'fecha_nacimiento' => '1990-01-01',
-                'refugio_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
+                'hogar_solidario_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
             ]),
             Invitado::query()->create([
                 'nombre' => 'B', 'apellido' => 'Dos', 'fecha_nacimiento' => '1991-01-01',
-                'refugio_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
+                'hogar_solidario_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
             ]),
         ]);
 
@@ -63,7 +63,7 @@ class RequerimientoConsolidacionTest extends TestCase
         $this->assertCount(1, $demanda);
         $this->assertSame(5, $demanda->first()['cantidad_total']);
         $this->assertSame(2, $demanda->first()['requerimientos_count']);
-        $this->assertSame($refugio->id, $demanda->first()['refugio_id']);
+        $this->assertSame($refugio->id, $demanda->first()['hogar_solidario_id']);
     }
 
     public function test_asignar_lote_valida_stock_total_y_asigna_todos(): void
@@ -79,7 +79,7 @@ class RequerimientoConsolidacionTest extends TestCase
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Jefe', 'apellido' => 'Familia', 'fecha_nacimiento' => '1985-01-01',
-            'refugio_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
+            'hogar_solidario_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
         ]);
 
         $reqs = collect([2, 3])->map(fn (int $cantidad) => Requerimiento::query()->create([
@@ -121,7 +121,7 @@ class RequerimientoConsolidacionTest extends TestCase
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Uno', 'apellido' => 'Solo', 'fecha_nacimiento' => '1985-01-01',
-            'refugio_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
+            'hogar_solidario_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
         ]);
 
         $reqs = collect([2, 3])->map(fn (int $cantidad) => Requerimiento::query()->create([
@@ -148,12 +148,12 @@ class RequerimientoConsolidacionTest extends TestCase
         app(RequerimientoAsignacionService::class)->asignarLote($reqs->all(), $centro->id);
     }
 
-    /** @return array{0: Refugio, 1: User} */
+    /** @return array{0: HogarSolidario, 1: User} */
     private function refugioConAnfitrion(): array
     {
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Consolidado',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Consolidado',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -162,7 +162,7 @@ class RequerimientoConsolidacionTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         return [$refugio, $anfitrion];

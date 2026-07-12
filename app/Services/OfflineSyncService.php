@@ -137,7 +137,7 @@ class OfflineSyncService
      */
     private function syncInvitadoRegistro(User $user, array $payload, string $clientId, array &$idMap): int
     {
-        if (! $user->isAnfitrion() || $user->refugio_id === null) {
+        if (! $user->isAnfitrion() || $user->hogar_solidario_id === null) {
             throw new RuntimeException('Solo anfitriones pueden registrar Invitados offline.');
         }
 
@@ -234,7 +234,7 @@ class OfflineSyncService
 
         $invitado = Invitado::query()->findOrFail($validated['invitado_id']);
 
-        if ($user->refugio_id !== $invitado->refugio_id) {
+        if ($user->hogar_solidario_id !== $invitado->hogar_solidario_id) {
             throw new RuntimeException('El Invitado no pertenece a su refugio.');
         }
 

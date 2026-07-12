@@ -8,7 +8,7 @@ use App\Enums\RequerimientoEstatus;
 use App\Enums\ActivityAction;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Support\GeoDistance;
 use App\Support\InsumoCatalog;
@@ -71,7 +71,7 @@ class RequerimientoAsignacionService
      * @return Collection<int, array{centro: CentroAcopio, inventario: Inventario, distancia_km: ?float, cantidad: int}>
      */
     public function buscarCentrosConStockConsolidado(
-        Refugio $refugio,
+        HogarSolidario $refugio,
         ?string $categoria,
         ?string $subcategoria,
         string $itemSolicitado,
@@ -137,7 +137,7 @@ class RequerimientoAsignacionService
         /** @var Requerimiento $referencia */
         $referencia = $pendientes->first();
         $refugioIds = $pendientes
-            ->map(fn (Requerimiento $r): ?int => $r->invitado?->refugio_id)
+            ->map(fn (Requerimiento $r): ?int => $r->invitado?->hogar_solidario_id)
             ->unique()
             ->filter()
             ->values();

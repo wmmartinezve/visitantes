@@ -9,7 +9,7 @@ use App\Enums\RequerimientoEstatus;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Support\OperacionFiltros;
 use Illuminate\Database\Eloquent\Builder;
@@ -75,7 +75,7 @@ class OperacionMetricsService
             ->orderByDesc('activos_count')
             ->limit($limit)
             ->get(['id', 'nombre'])
-            ->map(fn (Refugio $refugio): object => (object) [
+            ->map(fn (HogarSolidario $refugio): object => (object) [
                 'nombre' => $refugio->nombre,
                 'total' => (int) $refugio->activos_count,
             ]);
@@ -199,10 +199,10 @@ class OperacionMetricsService
             ->whereBetween('updated_at', [$filtros->desde, $filtros->hasta]);
     }
 
-    /** @return Builder<Refugio> */
+    /** @return Builder<HogarSolidario> */
     private function refugios(OperacionFiltros $filtros): Builder
     {
-        $query = Refugio::query();
+        $query = HogarSolidario::query();
 
         if ($filtros->refugioId) {
             return $query->whereKey($filtros->refugioId);
@@ -265,7 +265,7 @@ class OperacionMetricsService
     private function aplicarFiltroInvitado(Builder $query, OperacionFiltros $filtros): Builder
     {
         if ($filtros->refugioId) {
-            return $query->where('refugio_id', $filtros->refugioId);
+            return $query->where('hogar_solidario_id', $filtros->refugioId);
         }
 
         if ($filtros->parroquiaId || $filtros->municipioId) {

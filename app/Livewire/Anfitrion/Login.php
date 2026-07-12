@@ -23,7 +23,7 @@ class Login extends Component
     {
         $user = Auth::user();
 
-        if ($user?->rol === UserRole::Anfitrion && $user->refugio_id !== null) {
+        if ($user?->rol === UserRole::Anfitrion && $user->hogar_solidario_id !== null) {
             $this->redirectRoute('anfitrion.dashboard', navigate: true);
         }
     }
@@ -48,7 +48,7 @@ class Login extends Component
 
         $user = Auth::user();
 
-        if ($user === null || $user->rol !== UserRole::Anfitrion || $user->refugio_id === null) {
+        if ($user === null || $user->rol !== UserRole::Anfitrion || $user->hogar_solidario_id === null) {
             Auth::logout();
             $this->addError('email', 'Esta cuenta no tiene acceso como anfitrión.');
 

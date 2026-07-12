@@ -9,7 +9,7 @@ use App\Enums\UserRole;
 use App\Models\CentroAcopio;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\GeoNavigation;
@@ -36,8 +36,8 @@ class Fase6LogisticaTest extends TestCase
             'activo' => true,
         ]);
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Destino',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Destino',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.21380000,
             'longitud' => -64.63280000,
@@ -51,14 +51,14 @@ class Fase6LogisticaTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $invitado = Invitado::query()->create([
             'nombre' => 'María',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1990-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 
@@ -85,8 +85,8 @@ class Fase6LogisticaTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = Refugio::query()->create([
-            'nombre' => 'Refugio Test',
+        $refugio = HogarSolidario::query()->create([
+            'nombre' => 'HogarSolidario Test',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -95,14 +95,14 @@ class Fase6LogisticaTest extends TestCase
 
         $anfitrion = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
         ]);
 
         $invitado = Invitado::query()->create([
             'nombre' => 'Luis',
             'apellido' => 'Test',
             'fecha_nacimiento' => '1988-01-01',
-            'refugio_id' => $refugio->id,
+            'hogar_solidario_id' => $refugio->id,
             'estatus' => 'activo',
         ]);
 

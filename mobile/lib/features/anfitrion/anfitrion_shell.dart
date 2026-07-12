@@ -100,7 +100,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
     return AppScaffold(
       title: _user.name,
-      subtitle: 'Refugio: ${_user.refugioNombre ?? '—'}',
+      subtitle: 'Hogar solidario: ${_user.refugioNombre ?? '—'}',
       catalog: widget.catalog,
       sync: widget.sync,
       onLogout: widget.onLogout,
@@ -146,7 +146,7 @@ class _HomeTab extends StatelessWidget {
           children: [
             StatCard(
               icon: Icons.home_work,
-              title: 'Refugio asignado',
+              title: 'Hogar solidario asignado',
               value: user.refugioNombre ?? '—',
               accent: VenezuelaColors.blue,
             ),

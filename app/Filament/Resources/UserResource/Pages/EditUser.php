@@ -58,7 +58,7 @@ class EditUser extends EditRecord
 
         $record->forceFill([
             'rol' => $data['rol'],
-            'refugio_id' => $data['refugio_id'] ?? null,
+            'hogar_solidario_id' => $data['hogar_solidario_id'] ?? null,
             'centro_acopio_id' => $data['centro_acopio_id'] ?? null,
         ]);
         $record->save();

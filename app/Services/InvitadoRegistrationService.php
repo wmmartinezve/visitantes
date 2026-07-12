@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Enums\InvitadoEstatus;
+use App\Enums\SituacionJefeFamilia;
 use App\Enums\ActivityAction;
 use App\Models\Invitado;
 use App\Models\User;
@@ -35,7 +36,13 @@ class InvitadoRegistrationService
                 'cedula' => $jefeData['cedula'] ?? null,
                 'fecha_nacimiento' => $jefeData['fecha_nacimiento'],
                 'telefono' => $jefeData['telefono'] ?? null,
-                'refugio_id' => $anfitrion->refugio_id,
+                'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
+                'procedencia_estado_id' => $jefeData['procedencia_estado_id'] ?? null,
+                'procedencia_municipio_id' => $jefeData['procedencia_municipio_id'] ?? null,
+                'procedencia_parroquia_id' => $jefeData['procedencia_parroquia_id'] ?? null,
+                'situacion_jefe' => isset($jefeData['situacion_jefe'])
+                    ? SituacionJefeFamilia::from($jefeData['situacion_jefe'])
+                    : null,
                 'estatus' => InvitadoEstatus::Activo,
                 'jefe_familia_id' => null,
             ]);
@@ -69,7 +76,7 @@ class InvitadoRegistrationService
                     'cedula' => $familiar['cedula'] ?? null,
                     'fecha_nacimiento' => $familiar['fecha_nacimiento'],
                     'telefono' => $familiar['telefono'] ?? null,
-                    'refugio_id' => $anfitrion->refugio_id,
+                    'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
                     'estatus' => InvitadoEstatus::Activo,
                     'jefe_familia_id' => $jefe->id,
                 ]);

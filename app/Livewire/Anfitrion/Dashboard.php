@@ -16,16 +16,16 @@ class Dashboard extends Component
 {
     public function render()
     {
-        $refugioId = auth()->user()->refugio_id;
+        $refugioId = auth()->user()->hogar_solidario_id;
 
         return view('livewire.anfitrion.dashboard', [
             'refugio' => auth()->user()->refugio,
             'invitadosActivos' => Invitado::query()
-                ->where('refugio_id', $refugioId)
+                ->where('hogar_solidario_id', $refugioId)
                 ->where('estatus', InvitadoEstatus::Activo)
                 ->count(),
             'requerimientosPendientes' => Requerimiento::query()
-                ->whereHas('invitado', fn ($q) => $q->where('refugio_id', $refugioId))
+                ->whereHas('invitado', fn ($q) => $q->where('hogar_solidario_id', $refugioId))
                 ->where('estatus', RequerimientoEstatus::Pendiente)
                 ->count(),
         ]);

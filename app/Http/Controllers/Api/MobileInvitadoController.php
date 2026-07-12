@@ -26,7 +26,7 @@ class MobileInvitadoController extends Controller
 
         $query = Invitado::query()
             ->with(['jefeFamilia'])
-            ->where('refugio_id', $user->refugio_id);
+            ->where('hogar_solidario_id', $user->hogar_solidario_id);
 
         if ($busqueda !== '') {
             $term = '%'.mb_strtolower($busqueda).'%';

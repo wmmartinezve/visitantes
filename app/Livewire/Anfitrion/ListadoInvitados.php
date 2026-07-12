@@ -25,11 +25,11 @@ class ListadoInvitados extends Component
     {
         $this->authorize('viewAny', Invitado::class);
 
-        $refugioId = auth()->user()->refugio_id;
+        $refugioId = auth()->user()->hogar_solidario_id;
 
         $invitados = Invitado::query()
             ->with(['miembrosFamilia'])
-            ->where('refugio_id', $refugioId)
+            ->where('hogar_solidario_id', $refugioId)
             ->whereNull('jefe_familia_id')
             ->when($this->busqueda !== '', function ($query): void {
                 $term = '%'.$this->busqueda.'%';

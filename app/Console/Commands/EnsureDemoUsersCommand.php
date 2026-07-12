@@ -29,7 +29,7 @@ class EnsureDemoUsersCommand extends Command
                 'name' => 'Administrador',
                 'password' => Hash::make('password'),
                 'rol' => UserRole::Admin,
-                'refugio_id' => null,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => null,
             ],
         );

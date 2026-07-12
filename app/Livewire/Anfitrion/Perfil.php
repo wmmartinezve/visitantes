@@ -21,7 +21,7 @@ class Perfil extends Component
     public function render()
     {
         return view('livewire.shared.field-operator-perfil', [
-            'contextLabel' => 'Refugio',
+            'contextLabel' => 'HogarSolidario',
             'contextValue' => auth()->user()?->refugio?->nombre,
         ]);
     }

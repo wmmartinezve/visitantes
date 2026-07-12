@@ -5,10 +5,13 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\CentroAcopio;
+use App\Models\Comuna;
+use App\Models\Estado;
 use App\Models\Inventario;
+use App\Models\HogarSolidario;
 use App\Models\Municipio;
-use App\Models\Refugio;
 use App\Models\User;
+use App\Enums\SituacionJefeFamilia;
 use App\Support\InsumoCatalog;
 
 class OfflineCatalogService
@@ -18,7 +21,8 @@ class OfflineCatalogService
      */
     public function buildFor(User $user): array
     {
-        $municipios = Municipio::query()->orderBy('nombre')->get(['id', 'nombre']);
+        $estados = Estado::query()->orderBy('nombre')->get(['id', 'nombre']);
+        $municipios = Municipio::query()->orderBy('nombre')->get(['id', 'nombre', 'estado_id']);
         $parroquias = Municipio::query()
             ->with(['parroquias:id,municipio_id,nombre'])
             ->orderBy('nombre')
@@ -30,18 +34,31 @@ class OfflineCatalogService
             ]))
             ->values();
 
-        $refugios = Refugio::query()
-            ->with('parroquia:id,nombre,municipio_id')
+        $comunas = Comuna::query()
+            ->orderBy('nombre')
+            ->get(['id', 'parroquia_id', 'nombre'])
+            ->map(fn (Comuna $c) => [
+                'id' => $c->id,
+                'parroquia_id' => $c->parroquia_id,
+                'nombre' => $c->nombre,
+            ])
+            ->values();
+
+        $hogaresSolidarios = HogarSolidario::query()
+            ->with(['parroquia:id,nombre,municipio_id', 'comuna:id,nombre,parroquia_id'])
             ->orderBy('nombre')
             ->get()
-            ->map(fn (Refugio $r) => [
-                'id' => $r->id,
-                'nombre' => $r->nombre,
-                'parroquia_id' => $r->parroquia_id,
-                'parroquia' => $r->parroquia?->nombre,
-                'latitud' => (float) $r->latitud,
-                'longitud' => (float) $r->longitud,
-                'direccion_exacta' => $r->direccion_exacta,
+            ->map(fn (HogarSolidario $h) => [
+                'id' => $h->id,
+                'nombre' => $h->nombre,
+                'parroquia_id' => $h->parroquia_id,
+                'comuna_id' => $h->comuna_id,
+                'parroquia' => $h->parroquia?->nombre,
+                'comuna' => $h->comuna?->nombre,
+                'tipo_vivienda' => $h->tipo_vivienda?->value,
+                'latitud' => (float) $h->latitud,
+                'longitud' => (float) $h->longitud,
+                'direccion_exacta' => $h->direccion_exacta,
             ])
             ->values();
 
@@ -64,12 +81,14 @@ class OfflineCatalogService
 
         $operador = [
             'rol' => $user->rol->value,
-            'refugio_id' => $user->refugio_id,
+            'hogar_solidario_id' => $user->hogar_solidario_id,
             'centro_acopio_id' => $user->centro_acopio_id,
         ];
 
-        if ($user->refugio_id !== null) {
-            $operador['refugio'] = $refugios->firstWhere('id', $user->refugio_id);
+        if ($user->hogar_solidario_id !== null) {
+            $hogar = $hogaresSolidarios->firstWhere('id', $user->hogar_solidario_id);
+            $operador['hogar_solidario'] = $hogar;
+            $operador['refugio'] = $hogar;
         }
 
         if ($user->centro_acopio_id !== null) {
@@ -95,9 +114,11 @@ class OfflineCatalogService
             : [];
 
         $version = md5(json_encode([
+            $estados->count(),
             $municipios->count(),
             $parroquias->count(),
-            $refugios->count(),
+            $comunas->count(),
+            $hogaresSolidarios->count(),
             $centrosAcopio->count(),
             count($inventarioLocal),
         ]));
@@ -106,14 +127,25 @@ class OfflineCatalogService
             'version' => $version,
             'generated_at' => now()->toIso8601String(),
             'estado' => config('visitantes.estado'),
-            'municipios' => $municipios->map(fn ($m) => ['id' => $m->id, 'nombre' => $m->nombre])->values()->all(),
+            'estados' => $estados->map(fn ($e) => ['id' => $e->id, 'nombre' => $e->nombre])->values()->all(),
+            'municipios' => $municipios->map(fn ($m) => [
+                'id' => $m->id,
+                'estado_id' => $m->estado_id,
+                'nombre' => $m->nombre,
+            ])->values()->all(),
             'parroquias' => $parroquias->all(),
-            'refugios' => $refugios->all(),
+            'comunas' => $comunas->all(),
+            'hogares_solidarios' => $hogaresSolidarios->all(),
+            'refugios' => $hogaresSolidarios->all(),
             'centros_acopio' => $centrosAcopio->all(),
             'unidades_medida' => config('visitantes.unidades_medida'),
             'insumos_catalogo' => InsumoCatalog::catalog(),
             'items_insumo_sugeridos' => InsumoCatalog::flatSubcategorias(),
             'parentescos' => config('visitantes.parentescos'),
+            'situaciones_jefe' => collect(SituacionJefeFamilia::cases())
+                ->map(fn (SituacionJefeFamilia $s) => ['value' => $s->value, 'label' => $s->label()])
+                ->values()
+                ->all(),
             'operador' => $operador,
             'inventario_local' => $inventarioLocal,
         ];

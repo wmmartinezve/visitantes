@@ -33,7 +33,7 @@ class CreateUser extends CreateRecord
         ]);
         $user->forceFill([
             'rol' => $data['rol'],
-            'refugio_id' => $data['refugio_id'] ?? null,
+            'hogar_solidario_id' => $data['hogar_solidario_id'] ?? null,
             'centro_acopio_id' => $data['centro_acopio_id'] ?? null,
         ]);
         $user->save();
@@ -54,14 +54,14 @@ class CreateUser extends CreateRecord
     {
         return match ($data['rol'] ?? null) {
             \App\Enums\UserRole::Admin->value => array_merge($data, [
-                'refugio_id' => null,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => null,
             ]),
             \App\Enums\UserRole::Anfitrion->value => array_merge($data, [
                 'centro_acopio_id' => null,
             ]),
             \App\Enums\UserRole::CentroAcopio->value => array_merge($data, [
-                'refugio_id' => null,
+                'hogar_solidario_id' => null,
             ]),
             default => $data,
         };

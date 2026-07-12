@@ -5,7 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Enums\RequerimientoEstatus;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Services\RequerimientoAsignacionService;
 use App\Services\RequerimientoConsolidacionService;
 use Filament\Forms\Components\Select;
@@ -32,7 +32,7 @@ class DemandaConsolidadaRefugio extends Page implements HasForms
 
     protected static string $view = 'filament.pages.demanda-consolidada-refugio';
 
-    /** @var array{refugio_id: ?int, estatus: string} */
+    /** @var array{hogar_solidario_id: ?int, estatus: string} */
     public ?array $filtros = [];
 
     /** @var Collection<int, array<string, mixed>> */
@@ -51,7 +51,7 @@ class DemandaConsolidadaRefugio extends Page implements HasForms
         $this->demanda = collect();
         $this->centrosDisponibles = collect();
         $this->form->fill([
-            'refugio_id' => null,
+            'hogar_solidario_id' => null,
             'estatus' => RequerimientoEstatus::Pendiente->value,
         ]);
         $this->cargarDemanda();
@@ -61,10 +61,10 @@ class DemandaConsolidadaRefugio extends Page implements HasForms
     {
         return $form
             ->schema([
-                Select::make('refugio_id')
-                    ->label('Refugio')
+                Select::make('hogar_solidario_id')
+                    ->label('HogarSolidario')
                     ->placeholder('Todos los refugios')
-                    ->options(fn (): array => Refugio::query()
+                    ->options(fn (): array => HogarSolidario::query()
                         ->orderBy('nombre')
                         ->pluck('nombre', 'id')
                         ->all())
@@ -95,7 +95,7 @@ class DemandaConsolidadaRefugio extends Page implements HasForms
     public function cargarDemanda(): void
     {
         $estatus = RequerimientoEstatus::from($this->filtros['estatus'] ?? RequerimientoEstatus::Pendiente->value);
-        $refugioId = $this->filtros['refugio_id'] ?? null;
+        $refugioId = $this->filtros['hogar_solidario_id'] ?? null;
 
         $this->demanda = app(RequerimientoConsolidacionService::class)->demandaPorRefugio(
             $estatus,
@@ -108,7 +108,7 @@ class DemandaConsolidadaRefugio extends Page implements HasForms
         $this->grupoSeleccionado = $grupoKey;
         $this->grupoActivo = $this->demanda->first(
             fn (array $fila): bool => app(RequerimientoConsolidacionService::class)->grupoKey(
-                $fila['refugio_id'],
+                $fila['hogar_solidario_id'],
                 $fila['categoria'],
                 $fila['subcategoria'],
             ) === $grupoKey,
@@ -120,7 +120,7 @@ class DemandaConsolidadaRefugio extends Page implements HasForms
             return;
         }
 
-        $refugio = Refugio::query()->findOrFail($this->grupoActivo['refugio_id']);
+        $refugio = HogarSolidario::query()->findOrFail($this->grupoActivo['hogar_solidario_id']);
 
         $this->centrosDisponibles = app(RequerimientoAsignacionService::class)->buscarCentrosConStockConsolidado(
             $refugio,
@@ -183,7 +183,7 @@ class DemandaConsolidadaRefugio extends Page implements HasForms
     public function grupoKey(array $fila): string
     {
         return app(RequerimientoConsolidacionService::class)->grupoKey(
-            $fila['refugio_id'],
+            $fila['hogar_solidario_id'],
             $fila['categoria'],
             $fila['subcategoria'],
         );

@@ -21,14 +21,14 @@ class InvitadoPolicy
         }
 
         return $user->isAnfitrion()
-            && $user->refugio_id !== null
-            && $user->refugio_id === $invitado->refugio_id;
+            && $user->hogar_solidario_id !== null
+            && $user->hogar_solidario_id === $invitado->hogar_solidario_id;
     }
 
     public function create(User $user): bool
     {
         return $user->isAdmin()
-            || ($user->isAnfitrion() && $user->refugio_id !== null);
+            || ($user->isAnfitrion() && $user->hogar_solidario_id !== null);
     }
 
     public function createForInvitado(User $user, Invitado $invitado): bool
@@ -38,8 +38,8 @@ class InvitadoPolicy
         }
 
         return $user->isAnfitrion()
-            && $user->refugio_id !== null
-            && $user->refugio_id === $invitado->refugio_id;
+            && $user->hogar_solidario_id !== null
+            && $user->hogar_solidario_id === $invitado->hogar_solidario_id;
     }
 
     public function update(User $user, Invitado $invitado): bool

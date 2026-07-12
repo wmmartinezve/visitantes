@@ -12,7 +12,7 @@ class MobileInvitadoStoreRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user !== null && $user->isAnfitrion() && $user->refugio_id !== null;
+        return $user !== null && $user->isAnfitrion() && $user->hogar_solidario_id !== null;
     }
 
     /**
@@ -26,6 +26,10 @@ class MobileInvitadoStoreRequest extends FormRequest
             'cedula' => ['nullable', 'string', 'max:20'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'fecha_nacimiento' => ['required', 'date', 'before_or_equal:today'],
+            'procedencia_estado_id' => ['required', 'integer', 'exists:estados,id'],
+            'procedencia_municipio_id' => ['required', 'integer', 'exists:municipios,id'],
+            'procedencia_parroquia_id' => ['required', 'integer', 'exists:parroquias,id'],
+            'situacion_jefe' => ['required', 'string', 'in:trabajando,desempleado,pensionado,estudiante,otro'],
             'familiares' => ['array'],
             'familiares.*.nombre' => ['required_with:familiares.*.apellido', 'string', 'max:255'],
             'familiares.*.apellido' => ['required_with:familiares.*.nombre', 'string', 'max:255'],

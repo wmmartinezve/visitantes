@@ -7,7 +7,7 @@ namespace App\Filament\Pages;
 use App\Models\CentroAcopio;
 use App\Models\Municipio;
 use App\Models\Parroquia;
-use App\Models\Refugio;
+use App\Models\HogarSolidario;
 use App\Support\OperacionFiltros;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -82,7 +82,7 @@ class Dashboard extends BaseDashboard
                         ->live()
                         ->afterStateUpdated(function (Set $set): void {
                             $set('parroquia_id', null);
-                            $set('refugio_id', null);
+                            $set('hogar_solidario_id', null);
                         }),
 
                     Select::make('parroquia_id')
@@ -101,17 +101,17 @@ class Dashboard extends BaseDashboard
                         })
                         ->searchable()
                         ->live()
-                        ->afterStateUpdated(fn (Set $set) => $set('refugio_id', null)),
+                        ->afterStateUpdated(fn (Set $set) => $set('hogar_solidario_id', null)),
 
-                    Select::make('refugio_id')
-                        ->label('Refugio')
+                    Select::make('hogar_solidario_id')
+                        ->label('HogarSolidario')
                         ->options(function (Get $get): array {
                             $parroquiaId = $get('parroquia_id');
                             if (! $parroquiaId) {
                                 return [];
                             }
 
-                            return Refugio::query()
+                            return HogarSolidario::query()
                                 ->where('parroquia_id', $parroquiaId)
                                 ->orderBy('nombre')
                                 ->pluck('nombre', 'id')
