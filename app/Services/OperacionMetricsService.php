@@ -6,12 +6,15 @@ namespace App\Services;
 
 use App\Enums\InvitadoEstatus;
 use App\Enums\RequerimientoEstatus;
+use App\Enums\UserRole;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
+use App\Models\User;
 use App\Support\OperacionFiltros;
+use App\Support\VisitantesFeatures;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Collection;
 
@@ -28,13 +31,36 @@ class OperacionMetricsService
         $reqEntregados = $this->requerimientosEntregadosEnPeriodo($filtros)->count();
         $unidadesEntregadas = (int) $this->requerimientosEntregadosEnPeriodo($filtros)->sum('cantidad');
 
+        $hogaresQuery = $this->refugios($filtros);
+        $hogaresTotal = (clone $hogaresQuery)->count();
+        $anfitrionesRegistrados = User::query()->where('rol', UserRole::Anfitrion)->count();
+        $anfitrionesDesplegadosGlobal = User::query()
+            ->where('rol', UserRole::Anfitrion)
+            ->whereNotNull('hogar_solidario_id')
+            ->count();
+
         return [
+            'hogares_solidarios' => $hogaresTotal,
+            'refugios' => $hogaresTotal,
+            'hogares_con_nucleo' => (clone $hogaresQuery)->whereHas('jefeFamilia')->count(),
+            'hogares_sin_nucleo' => (clone $hogaresQuery)->whereDoesntHave('jefeFamilia')->count(),
+            'hogares_nuevos_periodo' => (clone $hogaresQuery)
+                ->whereBetween('created_at', [$filtros->desde, $filtros->hasta])
+                ->count(),
+            'anfitriones_registrados' => $anfitrionesRegistrados,
+            'anfitriones_desplegados' => $this->anfitrionesDesplegados($filtros)->count(),
+            'anfitriones_sin_asignar' => User::query()
+                ->where('rol', UserRole::Anfitrion)
+                ->whereNull('hogar_solidario_id')
+                ->count(),
+            'tasa_despliegue_anfitriones' => $anfitrionesRegistrados > 0
+                ? round(($anfitrionesDesplegadosGlobal / $anfitrionesRegistrados) * 100, 1)
+                : 0.0,
             'invitados_activos' => $this->invitados($filtros)->where('estatus', InvitadoEstatus::Activo)->count(),
             'invitados_registrados' => $this->invitadosRegistradosEnPeriodo($filtros)->count(),
             'nuevas_familias' => $this->invitadosRegistradosEnPeriodo($filtros)->whereNull('jefe_familia_id')->count(),
             'miembros_familia' => $this->invitadosRegistradosEnPeriodo($filtros)->whereNotNull('jefe_familia_id')->count(),
             'invitados_egresados' => $this->invitados($filtros)->where('estatus', InvitadoEstatus::Egresado)->count(),
-            'refugios' => $this->refugios($filtros)->count(),
             'centros_activos' => $this->centrosAcopio($filtros)->where('activo', true)->count(),
             'requerimientos_creados' => $reqCreados,
             'requerimientos_pendientes' => $this->requerimientos($filtros)->where('estatus', RequerimientoEstatus::Pendiente)->count(),
@@ -48,6 +74,49 @@ class OperacionMetricsService
             'stock_bajo' => $this->inventario($filtros)->where('cantidad', '<=', self::STOCK_BAJO_UMBRAL)->count(),
             'unidades_inventario' => (int) $this->inventario($filtros)->sum('cantidad'),
         ];
+    }
+
+    /**
+     * Filas de KPIs para el PDF del dashboard (orden y etiquetas unificadas).
+     *
+     * @return list<array{0: string, 1: int|float|string}>
+     */
+    public function filasKpisParaPdf(array $kpis, ?bool $logistica = null): array
+    {
+        $logistica ??= VisitantesFeatures::logistica();
+
+        $filas = [
+            ['Hogares solidarios', $kpis['hogares_solidarios']],
+            ['Hogares con núcleo hospedado', $kpis['hogares_con_nucleo']],
+            ['Hogares sin núcleo', $kpis['hogares_sin_nucleo']],
+            ['Hogares nuevos en período', $kpis['hogares_nuevos_periodo']],
+            ['Anfitriones registrados', $kpis['anfitriones_registrados']],
+            ['Anfitriones desplegados', $kpis['anfitriones_desplegados']],
+            ['Anfitriones sin asignar', $kpis['anfitriones_sin_asignar']],
+            ['Tasa de despliegue anfitriones', $kpis['tasa_despliegue_anfitriones'].'%'],
+            ['Invitados activos', $kpis['invitados_activos']],
+            ['Registrados en período', $kpis['invitados_registrados']],
+            ['Nuevas familias (jefes)', $kpis['nuevas_familias']],
+            ['Miembros de familia', $kpis['miembros_familia']],
+            ['Invitados egresados', $kpis['invitados_egresados']],
+        ];
+
+        if ($logistica) {
+            $filas = array_merge($filas, [
+                ['Centros de acopio activos', $kpis['centros_activos']],
+                ['Requerimientos creados', $kpis['requerimientos_creados']],
+                ['Requerimientos pendientes', $kpis['requerimientos_pendientes']],
+                ['Requerimientos asignados', $kpis['requerimientos_asignados']],
+                ['Requerimientos entregados', $kpis['requerimientos_entregados']],
+                ['Tasa de cumplimiento', $kpis['tasa_cumplimiento'].'%'],
+                ['Unidades solicitadas', $kpis['unidades_solicitadas']],
+                ['Unidades entregadas', $kpis['unidades_entregadas']],
+                ['Ítems con stock bajo', $kpis['stock_bajo']],
+                ['Unidades en inventario', $kpis['unidades_inventario']],
+            ]);
+        }
+
+        return $filas;
     }
 
     /**
@@ -147,10 +216,15 @@ class OperacionMetricsService
      */
     public function reporteCompleto(OperacionFiltros $filtros): array
     {
+        $kpis = $this->kpis($filtros);
+        $logistica = VisitantesFeatures::logistica();
+
         return [
             'filtros' => $filtros,
             'etiquetas_filtros' => $filtros->descripcionEtiquetas(),
-            'kpis' => $this->kpis($filtros),
+            'kpis' => $kpis,
+            'kpi_filas' => $this->filasKpisParaPdf($kpis, $logistica),
+            'logistica_habilitada' => $logistica,
             'requerimientos_por_estatus' => $this->requerimientosPorEstatus($filtros),
             'top_refugios' => $this->topRefugiosPorInvitados($filtros),
             'top_centros' => $this->topCentrosPorEntregas($filtros),
@@ -276,6 +350,34 @@ class OperacionMetricsService
                     $q->whereHas('parroquia', fn (Builder $pq) => $pq->where('municipio_id', $filtros->municipioId));
                 }
             });
+        }
+
+        return $query;
+    }
+
+    /** @return Builder<User> */
+    private function anfitrionesDesplegados(OperacionFiltros $filtros): Builder
+    {
+        $query = User::query()
+            ->where('rol', UserRole::Anfitrion)
+            ->whereNotNull('hogar_solidario_id');
+
+        if ($filtros->refugioId) {
+            return $query->where('hogar_solidario_id', $filtros->refugioId);
+        }
+
+        if ($filtros->parroquiaId) {
+            return $query->whereHas(
+                'hogarSolidario',
+                fn (Builder $q) => $q->where('parroquia_id', $filtros->parroquiaId),
+            );
+        }
+
+        if ($filtros->municipioId) {
+            return $query->whereHas(
+                'hogarSolidario.parroquia',
+                fn (Builder $q) => $q->where('municipio_id', $filtros->municipioId),
+            );
         }
 
         return $query;

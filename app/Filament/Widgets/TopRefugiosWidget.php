@@ -18,7 +18,7 @@ class TopRefugiosWidget extends BaseWidget
 
     protected static ?int $sort = 4;
 
-    protected static ?string $heading = 'Refugios con más Invitados activos';
+    protected static ?string $heading = 'Hogares solidarios con más Invitados activos';
 
     public function table(Table $table): Table
     {

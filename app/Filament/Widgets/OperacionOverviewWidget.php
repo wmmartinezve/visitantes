@@ -26,9 +26,49 @@ class OperacionOverviewWidget extends BaseWidget
         $periodo = $filtros->desde->format('d/m/Y').' — '.$filtros->hasta->format('d/m/Y');
 
         $stats = [
-            Stat::make('Invitados activos', (string) $kpis['invitados_activos'])
-                ->description('Hospedados en refugios')
+            Stat::make('Hogares solidarios', (string) $kpis['hogares_solidarios'])
+                ->description('Registrados en el ámbito')
+                ->icon('heroicon-o-home-modern')
+                ->color('primary'),
+
+            Stat::make('Con núcleo hospedado', (string) $kpis['hogares_con_nucleo'])
+                ->description('Hogares con Invitados')
                 ->icon('heroicon-o-user-group')
+                ->color('success'),
+
+            Stat::make('Sin núcleo', (string) $kpis['hogares_sin_nucleo'])
+                ->description('Disponibles para acogida')
+                ->icon('heroicon-o-home')
+                ->color('gray'),
+
+            Stat::make('Hogares nuevos', (string) $kpis['hogares_nuevos_periodo'])
+                ->description($periodo)
+                ->icon('heroicon-o-plus-circle')
+                ->color('info'),
+
+            Stat::make('Anfitriones registrados', (string) $kpis['anfitriones_registrados'])
+                ->description('Usuarios app anfitrión')
+                ->icon('heroicon-o-identification')
+                ->color('primary'),
+
+            Stat::make('Anfitriones desplegados', (string) $kpis['anfitriones_desplegados'])
+                ->description('Con hogar solidario asignado')
+                ->icon('heroicon-o-map-pin')
+                ->color('success'),
+
+            Stat::make('Anfitriones sin asignar', (string) $kpis['anfitriones_sin_asignar'])
+                ->description('Pendientes de despliegue')
+                ->icon('heroicon-o-clock')
+                ->color('warning'),
+
+            Stat::make('Tasa de despliegue', $kpis['tasa_despliegue_anfitriones'].'%')
+                ->description('Desplegados / registrados')
+                ->icon('heroicon-o-chart-bar')
+                ->color($kpis['tasa_despliegue_anfitriones'] >= 70 ? 'success' : 'warning'),
+
+            Stat::make('Invitados activos', (string) $kpis['invitados_activos'])
+                ->description('Hospedados en hogares solidarios')
+                ->icon('heroicon-o-users')
                 ->color('primary'),
 
             Stat::make('Registrados en período', (string) $kpis['invitados_registrados'])
@@ -48,10 +88,6 @@ class OperacionOverviewWidget extends BaseWidget
                 ->description('Total acumulado')
                 ->icon('heroicon-o-arrow-right-on-rectangle')
                 ->color('gray'),
-
-            Stat::make('Refugios', (string) $kpis['refugios'])
-                ->description('Puntos de atención')
-                ->icon('heroicon-o-home-modern'),
         ];
 
         if (VisitantesFeatures::logistica()) {

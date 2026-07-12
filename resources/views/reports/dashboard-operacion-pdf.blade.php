@@ -144,25 +144,7 @@
     <h2>Indicadores generales</h2>
     <table class="kpi-grid">
         @php
-            $kpiRows = [
-                ['Invitados activos', $kpis['invitados_activos']],
-                ['Registrados en período', $kpis['invitados_registrados']],
-                ['Nuevas familias', $kpis['nuevas_familias']],
-                ['Miembros de familia', $kpis['miembros_familia']],
-                ['Invitados egresados', $kpis['invitados_egresados']],
-                ['Refugios', $kpis['refugios']],
-                ['Centros de acopio activos', $kpis['centros_activos']],
-                ['Requerimientos creados', $kpis['requerimientos_creados']],
-                ['Requerimientos pendientes', $kpis['requerimientos_pendientes']],
-                ['Requerimientos asignados', $kpis['requerimientos_asignados']],
-                ['Requerimientos entregados', $kpis['requerimientos_entregados']],
-                ['Tasa de cumplimiento', $kpis['tasa_cumplimiento'].'%'],
-                ['Unidades solicitadas', $kpis['unidades_solicitadas']],
-                ['Unidades entregadas', $kpis['unidades_entregadas']],
-                ['Ítems con stock bajo', $kpis['stock_bajo']],
-                ['Unidades en inventario', $kpis['unidades_inventario']],
-            ];
-            $chunks = array_chunk($kpiRows, 4);
+            $chunks = array_chunk($kpi_filas, 4);
         @endphp
         @foreach ($chunks as $row)
             <tr>
@@ -179,30 +161,32 @@
         @endforeach
     </table>
 
-    <h2>Requerimientos por estatus (período)</h2>
-    <table class="data">
-        <thead>
-            <tr>
-                <th>Estatus</th>
-                <th>Cantidad</th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach ($requerimientos_por_estatus as $estatus => $total)
+    @if ($logistica_habilitada)
+        <h2>Requerimientos por estatus (período)</h2>
+        <table class="data">
+            <thead>
                 <tr>
-                    <td>{{ $estatus }}</td>
-                    <td>{{ $total }}</td>
+                    <th>Estatus</th>
+                    <th>Cantidad</th>
                 </tr>
-            @endforeach
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @foreach ($requerimientos_por_estatus as $estatus => $total)
+                    <tr>
+                        <td>{{ $estatus }}</td>
+                        <td>{{ $total }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
 
-    <h2>Refugios con más Invitados activos</h2>
+    <h2>Hogares solidarios con más Invitados activos</h2>
     <table class="data">
         <thead>
             <tr>
                 <th>#</th>
-                <th>Refugio</th>
+                <th>Hogar solidario</th>
                 <th>Invitados activos</th>
             </tr>
         </thead>
@@ -219,57 +203,61 @@
         </tbody>
     </table>
 
-    <h2>Centros de acopio con más entregas (período)</h2>
-    <table class="data">
-        <thead>
-            <tr>
-                <th>#</th>
-                <th>Centro</th>
-                <th>Entregas</th>
-                <th>Unidades</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($top_centros as $index => $centro)
+    @if ($logistica_habilitada)
+        <h2>Centros de acopio con más entregas (período)</h2>
+        <table class="data">
+            <thead>
                 <tr>
-                    <td>{{ $index + 1 }}</td>
-                    <td>{{ $centro->nombre }}</td>
-                    <td>{{ $centro->entregados }}</td>
-                    <td>{{ $centro->unidades }}</td>
+                    <th>#</th>
+                    <th>Centro</th>
+                    <th>Entregas</th>
+                    <th>Unidades</th>
                 </tr>
-            @empty
-                <tr><td colspan="4">Sin entregas en el período.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @forelse ($top_centros as $index => $centro)
+                    <tr>
+                        <td>{{ $index + 1 }}</td>
+                        <td>{{ $centro->nombre }}</td>
+                        <td>{{ $centro->entregados }}</td>
+                        <td>{{ $centro->unidades }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="4">Sin entregas en el período.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    @endif
 
     <div class="page-break"></div>
 
-    <h2>Inventario con stock bajo (≤ 5 unidades)</h2>
-    <table class="data">
-        <thead>
-            <tr>
-                <th>Centro</th>
-                <th>Municipio</th>
-                <th>Ítem</th>
-                <th>Cantidad</th>
-                <th>Unidad</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($stock_bajo as $item)
+    @if ($logistica_habilitada)
+        <h2>Inventario con stock bajo (≤ 5 unidades)</h2>
+        <table class="data">
+            <thead>
                 <tr>
-                    <td>{{ $item->centroAcopio?->nombre ?? '—' }}</td>
-                    <td>{{ $item->centroAcopio?->parroquia?->municipio?->nombre ?? '—' }}</td>
-                    <td>{{ $item->item_nombre }}</td>
-                    <td>{{ $item->cantidad }}</td>
-                    <td>{{ $item->unidad_medida }}</td>
+                    <th>Centro</th>
+                    <th>Municipio</th>
+                    <th>Ítem</th>
+                    <th>Cantidad</th>
+                    <th>Unidad</th>
                 </tr>
-            @empty
-                <tr><td colspan="5">No hay ítems con stock bajo.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @forelse ($stock_bajo as $item)
+                    <tr>
+                        <td>{{ $item->centroAcopio?->nombre ?? '—' }}</td>
+                        <td>{{ $item->centroAcopio?->parroquia?->municipio?->nombre ?? '—' }}</td>
+                        <td>{{ $item->item_nombre }}</td>
+                        <td>{{ $item->cantidad }}</td>
+                        <td>{{ $item->unidad_medida }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="5">No hay ítems con stock bajo.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    @endif
 
     <h2>Invitados registrados en el período (jefes de familia)</h2>
     <table class="data">
@@ -277,7 +265,7 @@
             <tr>
                 <th>Nombre</th>
                 <th>Cédula</th>
-                <th>Refugio</th>
+                <th>Hogar solidario</th>
                 <th>Municipio</th>
                 <th>Registrado</th>
             </tr>
@@ -297,43 +285,47 @@
         </tbody>
     </table>
 
-    <h2>Requerimientos del período</h2>
-    <table class="data">
-        <thead>
-            <tr>
-                <th>Invitado</th>
-                <th>Refugio</th>
-                <th>Ítem</th>
-                <th>Cant.</th>
-                <th>Estatus</th>
-                <th>Centro</th>
-                <th>Solicitado</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse ($requerimientos_recientes as $req)
+    @if ($logistica_habilitada)
+        <h2>Requerimientos del período</h2>
+        <table class="data">
+            <thead>
                 <tr>
-                    <td>{{ $req->invitado?->nombreCompleto() ?? '—' }}</td>
-                    <td>{{ $req->invitado?->refugio?->nombre ?? '—' }}</td>
-                    <td>{{ $req->item_solicitado }}</td>
-                    <td>{{ $req->cantidad }}</td>
-                    <td>
-                        <span class="badge badge-{{ $req->estatus?->value }}">
-                            {{ $req->estatus?->label() }}
-                        </span>
-                    </td>
-                    <td>{{ $req->centroAcopio?->nombre ?? '—' }}</td>
-                    <td>{{ $req->created_at?->format('d/m/Y H:i') }}</td>
+                    <th>Invitado</th>
+                    <th>Hogar solidario</th>
+                    <th>Ítem</th>
+                    <th>Cant.</th>
+                    <th>Estatus</th>
+                    <th>Centro</th>
+                    <th>Solicitado</th>
                 </tr>
-            @empty
-                <tr><td colspan="7">Sin requerimientos en el período.</td></tr>
-            @endforelse
-        </tbody>
-    </table>
+            </thead>
+            <tbody>
+                @forelse ($requerimientos_recientes as $req)
+                    <tr>
+                        <td>{{ $req->invitado?->nombreCompleto() ?? '—' }}</td>
+                        <td>{{ $req->invitado?->refugio?->nombre ?? '—' }}</td>
+                        <td>{{ $req->item_solicitado }}</td>
+                        <td>{{ $req->cantidad }}</td>
+                        <td>
+                            <span class="badge badge-{{ $req->estatus?->value }}">
+                                {{ $req->estatus?->label() }}
+                            </span>
+                        </td>
+                        <td>{{ $req->centroAcopio?->nombre ?? '—' }}</td>
+                        <td>{{ $req->created_at?->format('d/m/Y H:i') }}</td>
+                    </tr>
+                @empty
+                    <tr><td colspan="7">Sin requerimientos en el período.</td></tr>
+                @endforelse
+            </tbody>
+        </table>
+    @endif
 
     <div class="footer">
         Visitantes · {{ config('visitantes.estado') }} — Reporte institucional generado automáticamente.
-        Los datos de entregas usan la fecha de actualización del requerimiento al marcarse como entregado.
+        @if ($logistica_habilitada)
+            Los datos de entregas usan la fecha de actualización del requerimiento al marcarse como entregado.
+        @endif
     </div>
 </body>
 </html>

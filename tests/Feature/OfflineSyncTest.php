@@ -44,7 +44,9 @@ class OfflineSyncTest extends TestCase
                 'items_insumo_sugeridos',
                 'operador',
             ])
-            ->assertJsonPath('operador.rol', 'anfitrion');
+            ->assertJsonPath('operador.rol', 'anfitrion')
+            ->assertJsonPath('operador.requiere_registro_hogar', true)
+            ->assertJsonPath('operador.tiene_nucleo_familiar', false);
     }
 
     public function test_acopio_puede_descargar_catalogo_con_inventario_local(): void

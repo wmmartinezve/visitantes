@@ -38,9 +38,32 @@ class MobileFieldApiTest extends TestCase
         return User::query()->where('email', 'anfitrion@visitantes.test')->firstOrFail();
     }
 
-    public function test_lista_invitados_mobile(): void
+    private function anfitrionConHogar(): User
+    {
+        $anfitrion = $this->anfitrion();
+
+        if ($anfitrion->hogar_solidario_id !== null) {
+            return $anfitrion;
+        }
+
+        $hogar = HogarSolidario::query()->firstOrFail();
+        $anfitrion->forceFill(['hogar_solidario_id' => $hogar->id])->save();
+
+        return $anfitrion->fresh();
+    }
+
+    public function test_lista_invitados_vacia_sin_hogar_asignado(): void
     {
         Sanctum::actingAs($this->anfitrion());
+
+        $this->getJson('/api/mobile/invitados')
+            ->assertOk()
+            ->assertJsonCount(0, 'data');
+    }
+
+    public function test_lista_invitados_mobile(): void
+    {
+        Sanctum::actingAs($this->anfitrionConHogar());
 
         $this->getJson('/api/mobile/invitados')
             ->assertOk()
@@ -49,7 +72,7 @@ class MobileFieldApiTest extends TestCase
 
     public function test_busqueda_invitados_mobile_es_insensitive(): void
     {
-        $anfitrion = $this->anfitrion();
+        $anfitrion = $this->anfitrionConHogar();
         Sanctum::actingAs($anfitrion);
 
         Invitado::query()->create([
@@ -75,7 +98,7 @@ class MobileFieldApiTest extends TestCase
     {
         Storage::fake(InvitadoFotoStorage::privateDisk());
 
-        $anfitrion = $this->anfitrion();
+        $anfitrion = $this->anfitrionConHogar();
         Sanctum::actingAs($anfitrion);
 
         $jefe = Invitado::query()
@@ -105,7 +128,7 @@ class MobileFieldApiTest extends TestCase
     {
         Storage::fake(InvitadoFotoStorage::privateDisk());
 
-        $anfitrion = $this->anfitrion();
+        $anfitrion = $this->anfitrionConHogar();
         $this->limpiarNucleoDeHogar((int) $anfitrion->hogar_solidario_id);
         Sanctum::actingAs($anfitrion);
 
@@ -154,7 +177,7 @@ class MobileFieldApiTest extends TestCase
 
     public function test_lista_invitados_incluye_jefe_y_familiares(): void
     {
-        $anfitrion = $this->anfitrion();
+        $anfitrion = $this->anfitrionConHogar();
         $this->limpiarNucleoDeHogar((int) $anfitrion->hogar_solidario_id);
         Sanctum::actingAs($anfitrion);
 
@@ -198,7 +221,7 @@ class MobileFieldApiTest extends TestCase
     public function test_crear_requerimiento_mobile(): void
     {
         VisitantesFeatureTest::skipUnlessLogistica($this);
-        $anfitrion = $this->anfitrion();
+        $anfitrion = $this->anfitrionConHogar();
         Sanctum::actingAs($anfitrion);
 
         $invitado = Invitado::query()->where('hogar_solidario_id', $anfitrion->hogar_solidario_id)->firstOrFail();

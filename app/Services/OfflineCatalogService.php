@@ -90,6 +90,7 @@ class OfflineCatalogService
             'hogar_solidario_id' => $user->hogar_solidario_id,
             'centro_acopio_id' => $user->centro_acopio_id,
             'requiere_registro_hogar' => $user->isAnfitrion() && $user->hogar_solidario_id === null,
+            'tiene_nucleo_familiar' => false,
         ];
 
         if ($user->hogar_solidario_id !== null) {

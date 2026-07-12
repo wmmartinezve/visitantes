@@ -57,7 +57,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Anfitrión Demo (Puerto La Cruz)',
                 'password' => 'password',
                 'rol' => UserRole::Anfitrion,
-                'hogar_solidario_id' => $refugioPlc->id,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => null,
             ],
         );
@@ -100,7 +100,7 @@ class DemoOperacionSeeder extends Seeder
                 array_merge(
                     $this->requerimientoPair('Abrigo y descanso', 'Colchoneta'),
                     [
-                        'anfitrion_id' => $anfitrion->id,
+                        'anfitrion_id' => null,
                         'cantidad' => 5,
                         'centro_acopio_id' => null,
                     ],
@@ -169,7 +169,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Anfitrión Demo (Barcelona)',
                 'password' => 'password',
                 'rol' => UserRole::Anfitrion,
-                'hogar_solidario_id' => $refugio->id,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => null,
             ],
         );
@@ -199,7 +199,7 @@ class DemoOperacionSeeder extends Seeder
                 array_merge(
                     $this->requerimientoPair('Alimentos y bebidas', 'Agua embotellada'),
                     [
-                        'anfitrion_id' => $anfitrion->id,
+                        'anfitrion_id' => null,
                         'cantidad' => 10,
                         'centro_acopio_id' => null,
                     ],
@@ -252,7 +252,7 @@ class DemoOperacionSeeder extends Seeder
                 'name' => 'Anfitrión Demo (El Tigre)',
                 'password' => 'password',
                 'rol' => UserRole::Anfitrion,
-                'hogar_solidario_id' => $refugio->id,
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => null,
             ],
         );

@@ -105,7 +105,7 @@ class Dashboard extends BaseDashboard
                         ->afterStateUpdated(fn (Set $set) => $set('hogar_solidario_id', null)),
 
                     Select::make('hogar_solidario_id')
-                        ->label('HogarSolidario')
+                        ->label('Hogar solidario')
                         ->options(function (Get $get): array {
                             $parroquiaId = $get('parroquia_id');
                             if (! $parroquiaId) {

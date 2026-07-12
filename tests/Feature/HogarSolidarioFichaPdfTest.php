@@ -39,7 +39,7 @@ class HogarSolidarioFichaPdfTest extends TestCase
     public function test_anfitrion_no_puede_descargar_ficha_pdf(): void
     {
         $anfitrion = User::query()->where('email', 'anfitrion@visitantes.test')->firstOrFail();
-        $hogar = HogarSolidario::query()->findOrFail($anfitrion->hogar_solidario_id);
+        $hogar = HogarSolidario::query()->whereHas('jefeFamilia')->firstOrFail();
 
         $this->actingAs($anfitrion)
             ->get("/admin/hogares-solidarios/{$hogar->id}/exportar-ficha-pdf")

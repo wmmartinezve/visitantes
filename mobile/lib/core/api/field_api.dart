@@ -2,7 +2,6 @@ import 'package:dio/dio.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
-import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
 

@@ -45,7 +45,10 @@ class DashboardOperacionTest extends TestCase
         $kpis = app(OperacionMetricsService::class)->kpis($filtros);
 
         $this->assertGreaterThan(0, $kpis['invitados_activos']);
-        $this->assertGreaterThan(0, $kpis['refugios']);
+        $this->assertGreaterThan(0, $kpis['hogares_solidarios']);
+        $this->assertArrayHasKey('anfitriones_desplegados', $kpis);
+        $this->assertArrayHasKey('anfitriones_registrados', $kpis);
+        $this->assertArrayHasKey('tasa_despliegue_anfitriones', $kpis);
         $this->assertArrayHasKey('tasa_cumplimiento', $kpis);
     }
 
@@ -76,8 +79,15 @@ class DashboardOperacionTest extends TestCase
         );
 
         $this->assertArrayHasKey('kpis', $reporte);
+        $this->assertArrayHasKey('kpi_filas', $reporte);
+        $this->assertArrayHasKey('logistica_habilitada', $reporte);
         $this->assertArrayHasKey('top_refugios', $reporte);
         $this->assertArrayHasKey('requerimientos_recientes', $reporte);
         $this->assertNotEmpty($reporte['etiquetas_filtros']);
+        $this->assertNotEmpty($reporte['kpi_filas']);
+
+        $labels = array_column($reporte['kpi_filas'], 0);
+        $this->assertContains('Anfitriones desplegados', $labels);
+        $this->assertContains('Hogares solidarios', $labels);
     }
 }
