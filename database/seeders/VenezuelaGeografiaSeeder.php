@@ -6,7 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Estado;
 use App\Models\Municipio;
-use App\Models\Parroquia;
+use App\Support\GeografiaUpsert;
 use Illuminate\Database\Seeder;
 
 class VenezuelaGeografiaSeeder extends Seeder
@@ -61,10 +61,7 @@ class VenezuelaGeografiaSeeder extends Seeder
                 $municipio->update(['estado_id' => $estadoId]);
             }
 
-            Parroquia::query()->firstOrCreate([
-                'municipio_id' => $municipio->id,
-                'nombre' => $row['parroquia'],
-            ]);
+            GeografiaUpsert::upsertParroquia($municipio, $row['parroquia']);
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Database\Seeders;
 
 use App\Models\Estado;
 use App\Models\Municipio;
-use App\Models\Parroquia;
+use App\Support\GeografiaUpsert;
 use Illuminate\Database\Seeder;
 
 class AnzoateguiGeografiaSeeder extends Seeder
@@ -29,10 +29,7 @@ class AnzoateguiGeografiaSeeder extends Seeder
             }
 
             foreach ($parroquias as $parroquiaNombre) {
-                Parroquia::query()->firstOrCreate([
-                    'municipio_id' => $municipio->id,
-                    'nombre' => $parroquiaNombre,
-                ]);
+                GeografiaUpsert::upsertParroquia($municipio, $parroquiaNombre);
             }
         }
     }
