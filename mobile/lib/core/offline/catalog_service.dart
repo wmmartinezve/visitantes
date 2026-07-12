@@ -9,6 +9,8 @@ class CatalogService extends ChangeNotifier {
       : _api = apiClient ?? ApiClient(),
         _connectivity = connectivity ?? Connectivity();
 
+  static const Duration cacheTtl = Duration(hours: 24);
+
   final ApiClient _api;
   final Connectivity _connectivity;
 
@@ -25,15 +27,80 @@ class CatalogService extends ChangeNotifier {
     return null;
   }
 
-  bool get isReady {
+  DateTime? get cacheFetchedAt {
+    final explicit = LocalDb.meta.get('catalog_cached_at');
+    if (explicit is String) {
+      final parsed = DateTime.tryParse(explicit);
+      if (parsed != null) return parsed.toLocal();
+    }
+
+    final generatedAt = cachedCatalog?['generated_at'];
+    if (generatedAt is String) {
+      return DateTime.tryParse(generatedAt)?.toLocal();
+    }
+
+    return null;
+  }
+
+  bool get isCacheExpired {
+    final fetchedAt = cacheFetchedAt;
+    if (fetchedAt == null) return true;
+    return DateTime.now().difference(fetchedAt) > cacheTtl;
+  }
+
+  Duration? get cacheTimeRemaining {
+    final fetchedAt = cacheFetchedAt;
+    if (fetchedAt == null) return null;
+    final remaining = cacheTtl - DateTime.now().difference(fetchedAt);
+    if (remaining.isNegative) return Duration.zero;
+    return remaining;
+  }
+
+  bool get hasRegistrationCatalogData {
     final catalog = cachedCatalog;
     if (catalog == null) return false;
-    final estados = catalog['estados'] as List?;
-    final municipios = catalog['municipios'] as List?;
-    return (estados?.isNotEmpty ?? false) && (municipios?.isNotEmpty ?? false);
+
+    bool hasList(String key) {
+      final raw = catalog[key];
+      return raw is List && raw.isNotEmpty;
+    }
+
+    return hasList('estados') &&
+        hasList('municipios') &&
+        hasList('parroquias') &&
+        hasList('parentescos') &&
+        hasList('tipos_vivienda') &&
+        hasList('tipos_anfitrion') &&
+        hasList('situaciones_jefe') &&
+        hasList('condiciones');
+  }
+
+  /// Catálogo listo para formularios (online u offline con caché local).
+  bool get isReady => hasRegistrationCatalogData;
+
+  bool get canWorkOffline => hasRegistrationCatalogData && !isCacheExpired;
+
+  /// Garantiza catálogo en Hive: usa caché válida (<24 h) o descarga si hay red.
+  Future<Map<String, dynamic>?> ensureCached({bool force = false}) async {
+    final cached = cachedCatalog;
+
+    if (!force && cached != null && !isCacheExpired && hasRegistrationCatalogData) {
+      return cached;
+    }
+
+    if (await isOnline) {
+      final fresh = await refresh(force: true);
+      if (fresh != null) return fresh;
+    }
+
+    return cached;
   }
 
   Future<Map<String, dynamic>?> refresh({bool force = false}) async {
+    if (!force && cachedCatalog != null && !isCacheExpired && hasRegistrationCatalogData) {
+      return cachedCatalog;
+    }
+
     if (!await isOnline) {
       return cachedCatalog;
     }
@@ -47,11 +114,7 @@ class CatalogService extends ChangeNotifier {
 
       final version = catalog['version'] as String?;
 
-      // Siempre persistir: el bloque `operador` depende del usuario y no entra en `version`.
-      await LocalDb.catalog.put('current', catalog);
-      await LocalDb.meta.put('catalog_version', version);
-      await LocalDb.meta.put('catalog_updated_at', catalog['generated_at']);
-
+      await _persistCatalog(catalog, version: version);
       notifyListeners();
       return catalog;
     } catch (_) {
@@ -59,10 +122,18 @@ class CatalogService extends ChangeNotifier {
     }
   }
 
+  Future<void> _persistCatalog(Map<String, dynamic> catalog, {String? version}) async {
+    await LocalDb.catalog.put('current', catalog);
+    await LocalDb.meta.put('catalog_version', version);
+    await LocalDb.meta.put('catalog_updated_at', catalog['generated_at']);
+    await LocalDb.meta.put('catalog_cached_at', DateTime.now().toUtc().toIso8601String());
+  }
+
   Future<void> clear() async {
     await LocalDb.catalog.delete('current');
     await LocalDb.meta.delete('catalog_version');
     await LocalDb.meta.delete('catalog_updated_at');
+    await LocalDb.meta.delete('catalog_cached_at');
     notifyListeners();
   }
 
@@ -112,6 +183,26 @@ class CatalogService extends ChangeNotifier {
   int get municipiosCount => (cachedCatalog?['municipios'] as List?)?.length ?? 0;
   int get parroquiasCount => (cachedCatalog?['parroquias'] as List?)?.length ?? 0;
   int get centrosCount => (cachedCatalog?['centros_acopio'] as List?)?.length ?? 0;
+
+  String get offlineCacheSummary {
+    if (!hasRegistrationCatalogData) {
+      return 'Sin caché de catálogo';
+    }
+
+    final remaining = cacheTimeRemaining;
+    if (isCacheExpired) {
+      return 'Caché expirada · $municipiosCount mun. · conecte para actualizar';
+    }
+
+    if (remaining == null) {
+      return 'Caché offline · $municipiosCount mun. · $parroquiasCount parr.';
+    }
+
+    final hours = remaining.inHours;
+    final minutes = remaining.inMinutes.remainder(60);
+    final ttlLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
+    return 'Caché offline · $municipiosCount mun. · válida $ttlLabel';
+  }
 
   bool get tieneNucleoFamiliarEnHogar {
     final operador = cachedCatalog?['operador'];

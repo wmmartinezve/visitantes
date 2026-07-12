@@ -132,7 +132,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   Future<void> _cambiarHogarActivo(int hogarId) async {
     try {
       final user = await widget.auth.setActiveHogar(hogarId);
-      await widget.catalog.refresh(force: true);
+      await widget.catalog.ensureCached(force: true);
       _handleUserUpdated(user);
       _bumpRefresh();
       if (!mounted) return;
@@ -188,7 +188,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   }
 
   Future<void> _onRegistered() async {
-    await widget.catalog.refresh(force: true);
+    await widget.catalog.ensureCached(force: true);
     try {
       final user = await widget.auth.fetchCurrentUser();
       _handleUserUpdated(user);

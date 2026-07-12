@@ -150,9 +150,13 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
       _applyDefaultHogarEstado();
       return;
     }
+
     setState(() => _loadingCatalog = true);
     try {
-      await widget.catalog.refresh(force: true);
+      await widget.catalog.ensureCached();
+      if (!widget.catalog.isReady) {
+        await widget.catalog.ensureCached(force: true);
+      }
     } finally {
       if (mounted) {
         setState(() => _loadingCatalog = false);
@@ -1143,7 +1147,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   Widget build(BuildContext context) {
     super.build(context);
 
-    if (_loadingCatalog || !widget.catalog.isReady) {
+    if (_loadingCatalog) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -1156,12 +1160,39 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
             ),
             const SizedBox(height: 12),
             OutlinedButton.icon(
-              onPressed: _loadingCatalog ? null : _ensureCatalogReady,
+              onPressed: _ensureCatalogReady,
               icon: const Icon(Icons.refresh),
               label: const Text('Reintentar'),
             ),
           ],
         ),
+      );
+    }
+
+    if (!widget.catalog.isReady) {
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        children: [
+          const Icon(Icons.cloud_off, size: 48, color: VenezuelaColors.blue),
+          const SizedBox(height: 16),
+          Text(
+            'Catálogo offline no disponible',
+            style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 8),
+          const Text(
+            'Conéctese a internet al menos una vez para descargar estados, municipios, parroquias y listas del formulario. '
+            'La caché se guarda en el teléfono por 24 horas.',
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 16),
+          FilledButton.icon(
+            onPressed: _ensureCatalogReady,
+            icon: const Icon(Icons.download),
+            label: const Text('Descargar catálogo'),
+          ),
+        ],
       );
     }
 

@@ -34,8 +34,7 @@ class _AuthGateState extends State<AuthGate> {
     var user = await _auth.restoreSession();
     if (user != null) {
       _sync.startAutoSync();
-      await _catalog.clear();
-      await _catalog.refresh(force: true);
+      await _catalog.ensureCached();
       try {
         user = await _auth.fetchCurrentUser();
         await _catalog.syncOperadorFromUser(user);
@@ -64,8 +63,7 @@ class _AuthGateState extends State<AuthGate> {
       }
 
       _sync.startAutoSync();
-      await _catalog.clear();
-      await _catalog.refresh(force: true);
+      await _catalog.ensureCached(force: true);
       user = await _auth.fetchCurrentUser();
       await _catalog.syncOperadorFromUser(user);
       await _sync.syncPending();

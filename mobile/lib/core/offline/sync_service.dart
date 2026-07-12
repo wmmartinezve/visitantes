@@ -237,7 +237,7 @@ class SyncService extends ChangeNotifier {
     }
 
     if (ok > 0) {
-      await _catalog.refresh(force: true);
+      await _catalog.ensureCached(force: true);
     }
 
     notifyListeners();
@@ -276,7 +276,7 @@ class SyncService extends ChangeNotifier {
     }
 
     final syncResult = syncQueue ? await syncPending() : SyncResult(ok: 0, failed: 0);
-    final catalog = await _catalog.refresh(force: true);
+    final catalog = await _catalog.ensureCached(force: true);
     notifyListeners();
 
     return RefreshAllResult(

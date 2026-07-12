@@ -168,6 +168,7 @@ class _OfflineBannerState extends State<OfflineBanner> {
     super.initState();
     _checkOnline();
     widget.sync.addListener(_onSyncChanged);
+    widget.catalog.addListener(_onCatalogChanged);
     _connectivitySub = Connectivity().onConnectivityChanged.listen((results) {
       final online = !results.contains(ConnectivityResult.none);
       if (!mounted) return;
@@ -182,6 +183,7 @@ class _OfflineBannerState extends State<OfflineBanner> {
   void dispose() {
     _connectivitySub?.cancel();
     widget.sync.removeListener(_onSyncChanged);
+    widget.catalog.removeListener(_onCatalogChanged);
     super.dispose();
   }
 
@@ -189,21 +191,14 @@ class _OfflineBannerState extends State<OfflineBanner> {
     if (mounted) setState(() {});
   }
 
+  void _onCatalogChanged() {
+    if (mounted) setState(() {});
+  }
+
   Future<void> _checkOnline() async {
     final online = await widget.catalog.isOnline;
     if (!mounted) return;
     setState(() => _online = online);
-  }
-
-  String? get _catalogUpdatedAt {
-    final raw = widget.catalog.cachedCatalog?['generated_at'] as String?;
-    if (raw == null) return null;
-    try {
-      final dt = DateTime.parse(raw).toLocal();
-      return '${dt.day}/${dt.month} ${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
-    } catch (_) {
-      return null;
-    }
   }
 
   @override
@@ -274,20 +269,25 @@ class _OfflineBannerState extends State<OfflineBanner> {
           );
         }
 
-        final updated = _catalogUpdatedAt;
+        final fetchedAt = widget.catalog.cacheFetchedAt;
+        final updated = fetchedAt == null
+            ? null
+            : '${fetchedAt.day}/${fetchedAt.month} ${fetchedAt.hour.toString().padLeft(2, '0')}:${fetchedAt.minute.toString().padLeft(2, '0')}';
+        final cacheExpired = widget.catalog.isCacheExpired;
+        final cacheSummary = widget.catalog.offlineCacheSummary;
         return _BannerShell(
-          color: VenezuelaColors.yellowContainer,
-          icon: Icons.offline_pin,
-          iconColor: VenezuelaColors.onYellowContainer,
+          color: cacheExpired ? Colors.orange.shade100 : VenezuelaColors.yellowContainer,
+          icon: cacheExpired ? Icons.warning_amber_rounded : Icons.offline_pin,
+          iconColor: cacheExpired ? Colors.orange.shade900 : VenezuelaColors.onYellowContainer,
           child: Row(
             children: [
               Expanded(
                 child: Text(
-                  updated != null
-                      ? 'Caché offline · ${widget.catalog.municipiosCount} mun. · actualizada $updated'
-                      : 'Datos offline: ${widget.catalog.municipiosCount} municipios, '
-                          '${widget.catalog.parroquiasCount} parroquias',
-                  style: TextStyle(fontSize: 12, color: VenezuelaColors.onYellowContainer),
+                  updated != null ? '$cacheSummary · guardada $updated' : cacheSummary,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: cacheExpired ? Colors.orange.shade900 : VenezuelaColors.onYellowContainer,
+                  ),
                 ),
               ),
               if (widget.onRefresh != null)
