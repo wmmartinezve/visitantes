@@ -9,11 +9,18 @@ use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class MobileCentroGeolocalizacionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        VisitantesFeatureTest::skipUnlessLogistica($this);
+    }
 
     private function operadorAcopio(): User
     {

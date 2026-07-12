@@ -10,6 +10,7 @@ use App\Services\ReporteExportService;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class ReportesOperacionTest extends TestCase
@@ -18,6 +19,8 @@ class ReportesOperacionTest extends TestCase
 
     public function test_admin_puede_acceder_a_reportes(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
+
         $admin = User::factory()->create(['rol' => UserRole::Admin]);
 
         $this->actingAs($admin)

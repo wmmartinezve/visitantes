@@ -11,7 +11,7 @@
             <p class="text-xs font-medium uppercase tracking-wider text-m3-primary">Visitantes · {{ config('visitantes.estado') }}</p>
             <h1 class="mt-1 text-2xl font-medium text-m3-on-surface">Gestión de Invitados</h1>
             <p class="mt-2 text-sm text-m3-on-surface-variant">
-                Sistema de asistencia y logística para anfitriones y centros de acopio en {{ config('visitantes.estado') }}.
+                Registro y seguimiento de Invitados en hogares solidarios de {{ config('visitantes.estado') }}.
             </p>
         </div>
 
@@ -20,7 +20,7 @@
                 <span class="material-symbols-outlined text-m3-primary">admin_panel_settings</span>
                 <div class="min-w-0 flex-1">
                     <p class="font-medium text-m3-on-surface">Panel administrativo</p>
-                    <p class="text-xs text-m3-on-surface-variant">Catálogo, asignación de requerimientos, reportes (web)</p>
+                    <p class="text-xs text-m3-on-surface-variant">Hogares solidarios, Invitados y reportes (web)</p>
                 </div>
                 <span class="material-symbols-outlined text-m3-on-surface-variant">chevron_right</span>
             </a>
@@ -29,7 +29,7 @@
                 <span class="material-symbols-outlined text-m3-secondary">phone_android</span>
                 <div class="min-w-0 flex-1">
                     <p class="font-medium text-m3-on-surface">App móvil Flutter</p>
-                    <p class="text-xs text-m3-on-surface-variant">Anfitrión y Centro de Acopio — carpeta <code class="text-xs">mobile/</code></p>
+                    <p class="text-xs text-m3-on-surface-variant">Anfitrión — carpeta <code class="text-xs">mobile/</code></p>
                 </div>
             </div>
         </div>
@@ -43,7 +43,6 @@
                 <p class="mb-2 font-medium text-m3-on-surface">Credenciales demo (local)</p>
                 <p><span class="font-medium">Panel admin:</span> admin@visitantes.test / password</p>
                 <p class="mt-1"><span class="font-medium">Anfitrión:</span> anfitrion@visitantes.test / password → app Flutter</p>
-                <p class="mt-1"><span class="font-medium">Acopio:</span> acopio@visitantes.test / password → app Flutter</p>
             </div>
         @endif
     </div>

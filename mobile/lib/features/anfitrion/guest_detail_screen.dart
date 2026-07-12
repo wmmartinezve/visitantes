@@ -8,14 +8,10 @@ import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/media/photo_compression.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
-import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
-import 'package:visitantes_mobile/shared/widgets/insumo_picker.dart';
-import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/invitado_avatar.dart';
 import 'package:visitantes_mobile/shared/widgets/invitado_foto_preview.dart';
-import 'package:visitantes_mobile/shared/widgets/requirement_card.dart';
 
 class GuestDetailScreen extends StatefulWidget {
   const GuestDetailScreen({
@@ -23,13 +19,11 @@ class GuestDetailScreen extends StatefulWidget {
     required this.invitadoId,
     required this.fieldApi,
     this.catalog,
-    this.sync,
   });
 
   final int invitadoId;
   final FieldApi fieldApi;
   final CatalogService? catalog;
-  final SyncService? sync;
 
   @override
   State<GuestDetailScreen> createState() => _GuestDetailScreenState();
@@ -38,25 +32,14 @@ class GuestDetailScreen extends StatefulWidget {
 class _GuestDetailScreenState extends State<GuestDetailScreen> {
   InvitadoModel? _invitado;
   bool _loading = true;
-  String? _categoria;
-  String? _subcategoria;
-  final _cantidad = TextEditingController(text: '1');
-  bool _saving = false;
   bool _uploadingFoto = false;
 
   CatalogService get _catalog => widget.catalog ?? CatalogService();
-  SyncService get _sync => widget.sync ?? SyncService();
 
   @override
   void initState() {
     super.initState();
     _load();
-  }
-
-  @override
-  void dispose() {
-    _cantidad.dispose();
-    super.dispose();
   }
 
   Future<void> _load() async {
@@ -129,53 +112,6 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
     } finally {
       if (mounted) setState(() => _uploadingFoto = false);
-    }
-  }
-
-  Future<void> _addRequerimiento() async {
-    if (_categoria == null || _categoria!.isEmpty || _subcategoria == null || _subcategoria!.isEmpty) {
-      return;
-    }
-    setState(() => _saving = true);
-
-    final payload = {
-      'invitado_id': widget.invitadoId,
-      'categoria': _categoria!,
-      'subcategoria': _subcategoria!,
-      'cantidad': int.tryParse(_cantidad.text.trim()) ?? 1,
-    };
-
-    try {
-      final online = await _catalog.isOnline;
-      if (online) {
-        await widget.fieldApi.createRequerimientoOnline(
-          invitadoId: widget.invitadoId,
-          categoria: _categoria!,
-          subcategoria: _subcategoria!,
-          cantidad: payload['cantidad'] as int,
-        );
-      } else {
-        await _sync.enqueue('requerimiento.create', payload);
-      }
-
-      setState(() {
-        _categoria = null;
-        _subcategoria = null;
-      });
-      _cantidad.text = '1';
-      await _load();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(online ? 'Requerimiento registrado.' : 'Requerimiento guardado offline.'),
-          backgroundColor: VenezuelaColors.blue,
-        ),
-      );
-    } catch (e) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Error: $e')));
-    } finally {
-      if (mounted) setState(() => _saving = false);
     }
   }
 
@@ -271,43 +207,6 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                           ),
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 20),
-                    FormSectionCard(
-                      title: 'Nuevo requerimiento',
-                      icon: M3FieldIcons.item,
-                      child: Column(
-                        children: [
-                          InsumoPicker(
-                            key: ValueKey('req-picker-$_categoria-$_subcategoria'),
-                            catalogo: insumosCatalogoFromCache(_catalog.cachedCatalog),
-                            categoria: _categoria,
-                            subcategoria: _subcategoria,
-                            onChanged: (cat, sub) => setState(() {
-                              _categoria = cat;
-                              _subcategoria = sub;
-                            }),
-                          ),
-                          M3TextFieldRaw(
-                            controller: _cantidad,
-                            label: 'Cantidad',
-                            icon: M3FieldIcons.quantity,
-                            keyboardType: TextInputType.number,
-                          ),
-                          const SizedBox(height: 4),
-                          FilledButton.icon(
-                            onPressed: _saving ? null : _addRequerimiento,
-                            icon: const Icon(Icons.add),
-                            label: const Text('Agregar requerimiento'),
-                            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-                          ),
-                        ],
-                      ),
-                    ),
-                    if (inv.requerimientos.isNotEmpty) ...[
-                      const SizedBox(height: 16),
-                      SectionHeader(title: 'Requerimientos (${inv.requerimientos.length})'),
-                      ...inv.requerimientos.map((r) => RequirementCard(requerimiento: r)),
                     ],
                   ],
                 ],

@@ -50,48 +50,4 @@
             @endforeach
         </div>
     @endif
-
-    <x-m3.section-header title="Requerimientos" />
-
-    <div class="m3-card space-y-3">
-        <form wire:submit="agregarRequerimiento" data-offline-form data-offline-type="requerimiento.create" data-offline-invitado-id="{{ $invitado->id }}" class="space-y-3">
-            <x-m3.select-field label="Categoría" icon="category"
-                wire:model.live="categoria" data-offline-field="categoria" :error="$errors->first('categoria')">
-                <option value="">Seleccione…</option>
-                @foreach(array_keys($insumosCatalogo) as $cat)
-                    <option value="{{ $cat }}">{{ $cat }}</option>
-                @endforeach
-            </x-m3.select-field>
-
-            <x-m3.select-field label="Subcategoría" icon="shopping_bag"
-                wire:model="subcategoria" data-offline-field="subcategoria" :error="$errors->first('subcategoria')"
-                :disabled="$categoria === ''">
-                <option value="">Seleccione…</option>
-                @foreach($subcategoriasDisponibles as $sub)
-                    <option value="{{ $sub }}">{{ $sub }}</option>
-                @endforeach
-            </x-m3.select-field>
-
-            <div class="flex gap-2">
-                <x-m3.text-field label="Cant." icon="numbers" type="number" wire:model="cantidad" data-offline-field="cantidad" min="1" class="!w-28 flex-shrink-0" />
-                <x-m3.button icon="add" variant="danger" class="flex-1">Agregar</x-m3.button>
-            </div>
-        </form>
-
-        <div class="divide-y divide-m3-outline-variant/30">
-            @forelse ($invitado->requerimientos as $req)
-                <div class="flex items-center justify-between py-3">
-                    <div>
-                        <p class="font-medium">{{ $req->subcategoria ?? $req->item_solicitado }}</p>
-                        <p class="text-xs text-m3-on-surface-variant">
-                            {{ $req->categoria ?? '—' }} · Cantidad: {{ $req->cantidad }}
-                        </p>
-                    </div>
-                    <x-m3.status-chip :estatus="$req->estatus?->value" :label="$req->estatus?->label()" />
-                </div>
-            @empty
-                <p class="py-6 text-center text-sm text-m3-on-surface-variant">Sin requerimientos.</p>
-            @endforelse
-        </div>
-    </div>
 </div>

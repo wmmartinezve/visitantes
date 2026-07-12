@@ -9,6 +9,7 @@ use App\Filament\Resources\UserResource\Pages;
 use App\Models\CentroAcopio;
 use App\Models\HogarSolidario;
 use App\Models\User;
+use App\Support\VisitantesFeatures;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -55,9 +56,11 @@ class UserResource extends Resource
                 ->maxLength(255),
             Forms\Components\Select::make('rol')
                 ->label('Rol')
-                ->options(collect(UserRole::cases())->mapWithKeys(
-                    fn (UserRole $rol): array => [$rol->value => $rol->label()]
-                ))
+                ->options(collect(UserRole::cases())
+                    ->when(! VisitantesFeatures::logistica(), fn ($roles) => $roles->reject(
+                        fn (UserRole $rol): bool => $rol === UserRole::CentroAcopio
+                    ))
+                    ->mapWithKeys(fn (UserRole $rol): array => [$rol->value => $rol->label()]))
                 ->default(UserRole::Admin->value)
                 ->required()
                 ->live(),
@@ -71,8 +74,8 @@ class UserResource extends Resource
                 ->label('Centro de acopio asignado')
                 ->options(fn (): array => CentroAcopio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
                 ->searchable()
-                ->visible(fn (Get $get): bool => $get('rol') === UserRole::CentroAcopio->value)
-                ->required(fn (Get $get): bool => $get('rol') === UserRole::CentroAcopio->value),
+                ->visible(fn (Get $get): bool => VisitantesFeatures::logistica() && $get('rol') === UserRole::CentroAcopio->value)
+                ->required(fn (Get $get): bool => VisitantesFeatures::logistica() && $get('rol') === UserRole::CentroAcopio->value),
         ]);
     }
 

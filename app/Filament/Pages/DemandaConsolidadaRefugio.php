@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\HidesWhenLogisticaDisabled;
 use App\Enums\RequerimientoEstatus;
 use App\Models\HogarSolidario;
 use App\Services\RequerimientoAsignacionService;
@@ -18,6 +19,7 @@ use Illuminate\Support\Collection;
 
 class DemandaConsolidadaRefugio extends Page implements HasForms
 {
+    use HidesWhenLogisticaDisabled;
     use InteractsWithForms;
 
     protected static ?string $navigationIcon = 'heroicon-o-truck';

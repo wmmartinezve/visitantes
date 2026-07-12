@@ -15,6 +15,7 @@ use App\Models\Requerimiento;
 use App\Models\User;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class AuthorizationPolicyTest extends TestCase
@@ -66,6 +67,7 @@ class AuthorizationPolicyTest extends TestCase
 
     public function test_operador_no_puede_editar_inventario_de_otro_centro(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $centroPropio = CentroAcopio::query()->create([
@@ -106,6 +108,7 @@ class AuthorizationPolicyTest extends TestCase
 
     public function test_operador_no_puede_entregar_requerimiento_de_otro_centro(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([
@@ -162,6 +165,7 @@ class AuthorizationPolicyTest extends TestCase
 
     public function test_admin_puede_asignar_requerimiento_pendiente(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([

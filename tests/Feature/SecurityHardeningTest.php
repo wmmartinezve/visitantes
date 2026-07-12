@@ -20,6 +20,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class SecurityHardeningTest extends TestCase
@@ -193,6 +194,7 @@ class SecurityHardeningTest extends TestCase
 
     public function test_marcar_entregado_es_idempotente(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();

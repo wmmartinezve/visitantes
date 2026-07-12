@@ -6,6 +6,7 @@ namespace App\Filament\Widgets;
 
 use App\Models\Requerimiento;
 use App\Support\OperacionFiltros;
+use App\Support\VisitantesFeatures;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
@@ -21,6 +22,11 @@ class RequerimientosFiltradosWidget extends BaseWidget
     protected int|string|array $columnSpan = 'full';
 
     protected static ?string $heading = 'Requerimientos del período';
+
+    public static function canView(): bool
+    {
+        return VisitantesFeatures::logistica();
+    }
 
     public function table(Table $table): Table
     {

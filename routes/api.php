@@ -4,12 +4,10 @@ use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobilePasswordResetController;
 use App\Http\Controllers\Api\MobileProfileController;
 use App\Http\Controllers\InvitadoFotoController;
-use App\Http\Controllers\Api\MobileCentroAcopioController;
-use App\Http\Controllers\Api\MobileEntregaController;
 use App\Http\Controllers\Api\MobileInvitadoController;
-use App\Http\Controllers\Api\MobileRequerimientoController;
 use App\Http\Controllers\Api\OfflineCatalogController;
 use App\Http\Controllers\Api\OfflineSyncController;
+use App\Support\VisitantesFeatures;
 use Illuminate\Support\Facades\Route;
 
 Route::prefix('mobile')->name('api.mobile.')->group(function (): void {
@@ -31,13 +29,15 @@ Route::prefix('mobile')->name('api.mobile.')->group(function (): void {
         Route::post('/invitados/{invitado}/foto', [MobileInvitadoController::class, 'updateFoto'])->name('invitados.foto.store');
         Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)->name('invitados.foto');
 
-        Route::get('/requerimientos', [MobileRequerimientoController::class, 'index'])->name('requerimientos.index');
-        Route::post('/requerimientos', [MobileRequerimientoController::class, 'store'])->name('requerimientos.store');
+        if (VisitantesFeatures::logistica()) {
+            Route::get('/requerimientos', [\App\Http\Controllers\Api\MobileRequerimientoController::class, 'index'])->name('requerimientos.index');
+            Route::post('/requerimientos', [\App\Http\Controllers\Api\MobileRequerimientoController::class, 'store'])->name('requerimientos.store');
 
-        Route::get('/entregas', [MobileEntregaController::class, 'index'])->name('entregas.index');
-        Route::post('/entregas/{requerimiento}/entregar', [MobileEntregaController::class, 'entregar'])->name('entregas.entregar');
+            Route::get('/entregas', [\App\Http\Controllers\Api\MobileEntregaController::class, 'index'])->name('entregas.index');
+            Route::post('/entregas/{requerimiento}/entregar', [\App\Http\Controllers\Api\MobileEntregaController::class, 'entregar'])->name('entregas.entregar');
 
-        Route::get('/centro', [MobileCentroAcopioController::class, 'show'])->name('centro.show');
-        Route::put('/centro/geolocalizacion', [MobileCentroAcopioController::class, 'updateGeolocalizacion'])->name('centro.geolocalizacion');
+            Route::get('/centro', [\App\Http\Controllers\Api\MobileCentroAcopioController::class, 'show'])->name('centro.show');
+            Route::put('/centro/geolocalizacion', [\App\Http\Controllers\Api\MobileCentroAcopioController::class, 'updateGeolocalizacion'])->name('centro.geolocalizacion');
+        }
     });
 });

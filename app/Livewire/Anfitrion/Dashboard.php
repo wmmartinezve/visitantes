@@ -5,9 +5,7 @@ declare(strict_types=1);
 namespace App\Livewire\Anfitrion;
 
 use App\Enums\InvitadoEstatus;
-use App\Enums\RequerimientoEstatus;
 use App\Models\Invitado;
-use App\Models\Requerimiento;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -23,10 +21,6 @@ class Dashboard extends Component
             'invitadosActivos' => Invitado::query()
                 ->where('hogar_solidario_id', $refugioId)
                 ->where('estatus', InvitadoEstatus::Activo)
-                ->count(),
-            'requerimientosPendientes' => Requerimiento::query()
-                ->whereHas('invitado', fn ($q) => $q->where('hogar_solidario_id', $refugioId))
-                ->where('estatus', RequerimientoEstatus::Pendiente)
                 ->count(),
         ]);
     }

@@ -1,18 +1,10 @@
 <?php
 
-use App\Http\Controllers\AcopioLogoutController;
 use App\Http\Controllers\Admin\DashboardPdfExportController;
 use App\Http\Controllers\AnfitrionLogoutController;
 use App\Http\Controllers\InvitadoFotoController;
 use App\Http\Controllers\Api\OfflineCatalogController;
 use App\Http\Controllers\Api\OfflineSyncController;
-use App\Livewire\Acopio\Dashboard as AcopioDashboard;
-use App\Livewire\Acopio\ForgotPassword as AcopioForgotPassword;
-use App\Livewire\Acopio\GestionInventario;
-use App\Livewire\Acopio\Login as AcopioLogin;
-use App\Livewire\Acopio\Perfil as AcopioPerfil;
-use App\Livewire\Acopio\ResetPassword as AcopioResetPassword;
-use App\Livewire\Acopio\Requerimientos as AcopioRequerimientos;
 use App\Livewire\Anfitrion\Dashboard;
 use App\Livewire\Anfitrion\ForgotPassword as AnfitrionForgotPassword;
 use App\Livewire\Anfitrion\InvitadoDetalle;
@@ -21,7 +13,7 @@ use App\Livewire\Anfitrion\Login;
 use App\Livewire\Anfitrion\Perfil as AnfitrionPerfil;
 use App\Livewire\Anfitrion\RegistrarInvitado;
 use App\Livewire\Anfitrion\ResetPassword as AnfitrionResetPassword;
-use App\Livewire\Anfitrion\Requerimientos as AnfitrionRequerimientos;
+use App\Support\VisitantesFeatures;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Route;
 
@@ -65,20 +57,25 @@ Route::prefix('anfitrion')->name('anfitrion.')->group(function (): void {
         Route::get('/perfil', AnfitrionPerfil::class)->name('perfil');
         Route::get('/invitados', ListadoInvitados::class)->name('invitados');
         Route::get('/invitados/{invitado}', InvitadoDetalle::class)->name('invitado');
-        Route::get('/requerimientos', AnfitrionRequerimientos::class)->name('requerimientos');
+
+        if (VisitantesFeatures::logistica()) {
+            Route::get('/requerimientos', \App\Livewire\Anfitrion\Requerimientos::class)->name('requerimientos');
+        }
     });
 });
 
-Route::prefix('acopio')->name('acopio.')->group(function (): void {
-    Route::get('/login', AcopioLogin::class)->name('login');
-    Route::get('/olvide-contrasena', AcopioForgotPassword::class)->name('password.request');
-    Route::get('/restablecer-contrasena/{token}', AcopioResetPassword::class)->name('password.reset');
+if (VisitantesFeatures::logistica()) {
+    Route::prefix('acopio')->name('acopio.')->group(function (): void {
+        Route::get('/login', \App\Livewire\Acopio\Login::class)->name('login');
+        Route::get('/olvide-contrasena', \App\Livewire\Acopio\ForgotPassword::class)->name('password.request');
+        Route::get('/restablecer-contrasena/{token}', \App\Livewire\Acopio\ResetPassword::class)->name('password.reset');
 
-    Route::middleware(['auth', 'centro_acopio'])->group(function (): void {
-        Route::get('/', AcopioDashboard::class)->name('dashboard');
-        Route::get('/perfil', AcopioPerfil::class)->name('perfil');
-        Route::get('/inventario', GestionInventario::class)->name('inventario');
-        Route::get('/requerimientos', AcopioRequerimientos::class)->name('requerimientos');
-        Route::post('/logout', AcopioLogoutController::class)->name('logout');
+        Route::middleware(['auth', 'centro_acopio'])->group(function (): void {
+            Route::get('/', \App\Livewire\Acopio\Dashboard::class)->name('dashboard');
+            Route::get('/perfil', \App\Livewire\Acopio\Perfil::class)->name('perfil');
+            Route::get('/inventario', \App\Livewire\Acopio\GestionInventario::class)->name('inventario');
+            Route::get('/requerimientos', \App\Livewire\Acopio\Requerimientos::class)->name('requerimientos');
+            Route::post('/logout', \App\Http\Controllers\AcopioLogoutController::class)->name('logout');
+        });
     });
-});
+}

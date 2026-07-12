@@ -113,4 +113,12 @@ return [
     | local = storage/app/private · s3 = bucket AWS (producción Railway)
     */
     'invitado_fotos_disk' => env('INVITADO_FOTOS_DISK', 'local'),
+
+    /*
+    | Módulos opcionales. Desactivados por defecto: centros de acopio,
+    | inventario, requerimientos y entregas.
+    */
+    'features' => [
+        'logistica' => env('VISITANTES_LOGISTICA', false),
+    ],
 ];

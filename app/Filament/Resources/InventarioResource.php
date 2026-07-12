@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HidesWhenLogisticaDisabled;
 use App\Filament\Resources\InventarioResource\Pages;
 use App\Models\CentroAcopio;
 use App\Models\Inventario;
@@ -16,6 +17,8 @@ use Filament\Tables\Table;
 
 class InventarioResource extends Resource
 {
+    use HidesWhenLogisticaDisabled;
+
     protected static ?string $model = Inventario::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-archive-box';

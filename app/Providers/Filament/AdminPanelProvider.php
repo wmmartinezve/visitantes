@@ -6,9 +6,8 @@ namespace App\Providers\Filament;
 
 use App\Filament\Pages\Auth\Login;
 use App\Filament\Widgets\OperacionOverviewWidget;
-use App\Filament\Widgets\RequerimientosEstatusChartWidget;
-use App\Filament\Widgets\RequerimientosFiltradosWidget;
 use App\Filament\Widgets\TopRefugiosWidget;
+use App\Support\VisitantesFeatures;
 use App\Http\Middleware\PreventAdminSearchIndexing;
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\AuthenticateSession;
@@ -58,13 +57,13 @@ class AdminPanelProvider extends PanelProvider
             ->discoverResources(in: app_path('Filament/Resources'), for: 'App\\Filament\\Resources')
             ->discoverPages(in: app_path('Filament/Pages'), for: 'App\\Filament\\Pages')
             ->discoverWidgets(in: app_path('Filament/Widgets'), for: 'App\\Filament\\Widgets')
-            ->widgets([
+            ->widgets(array_values(array_filter([
                 OperacionOverviewWidget::class,
-                RequerimientosEstatusChartWidget::class,
-                RequerimientosFiltradosWidget::class,
+                VisitantesFeatures::logistica() ? \App\Filament\Widgets\RequerimientosEstatusChartWidget::class : null,
+                VisitantesFeatures::logistica() ? \App\Filament\Widgets\RequerimientosFiltradosWidget::class : null,
                 TopRefugiosWidget::class,
                 Widgets\AccountWidget::class,
-            ])
+            ])))
             ->middleware([
                 PreventAdminSearchIndexing::class,
                 EncryptCookies::class,

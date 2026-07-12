@@ -8,6 +8,7 @@ use App\Models\CentroAcopio;
 use App\Models\Municipio;
 use App\Models\Parroquia;
 use App\Models\HogarSolidario;
+use App\Support\VisitantesFeatures;
 use Filament\Actions\Action;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Concerns\InteractsWithForms;
@@ -139,20 +140,22 @@ class MapaOperacion extends Page implements HasForms
             ->values()
             ->all();
 
-        $centros = $this->centrosQuery()
-            ->with(['parroquia.municipio'])
-            ->get()
-            ->map(fn (CentroAcopio $centro): array => [
-                'id' => $centro->id,
-                'nombre' => $centro->nombre,
-                'lat' => (float) $centro->latitud,
-                'lng' => (float) $centro->longitud,
-                'municipio' => $centro->parroquia?->municipio?->nombre ?? '—',
-                'parroquia' => $centro->parroquia?->nombre ?? '—',
-                'activo' => (bool) $centro->activo,
-            ])
-            ->values()
-            ->all();
+        $centros = VisitantesFeatures::logistica()
+            ? $this->centrosQuery()
+                ->with(['parroquia.municipio'])
+                ->get()
+                ->map(fn (CentroAcopio $centro): array => [
+                    'id' => $centro->id,
+                    'nombre' => $centro->nombre,
+                    'lat' => (float) $centro->latitud,
+                    'lng' => (float) $centro->longitud,
+                    'municipio' => $centro->parroquia?->municipio?->nombre ?? '—',
+                    'parroquia' => $centro->parroquia?->nombre ?? '—',
+                    'activo' => (bool) $centro->activo,
+                ])
+                ->values()
+                ->all()
+            : [];
 
         return [
             'refugios' => $refugios,

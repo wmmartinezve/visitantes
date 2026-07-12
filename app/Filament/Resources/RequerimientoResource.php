@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HidesWhenLogisticaDisabled;
 use App\Enums\RequerimientoEstatus;
 use App\Enums\UserRole;
 use App\Filament\Resources\RequerimientoResource\Pages;
@@ -21,6 +22,8 @@ use Filament\Tables\Table;
 
 class RequerimientoResource extends Resource
 {
+    use HidesWhenLogisticaDisabled;
+
     protected static ?string $model = Requerimiento::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-clipboard-document-list';

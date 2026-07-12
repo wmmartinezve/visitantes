@@ -19,11 +19,18 @@ use App\Services\RequerimientoConsolidacionService;
 use App\Support\InsumoCatalog;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class RequerimientoConsolidacionTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        VisitantesFeatureTest::skipUnlessLogistica($this);
+    }
 
     public function test_demanda_por_refugio_agrupa_cantidades(): void
     {

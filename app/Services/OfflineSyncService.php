@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Support\ActivityLogContext;
 use App\Support\HogarSolidarioValidationRules;
 use App\Support\InsumoCatalog;
+use App\Support\VisitantesFeatures;
 use App\Support\WitnessPhotoDecoder;
 use Illuminate\Database\QueryException;
 use Illuminate\Support\Facades\DB;
@@ -54,6 +55,15 @@ class OfflineSyncService
                     $payload = (array) ($item['payload'] ?? []);
 
                     try {
+                        if (! VisitantesFeatures::logistica() && in_array($type, [
+                            'requerimiento.create',
+                            'inventario.create',
+                            'inventario.update_cantidad',
+                            'entrega.marcar',
+                        ], true)) {
+                            throw new RuntimeException('El módulo de logística está deshabilitado.');
+                        }
+
                         $serverId = match ($type) {
                             'invitado.registro' => $this->syncInvitadoRegistro($user, $payload, $clientId, $idMap),
                             'requerimiento.create' => $this->syncRequerimientoCreate($user, $payload, $idMap),

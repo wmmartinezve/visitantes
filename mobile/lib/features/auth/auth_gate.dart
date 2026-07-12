@@ -3,7 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
-import 'package:visitantes_mobile/features/acopio/acopio_shell.dart';
 import 'package:visitantes_mobile/features/anfitrion/anfitrion_shell.dart';
 import 'package:visitantes_mobile/features/auth/auth_repository.dart';
 import 'package:visitantes_mobile/features/auth/forgot_password_screen.dart';
@@ -48,6 +47,17 @@ class _AuthGateState extends State<AuthGate> {
   Future<void> _handleLogin(String email, String password) async {
     try {
       final user = await _auth.login(email, password);
+      if (!user.isAnfitrion) {
+        await _auth.logout();
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Esta app móvil está disponible solo para anfitriones de hogares solidarios.'),
+          ),
+        );
+        return;
+      }
+
       _sync.startAutoSync();
       await _catalog.refresh(force: true);
       await _sync.syncPending();
@@ -95,18 +105,36 @@ class _AuthGateState extends State<AuthGate> {
       );
     }
 
-    if (user.isAnfitrion) {
-      return AnfitrionShell(
-        user: user,
-        catalog: _catalog,
-        sync: _sync,
-        auth: _auth,
-        onLogout: _logout,
-        onUserUpdated: (updated) => setState(() => _user = updated),
+    if (!user.isAnfitrion) {
+      return Scaffold(
+        body: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const Icon(Icons.info_outline, size: 48),
+                const SizedBox(height: 16),
+                Text(
+                  'Acceso no disponible',
+                  style: Theme.of(context).textTheme.titleLarge,
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'La app móvil está pensada para anfitriones de hogares solidarios.',
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 24),
+                FilledButton(onPressed: _logout, child: const Text('Cerrar sesión')),
+              ],
+            ),
+          ),
+        ),
       );
     }
 
-    return AcopioShell(
+    return AnfitrionShell(
       user: user,
       catalog: _catalog,
       sync: _sync,

@@ -14,6 +14,7 @@ use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Notification;
 use Illuminate\Support\Facades\Password;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class UserProfileAndPasswordResetTest extends TestCase
@@ -43,6 +44,7 @@ class UserProfileAndPasswordResetTest extends TestCase
 
     public function test_operador_puede_cambiar_su_contrasena_mobile(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $this->seed(DemoOperacionSeeder::class);
 

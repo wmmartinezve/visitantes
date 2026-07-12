@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Filament\Concerns\HidesWhenLogisticaDisabled;
 use App\Filament\Resources\CentroAcopioResource\Pages;
 use App\Filament\Resources\CentroAcopioResource\RelationManagers\InventariosRelationManager;
 use App\Filament\Support\GeolocalizacionFields;
@@ -17,6 +18,8 @@ use Filament\Tables\Table;
 
 class CentroAcopioResource extends Resource
 {
+    use HidesWhenLogisticaDisabled;
+
     protected static ?string $model = CentroAcopio::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-building-storefront';

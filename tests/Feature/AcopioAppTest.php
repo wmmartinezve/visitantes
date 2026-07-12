@@ -17,11 +17,18 @@ use App\Services\RequerimientoAsignacionService;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class AcopioAppTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        VisitantesFeatureTest::skipUnlessLogistica($this);
+    }
 
     private function createOperador(): User
     {

@@ -8,7 +8,6 @@ import 'package:visitantes_mobile/features/auth/auth_repository.dart';
 import 'package:visitantes_mobile/features/auth/profile_screen.dart';
 import 'package:visitantes_mobile/features/anfitrion/guests_list_screen.dart';
 import 'package:visitantes_mobile/features/anfitrion/register_guest_screen.dart';
-import 'package:visitantes_mobile/features/anfitrion/requirements_list_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/app_scaffold.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/pending_queue_panel.dart';
@@ -101,7 +100,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
         onUserUpdated: _handleUserUpdated,
       ),
       GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
-      RequirementsListScreen(key: ValueKey('reqs-$_refreshTick'), fieldApi: _fieldApi),
     ];
 
     return AppScaffold(
@@ -120,7 +118,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
           NavigationDestination(icon: Icon(Icons.home), label: 'Inicio'),
           NavigationDestination(icon: Icon(Icons.person_add), label: 'Registrar'),
           NavigationDestination(icon: Icon(Icons.groups), label: 'Invitados'),
-          NavigationDestination(icon: Icon(Icons.inventory_2), label: 'Req.'),
         ],
       ),
     );
@@ -181,12 +178,6 @@ class _HomeTab extends StatelessWidget {
                 Expanded(child: QuickActionTile(icon: Icons.person_add, label: 'Registrar Invitado', color: VenezuelaColors.red, onTap: () => onNavigate(1))),
                 const SizedBox(width: 10),
                 Expanded(child: QuickActionTile(icon: Icons.groups, label: 'Ver Invitados', color: VenezuelaColors.blue, onTap: () => onNavigate(2))),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(child: QuickActionTile(icon: Icons.inventory_2, label: 'Requerimientos', color: VenezuelaColors.blue, onTap: () => onNavigate(3))),
               ],
             ),
           ],

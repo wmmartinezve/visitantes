@@ -9,6 +9,7 @@ use App\Models\Municipio;
 use App\Models\Parroquia;
 use App\Models\HogarSolidario;
 use App\Support\OperacionFiltros;
+use App\Support\VisitantesFeatures;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\Section;
@@ -39,7 +40,7 @@ class Dashboard extends BaseDashboard
 
     public function getSubheading(): ?string
     {
-        return 'Indicadores, filtros y reportes de Invitados, refugios y logística en '
+        return 'Indicadores, filtros y reportes de Invitados y hogares solidarios en '
             .config('visitantes.estado').', '.config('visitantes.pais').'.';
     }
 
@@ -119,11 +120,13 @@ class Dashboard extends BaseDashboard
                         })
                         ->searchable(),
 
-                    Select::make('centro_acopio_id')
-                        ->label('Centro de acopio')
-                        ->options(fn (): array => CentroAcopio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
-                        ->searchable()
-                        ->preload(),
+                    ...(VisitantesFeatures::logistica() ? [
+                        Select::make('centro_acopio_id')
+                            ->label('Centro de acopio')
+                            ->options(fn (): array => CentroAcopio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
+                            ->searchable()
+                            ->preload(),
+                    ] : []),
                 ])
                 ->columns([
                     'default' => 1,

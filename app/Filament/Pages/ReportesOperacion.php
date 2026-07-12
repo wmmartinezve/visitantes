@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Concerns\HidesWhenLogisticaDisabled;
 use App\Models\CentroAcopio;
 use App\Models\Invitado;
 use App\Models\Requerimiento;
@@ -14,6 +15,8 @@ use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class ReportesOperacion extends Page
 {
+    use HidesWhenLogisticaDisabled;
+
     protected static ?string $navigationIcon = 'heroicon-o-document-chart-bar';
 
     protected static ?string $navigationGroup = 'Logística';

@@ -16,6 +16,7 @@ use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class OfflineSyncTest extends TestCase
@@ -48,6 +49,7 @@ class OfflineSyncTest extends TestCase
 
     public function test_acopio_puede_descargar_catalogo_con_inventario_local(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $this->seed(DemoOperacionSeeder::class);
 
@@ -249,6 +251,7 @@ class OfflineSyncTest extends TestCase
 
     public function test_sincroniza_requerimiento_referenciando_invitado_offline(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
@@ -308,6 +311,7 @@ class OfflineSyncTest extends TestCase
 
     public function test_sincroniza_inventario_desde_acopio(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
@@ -353,6 +357,7 @@ class OfflineSyncTest extends TestCase
 
     public function test_sincroniza_actualizacion_cantidad_inventario(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();

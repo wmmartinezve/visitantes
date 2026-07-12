@@ -24,6 +24,7 @@ use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class ActivityLogTest extends TestCase
@@ -76,6 +77,7 @@ class ActivityLogTest extends TestCase
 
     public function test_asignar_y_entregar_requerimiento_genera_bitacora(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         [$anfitrion, $refugio] = $this->anfitrionConRefugio();

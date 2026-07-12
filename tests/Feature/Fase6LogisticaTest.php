@@ -16,11 +16,18 @@ use App\Support\GeoNavigation;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class Fase6LogisticaTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        VisitantesFeatureTest::skipUnlessLogistica($this);
+    }
 
     public function test_acopio_muestra_distancia_y_ruta_en_entregas(): void
     {

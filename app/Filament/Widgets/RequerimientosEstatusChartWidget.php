@@ -6,6 +6,7 @@ namespace App\Filament\Widgets;
 
 use App\Services\OperacionMetricsService;
 use App\Support\OperacionFiltros;
+use App\Support\VisitantesFeatures;
 use Filament\Widgets\ChartWidget;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 
@@ -18,6 +19,11 @@ class RequerimientosEstatusChartWidget extends ChartWidget
     protected static ?string $heading = 'Requerimientos por estatus';
 
     protected static ?string $maxHeight = '280px';
+
+    public static function canView(): bool
+    {
+        return VisitantesFeatures::logistica();
+    }
 
     protected function getType(): string
     {

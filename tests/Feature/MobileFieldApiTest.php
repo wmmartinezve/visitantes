@@ -22,6 +22,7 @@ use Database\Seeders\VenezuelaEstadosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class MobileFieldApiTest extends TestCase
@@ -196,6 +197,7 @@ class MobileFieldApiTest extends TestCase
 
     public function test_crear_requerimiento_mobile(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $anfitrion = $this->anfitrion();
         Sanctum::actingAs($anfitrion);
 
@@ -218,6 +220,7 @@ class MobileFieldApiTest extends TestCase
 
     public function test_entregas_mobile_con_distancia(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
@@ -272,6 +275,7 @@ class MobileFieldApiTest extends TestCase
 
     public function test_geo_links_incluye_refugio_url_aunque_centro_no_tenga_gps(): void
     {
+        VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 

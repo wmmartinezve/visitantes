@@ -18,6 +18,7 @@ use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\InsumoCatalog;
+use App\Support\VisitantesFeatures;
 use Illuminate\Database\Seeder;
 
 class DemoOperacionSeeder extends Seeder
@@ -36,15 +37,19 @@ class DemoOperacionSeeder extends Seeder
             'Av. Municipal, Puerto La Cruz, Anzoátegui',
         );
 
-        $centroPlc = $this->centroAcopio(
-            'Centro de Acopio Pozuelos Norte',
-            $this->parroquia('Pozuelos') ?? $plc,
-            10.24500000,
-            -64.65500000,
-            'Sector Pozuelos, Juan Antonio Sotillo, Anzoátegui',
-        );
+        $centroPlc = VisitantesFeatures::logistica()
+            ? $this->centroAcopio(
+                'Centro de Acopio Pozuelos Norte',
+                $this->parroquia('Pozuelos') ?? $plc,
+                10.24500000,
+                -64.65500000,
+                'Sector Pozuelos, Juan Antonio Sotillo, Anzoátegui',
+            )
+            : null;
 
-        $this->inventarioBase($centroPlc);
+        if ($centroPlc !== null) {
+            $this->inventarioBase($centroPlc);
+        }
 
         $anfitrion = User::query()->updateOrCreate(
             ['email' => 'anfitrion@visitantes.test'],
@@ -57,16 +62,18 @@ class DemoOperacionSeeder extends Seeder
             ],
         );
 
-        User::query()->updateOrCreate(
-            ['email' => 'acopio@visitantes.test'],
-            [
-                'name' => 'Operador Acopio Demo',
-                'password' => 'password',
-                'rol' => UserRole::CentroAcopio,
-                'hogar_solidario_id' => null,
-                'centro_acopio_id' => $centroPlc->id,
-            ],
-        );
+        if (VisitantesFeatures::logistica() && $centroPlc !== null) {
+            User::query()->updateOrCreate(
+                ['email' => 'acopio@visitantes.test'],
+                [
+                    'name' => 'Operador Acopio Demo',
+                    'password' => 'password',
+                    'rol' => UserRole::CentroAcopio,
+                    'hogar_solidario_id' => null,
+                    'centro_acopio_id' => $centroPlc->id,
+                ],
+            );
+        }
 
         $invitado = Invitado::query()->firstOrCreate(
             [
@@ -82,22 +89,24 @@ class DemoOperacionSeeder extends Seeder
             ],
         );
 
-        Requerimiento::query()->firstOrCreate(
-            [
-                'invitado_id' => $invitado->id,
-                'categoria' => 'Abrigo y descanso',
-                'subcategoria' => 'Colchoneta',
-                'estatus' => RequerimientoEstatus::Pendiente,
-            ],
-            array_merge(
-                $this->requerimientoPair('Abrigo y descanso', 'Colchoneta'),
+        if (VisitantesFeatures::logistica()) {
+            Requerimiento::query()->firstOrCreate(
                 [
-                    'anfitrion_id' => $anfitrion->id,
-                    'cantidad' => 5,
-                    'centro_acopio_id' => null,
+                    'invitado_id' => $invitado->id,
+                    'categoria' => 'Abrigo y descanso',
+                    'subcategoria' => 'Colchoneta',
+                    'estatus' => RequerimientoEstatus::Pendiente,
                 ],
-            ),
-        );
+                array_merge(
+                    $this->requerimientoPair('Abrigo y descanso', 'Colchoneta'),
+                    [
+                        'anfitrion_id' => $anfitrion->id,
+                        'cantidad' => 5,
+                        'centro_acopio_id' => null,
+                    ],
+                ),
+            );
+        }
 
         $this->seedCiudadBarcelona();
         $this->seedCiudadElTigre();
@@ -118,37 +127,41 @@ class DemoOperacionSeeder extends Seeder
             'Av. 5 de Julio, Barcelona, Anzoátegui',
         );
 
-        $centro = $this->centroAcopio(
-            'Centro de Acopio Barcelona Centro',
-            $parroquia,
-            10.13800000,
-            -64.68400000,
-            'Centro de Barcelona, Anzoátegui',
-        );
+        $centro = VisitantesFeatures::logistica()
+            ? $this->centroAcopio(
+                'Centro de Acopio Barcelona Centro',
+                $parroquia,
+                10.13800000,
+                -64.68400000,
+                'Centro de Barcelona, Anzoátegui',
+            )
+            : null;
 
-        Inventario::query()->updateOrCreate(
-            [
-                'centro_acopio_id' => $centro->id,
-                'categoria' => 'Abrigo y descanso',
-                'subcategoria' => 'Colchoneta',
-            ],
-            array_merge(
-                $this->insumoPair('Abrigo y descanso', 'Colchoneta'),
-                ['cantidad' => 35, 'unidad_medida' => 'unidad'],
-            ),
-        );
+        if ($centro !== null) {
+            Inventario::query()->updateOrCreate(
+                [
+                    'centro_acopio_id' => $centro->id,
+                    'categoria' => 'Abrigo y descanso',
+                    'subcategoria' => 'Colchoneta',
+                ],
+                array_merge(
+                    $this->insumoPair('Abrigo y descanso', 'Colchoneta'),
+                    ['cantidad' => 35, 'unidad_medida' => 'unidad'],
+                ),
+            );
 
-        Inventario::query()->updateOrCreate(
-            [
-                'centro_acopio_id' => $centro->id,
-                'categoria' => 'Higiene personal',
-                'subcategoria' => 'Kit de higiene',
-            ],
-            array_merge(
-                $this->insumoPair('Higiene personal', 'Kit de higiene'),
-                ['cantidad' => 80, 'unidad_medida' => 'kit'],
-            ),
-        );
+            Inventario::query()->updateOrCreate(
+                [
+                    'centro_acopio_id' => $centro->id,
+                    'categoria' => 'Higiene personal',
+                    'subcategoria' => 'Kit de higiene',
+                ],
+                array_merge(
+                    $this->insumoPair('Higiene personal', 'Kit de higiene'),
+                    ['cantidad' => 80, 'unidad_medida' => 'kit'],
+                ),
+            );
+        }
 
         $anfitrion = User::query()->updateOrCreate(
             ['email' => 'anfitrion.barcelona@visitantes.test'],
@@ -175,22 +188,24 @@ class DemoOperacionSeeder extends Seeder
             ],
         );
 
-        Requerimiento::query()->firstOrCreate(
-            [
-                'invitado_id' => $invitado->id,
-                'categoria' => 'Alimentos y bebidas',
-                'subcategoria' => 'Agua embotellada',
-                'estatus' => RequerimientoEstatus::Pendiente,
-            ],
-            array_merge(
-                $this->requerimientoPair('Alimentos y bebidas', 'Agua embotellada'),
+        if (VisitantesFeatures::logistica()) {
+            Requerimiento::query()->firstOrCreate(
                 [
-                    'anfitrion_id' => $anfitrion->id,
-                    'cantidad' => 10,
-                    'centro_acopio_id' => null,
+                    'invitado_id' => $invitado->id,
+                    'categoria' => 'Alimentos y bebidas',
+                    'subcategoria' => 'Agua embotellada',
+                    'estatus' => RequerimientoEstatus::Pendiente,
                 ],
-            ),
-        );
+                array_merge(
+                    $this->requerimientoPair('Alimentos y bebidas', 'Agua embotellada'),
+                    [
+                        'anfitrion_id' => $anfitrion->id,
+                        'cantidad' => 10,
+                        'centro_acopio_id' => null,
+                    ],
+                ),
+            );
+        }
     }
 
     private function seedCiudadElTigre(): void
@@ -207,25 +222,29 @@ class DemoOperacionSeeder extends Seeder
             'Av. Intercomunal, El Tigre, Anzoátegui',
         );
 
-        $centro = $this->centroAcopio(
-            'Centro de Acopio El Tigre',
-            $parroquia,
-            8.89100000,
-            -64.24300000,
-            'Zona industrial, El Tigre, Anzoátegui',
-        );
+        $centro = VisitantesFeatures::logistica()
+            ? $this->centroAcopio(
+                'Centro de Acopio El Tigre',
+                $parroquia,
+                8.89100000,
+                -64.24300000,
+                'Zona industrial, El Tigre, Anzoátegui',
+            )
+            : null;
 
-        Inventario::query()->updateOrCreate(
-            [
-                'centro_acopio_id' => $centro->id,
-                'categoria' => 'Abrigo y descanso',
-                'subcategoria' => 'Frazada / cobija',
-            ],
-            array_merge(
-                $this->insumoPair('Abrigo y descanso', 'Frazada / cobija'),
-                ['cantidad' => 60, 'unidad_medida' => 'unidad'],
-            ),
-        );
+        if ($centro !== null) {
+            Inventario::query()->updateOrCreate(
+                [
+                    'centro_acopio_id' => $centro->id,
+                    'categoria' => 'Abrigo y descanso',
+                    'subcategoria' => 'Frazada / cobija',
+                ],
+                array_merge(
+                    $this->insumoPair('Abrigo y descanso', 'Frazada / cobija'),
+                    ['cantidad' => 60, 'unidad_medida' => 'unidad'],
+                ),
+            );
+        }
 
         User::query()->updateOrCreate(
             ['email' => 'anfitrion.tigre@visitantes.test'],
@@ -238,16 +257,18 @@ class DemoOperacionSeeder extends Seeder
             ],
         );
 
-        User::query()->updateOrCreate(
-            ['email' => 'acopio.tigre@visitantes.test'],
-            [
-                'name' => 'Operador Acopio El Tigre',
-                'password' => 'password',
-                'rol' => UserRole::CentroAcopio,
-                'hogar_solidario_id' => null,
-                'centro_acopio_id' => $centro->id,
-            ],
-        );
+        if (VisitantesFeatures::logistica() && $centro !== null) {
+            User::query()->updateOrCreate(
+                ['email' => 'acopio.tigre@visitantes.test'],
+                [
+                    'name' => 'Operador Acopio El Tigre',
+                    'password' => 'password',
+                    'rol' => UserRole::CentroAcopio,
+                    'hogar_solidario_id' => null,
+                    'centro_acopio_id' => $centro->id,
+                ],
+            );
+        }
     }
 
     private function seedCiudadLecheria(): void
@@ -264,37 +285,41 @@ class DemoOperacionSeeder extends Seeder
             'Av. El Morro, Lechería, Anzoátegui',
         );
 
-        $centro = $this->centroAcopio(
-            'Centro de Acopio Lechería',
-            $parroquia,
-            10.18700000,
-            -64.67700000,
-            'Sector El Morro, Lechería, Anzoátegui',
-        );
+        $centro = VisitantesFeatures::logistica()
+            ? $this->centroAcopio(
+                'Centro de Acopio Lechería',
+                $parroquia,
+                10.18700000,
+                -64.67700000,
+                'Sector El Morro, Lechería, Anzoátegui',
+            )
+            : null;
 
-        Inventario::query()->updateOrCreate(
-            [
-                'centro_acopio_id' => $centro->id,
-                'categoria' => 'Alimentos y bebidas',
-                'subcategoria' => 'Agua embotellada',
-            ],
-            array_merge(
-                $this->insumoPair('Alimentos y bebidas', 'Agua embotellada'),
-                ['cantidad' => 200, 'unidad_medida' => 'caja'],
-            ),
-        );
+        if ($centro !== null) {
+            Inventario::query()->updateOrCreate(
+                [
+                    'centro_acopio_id' => $centro->id,
+                    'categoria' => 'Alimentos y bebidas',
+                    'subcategoria' => 'Agua embotellada',
+                ],
+                array_merge(
+                    $this->insumoPair('Alimentos y bebidas', 'Agua embotellada'),
+                    ['cantidad' => 200, 'unidad_medida' => 'caja'],
+                ),
+            );
 
-        Inventario::query()->updateOrCreate(
-            [
-                'centro_acopio_id' => $centro->id,
-                'categoria' => 'Abrigo y descanso',
-                'subcategoria' => 'Colchoneta',
-            ],
-            array_merge(
-                $this->insumoPair('Abrigo y descanso', 'Colchoneta'),
-                ['cantidad' => 15, 'unidad_medida' => 'unidad'],
-            ),
-        );
+            Inventario::query()->updateOrCreate(
+                [
+                    'centro_acopio_id' => $centro->id,
+                    'categoria' => 'Abrigo y descanso',
+                    'subcategoria' => 'Colchoneta',
+                ],
+                array_merge(
+                    $this->insumoPair('Abrigo y descanso', 'Colchoneta'),
+                    ['cantidad' => 15, 'unidad_medida' => 'unidad'],
+                ),
+            );
+        }
     }
 
     private function parroquia(string $nombre): ?Parroquia
