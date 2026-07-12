@@ -133,10 +133,16 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   @override
   void initState() {
     super.initState();
+    widget.catalog.addListener(_onCatalogChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _initHogarEstado();
       _ensureCatalogReady();
     });
+  }
+
+  void _onCatalogChanged() {
+    if (!mounted) return;
+    setState(_initHogarEstado);
   }
 
   Future<void> _ensureCatalogReady() async {
@@ -169,6 +175,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   void dispose() {
+    widget.catalog.removeListener(_onCatalogChanged);
     for (final f in _familiares) {
       f.dispose();
     }
@@ -1106,72 +1113,56 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
     final isLastStep = _step >= _totalSteps - 1;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       children: [
-        Expanded(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (_incluyeHogar)
-                  Card(
-                    color: VenezuelaColors.yellow.withValues(alpha: 0.12),
-                    margin: EdgeInsets.zero,
-                    child: const Padding(
-                      padding: EdgeInsets.all(10),
-                      child: Text(
-                        'Primero registre su hogar solidario y luego el núcleo familiar hospedado. '
-                        'Un hogar = una familia.',
-                      ),
-                    ),
-                  ),
-                if (_incluyeHogar) const SizedBox(height: 12),
-                _buildStepIndicator(),
-                const SizedBox(height: 12),
-                Form(
-                  key: _formKey,
-                  child: _buildStepContent(),
-                ),
-              ],
+        if (_incluyeHogar)
+          Card(
+            color: VenezuelaColors.yellow.withValues(alpha: 0.12),
+            margin: EdgeInsets.zero,
+            child: const Padding(
+              padding: EdgeInsets.all(10),
+              child: Text(
+                'Primero registre su hogar solidario y luego el núcleo familiar hospedado. '
+                'Un hogar = una familia.',
+              ),
             ),
           ),
+        if (_incluyeHogar) const SizedBox(height: 12),
+        _buildStepIndicator(),
+        const SizedBox(height: 12),
+        Form(
+          key: _formKey,
+          child: _buildStepContent(),
         ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Row(
-              children: [
-                if (_step > 0)
-                  OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
-                else
-                  const SizedBox.shrink(),
-                const Spacer(),
-                if (!isLastStep)
-                  FilledButton(
-                    onPressed: _saving ? null : _nextStep,
-                    style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-                    child: const Text('Siguiente'),
-                  )
-                else
-                  FilledButton.icon(
-                    onPressed: _saving ? null : _submit,
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.check),
-                    label: const Text('Registrar'),
-                    style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-                  ),
-              ],
-            ),
-          ),
+        const SizedBox(height: 20),
+        Row(
+          children: [
+            if (_step > 0)
+              OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
+            else
+              const SizedBox.shrink(),
+            const Spacer(),
+            if (!isLastStep)
+              FilledButton(
+                onPressed: _saving ? null : _nextStep,
+                style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
+                child: const Text('Siguiente'),
+              )
+            else
+              FilledButton.icon(
+                onPressed: _saving ? null : _submit,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.check),
+                label: const Text('Registrar'),
+                style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+              ),
+          ],
         ),
       ],
     );

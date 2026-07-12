@@ -194,62 +194,61 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
       );
     }
 
-    return ListenableBuilder(
-      listenable: widget.catalog,
-      builder: (context, _) {
-        final pages = [
-          _HomeTab(
-            sync: widget.sync,
-            hogarEtiqueta: _hogarEtiqueta,
-            sinHogar: _sinHogar,
-            hogares: _hogares,
-            hogarActivoId: _user.refugioId,
-            puedeRegistrarOtro: _user.puedeRegistrarOtroHogar || widget.catalog.puedeRegistrarOtroHogar,
-            onNavigate: _goTo,
-            onSync: _syncFromHome,
-            onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
-            onCambiarHogar: _cambiarHogarActivo,
-          ),
-          RegisterGuestScreen(
-            key: ValueKey('register-wizard-$_registerWizardKey'),
-            user: _user,
-            catalog: widget.catalog,
-            sync: widget.sync,
-            fieldApi: _fieldApi,
-            nucleoYaRegistrado: _nucleoYaRegistrado,
-            requiereRegistroHogar: _requiereRegistroHogar,
-            registrarNuevoHogar: _registrarNuevoHogar,
-            onRegistered: _onRegistered,
-            onUserUpdated: _handleUserUpdated,
-          ),
-          GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
-        ];
+    final pages = [
+      _HomeTab(
+        sync: widget.sync,
+        hogarEtiqueta: _hogarEtiqueta,
+        sinHogar: _sinHogar,
+        hogares: _hogares,
+        hogarActivoId: _user.refugioId,
+        puedeRegistrarOtro: _user.puedeRegistrarOtroHogar || widget.catalog.puedeRegistrarOtroHogar,
+        onNavigate: _goTo,
+        onSync: _syncFromHome,
+        onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
+        onCambiarHogar: _cambiarHogarActivo,
+      ),
+      RegisterGuestScreen(
+        key: ValueKey('register-wizard-$_registerWizardKey'),
+        user: _user,
+        catalog: widget.catalog,
+        sync: widget.sync,
+        fieldApi: _fieldApi,
+        nucleoYaRegistrado: _nucleoYaRegistrado,
+        requiereRegistroHogar: _requiereRegistroHogar,
+        registrarNuevoHogar: _registrarNuevoHogar,
+        onRegistered: _onRegistered,
+        onUserUpdated: _handleUserUpdated,
+      ),
+      GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
+    ];
 
-        return AppScaffold(
-          title: _user.name,
-          subtitle: _sinHogar
-              ? 'Registre su primer hogar solidario'
-              : 'Hogar activo: $_hogarEtiqueta',
-          catalog: widget.catalog,
-          sync: widget.sync,
-          onLogout: widget.onLogout,
-          onProfile: _openProfile,
-          onRefreshComplete: _bumpRefresh,
-          body: pages[_index],
-          bottomNav: NavigationBar(
-            selectedIndex: _index,
-            onDestinationSelected: _goTo,
-            destinations: [
-              const NavigationDestination(icon: Icon(Icons.home), label: 'Inicio'),
-              NavigationDestination(
-                icon: const Icon(Icons.person_add),
-                label: _sinHogar || _registrarNuevoHogar ? 'Registrar núcleo' : 'Registrar',
-              ),
-              const NavigationDestination(icon: Icon(Icons.groups), label: 'Invitados'),
-            ],
+    return AppScaffold(
+      title: _user.name,
+      subtitle: _sinHogar
+          ? 'Registre su primer hogar solidario'
+          : 'Hogar activo: $_hogarEtiqueta',
+      catalog: widget.catalog,
+      sync: widget.sync,
+      onLogout: widget.onLogout,
+      onProfile: _openProfile,
+      onRefreshComplete: _bumpRefresh,
+      body: IndexedStack(
+        index: _index,
+        sizing: StackFit.expand,
+        children: pages,
+      ),
+      bottomNav: NavigationBar(
+        selectedIndex: _index,
+        onDestinationSelected: _goTo,
+        destinations: [
+          const NavigationDestination(icon: Icon(Icons.home), label: 'Inicio'),
+          NavigationDestination(
+            icon: const Icon(Icons.person_add),
+            label: _sinHogar || _registrarNuevoHogar ? 'Registrar núcleo' : 'Registrar',
           ),
-        );
-      },
+          const NavigationDestination(icon: Icon(Icons.groups), label: 'Invitados'),
+        ],
+      ),
     );
   }
 }
