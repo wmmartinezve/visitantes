@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:visitantes_mobile/config/app_config.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
@@ -13,6 +14,7 @@ import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
+import 'package:visitantes_mobile/shared/widgets/centro_geolocalizacion_map.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/witness_photo_capture.dart';
 
@@ -212,15 +214,28 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
         return;
       }
 
-      final position = await Geolocator.getCurrentPosition();
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 20),
+        ),
+      );
       if (!mounted) return;
-      setState(() {
-        _hogarLat.text = position.latitude.toStringAsFixed(8);
-        _hogarLng.text = position.longitude.toStringAsFixed(8);
-      });
+      _actualizarUbicacionHogar(LatLng(position.latitude, position.longitude));
     } finally {
       if (mounted) setState(() => _loadingGps = false);
     }
+  }
+
+  double? get _hogarLatitud => double.tryParse(_hogarLat.text.trim());
+
+  double? get _hogarLongitud => double.tryParse(_hogarLng.text.trim());
+
+  void _actualizarUbicacionHogar(LatLng posicion) {
+    setState(() {
+      _hogarLat.text = posicion.latitude.toStringAsFixed(8);
+      _hogarLng.text = posicion.longitude.toStringAsFixed(8);
+    });
   }
 
   Future<void> _pickPhoto() async {
@@ -327,6 +342,12 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
       if (_tipoAnfitrion == 'familiar' && (_parentescoAnfitrion == null || _parentescoAnfitrion!.isEmpty)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Indique el parentesco cuando el hogar es de un familiar.')),
+        );
+        return false;
+      }
+      if (_hogarLatitud == null || _hogarLongitud == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Marque la ubicación del hogar en el mapa o use GPS.')),
         );
         return false;
       }
@@ -719,29 +740,36 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
             icon: Icons.signpost_outlined,
             validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
           ),
-          Row(
-            children: [
-              Expanded(
-                child: M3TextField(
-                  controller: _hogarLat,
-                  label: 'Latitud',
-                  icon: Icons.my_location_outlined,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                ),
-              ),
-              const SizedBox(width: 8),
-              Expanded(
-                child: M3TextField(
-                  controller: _hogarLng,
-                  label: 'Longitud',
-                  icon: Icons.my_location_outlined,
-                  keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                  validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
-                ),
-              ),
-            ],
+          const SizedBox(height: 12),
+          Text(
+            'Ubicación del hogar',
+            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
+          const SizedBox(height: 8),
+          CentroGeolocalizacionMap(
+            latitud: _hogarLatitud,
+            longitud: _hogarLongitud,
+            editable: true,
+            height: 240,
+            markerId: 'hogar_solidario',
+            emptyHint: 'Toque el mapa o use «Usar ubicación GPS» para marcar el hogar.',
+            onLocationChanged: _actualizarUbicacionHogar,
+          ),
+          if (_hogarLatitud != null && _hogarLongitud != null) ...[
+            const SizedBox(height: 8),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Text(
+                'Lat: ${_hogarLatitud!.toStringAsFixed(6)} · Lng: ${_hogarLongitud!.toStringAsFixed(6)}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ),
+          ],
           Align(
             alignment: Alignment.centerLeft,
             child: TextButton.icon(
@@ -749,7 +777,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               icon: _loadingGps
                   ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
                   : const Icon(Icons.gps_fixed),
-              label: const Text('Usar ubicación GPS'),
+              label: Text(_loadingGps ? 'Obteniendo GPS…' : 'Usar ubicación GPS'),
             ),
           ),
           const Divider(height: 24),

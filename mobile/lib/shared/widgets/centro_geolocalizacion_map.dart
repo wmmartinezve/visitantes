@@ -1,3 +1,5 @@
+import 'package:flutter/foundation.dart';
+import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:visitantes_mobile/config/maps_config.dart';
@@ -14,6 +16,9 @@ class CentroGeolocalizacionMap extends StatefulWidget {
     required this.editable,
     this.onLocationChanged,
     this.height = 220,
+    this.markerId = 'ubicacion',
+    this.emptyHint = 'Toque el mapa o use el botón GPS para marcar la ubicación.',
+    this.dragHint = 'Arrastre el pin para ajustar',
   });
 
   final double? latitud;
@@ -21,6 +26,9 @@ class CentroGeolocalizacionMap extends StatefulWidget {
   final bool editable;
   final ValueChanged<LatLng>? onLocationChanged;
   final double height;
+  final String markerId;
+  final String emptyHint;
+  final String dragHint;
 
   @override
   State<CentroGeolocalizacionMap> createState() => _CentroGeolocalizacionMapState();
@@ -43,7 +51,7 @@ class _CentroGeolocalizacionMapState extends State<CentroGeolocalizacionMap> {
 
     return {
       Marker(
-        markerId: const MarkerId('centro_acopio'),
+        markerId: MarkerId(widget.markerId),
         position: LatLng(widget.latitud!, widget.longitud!),
         draggable: widget.editable,
         onDragEnd: widget.onLocationChanged,
@@ -93,6 +101,9 @@ class _CentroGeolocalizacionMapState extends State<CentroGeolocalizacionMap> {
                 target: _cameraTarget,
                 zoom: widget.latitud != null ? 16 : 8,
               ),
+              gestureRecognizers: const <Factory<OneSequenceGestureRecognizer>>{
+                Factory<EagerGestureRecognizer>(EagerGestureRecognizer.new),
+              },
               onMapCreated: (controller) {
                 _controller = controller;
                 _moveCameraToSelection();
@@ -118,7 +129,7 @@ class _CentroGeolocalizacionMapState extends State<CentroGeolocalizacionMap> {
                   child: Padding(
                     padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
                     child: Text(
-                      'Toque el mapa o use «Fijar ubicación GPS» para marcar el centro.',
+                      widget.emptyHint,
                       style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Colors.white),
                       textAlign: TextAlign.center,
                     ),
@@ -141,7 +152,7 @@ class _CentroGeolocalizacionMapState extends State<CentroGeolocalizacionMap> {
                         Icon(Icons.touch_app, size: 16, color: VenezuelaColors.blue),
                         const SizedBox(width: 4),
                         Text(
-                          'Arrastre el pin para ajustar',
+                          widget.dragHint,
                           style: Theme.of(context).textTheme.labelSmall,
                         ),
                       ],

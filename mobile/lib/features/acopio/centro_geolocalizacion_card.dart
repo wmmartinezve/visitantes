@@ -283,6 +283,8 @@ class _CentroGeolocalizacionCardState extends State<CentroGeolocalizacionCard> {
               latitud: lat,
               longitud: lng,
               editable: _editable,
+              markerId: 'centro_acopio',
+              emptyHint: 'Toque el mapa o use «Fijar ubicación GPS» para marcar el centro.',
               onLocationChanged: _editable ? _actualizarUbicacion : null,
             ),
             const SizedBox(height: 12),
