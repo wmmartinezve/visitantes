@@ -28,6 +28,7 @@ class RegisterGuestScreen extends StatefulWidget {
     this.registrarNuevoHogar = false,
     this.onRegistered,
     this.onUserUpdated,
+    this.onRegistrarOtroHogar,
   });
 
   final MobileUser user;
@@ -39,6 +40,7 @@ class RegisterGuestScreen extends StatefulWidget {
   final bool registrarNuevoHogar;
   final VoidCallback? onRegistered;
   final ValueChanged<MobileUser>? onUserUpdated;
+  final VoidCallback? onRegistrarOtroHogar;
 
   @override
   State<RegisterGuestScreen> createState() => _RegisterGuestScreenState();
@@ -1042,6 +1044,64 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     };
   }
 
+  Widget _buildWizardFooter(bool isLastStep) {
+    return Material(
+      elevation: 6,
+      color: Theme.of(context).scaffoldBackgroundColor,
+      child: SafeArea(
+        top: false,
+        child: Padding(
+          padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + MediaQuery.viewInsetsOf(context).bottom),
+          child: Row(
+            children: [
+              if (_step > 0)
+                OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
+              else
+                const SizedBox.shrink(),
+              const Spacer(),
+              if (!isLastStep)
+                FilledButton(
+                  onPressed: _saving ? null : _nextStep,
+                  style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
+                  child: const Text('Siguiente'),
+                )
+              else
+                FilledButton.icon(
+                  onPressed: _saving ? null : _submit,
+                  icon: _saving
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                        )
+                      : const Icon(Icons.check),
+                  label: const Text('Registrar'),
+                  style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildWizardBody({required List<Widget> children, required bool isLastStep}) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: children,
+          ),
+        ),
+        _buildWizardFooter(isLastStep),
+      ],
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_loadingCatalog || !widget.catalog.isReady) {
@@ -1092,13 +1152,14 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                   ),
                   const SizedBox(height: 12),
                   FilledButton.icon(
-                    onPressed: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Use Inicio → Registrar otro hogar y núcleo para un nuevo hogar.'),
-                        ),
-                      );
-                    },
+                    onPressed: widget.onRegistrarOtroHogar ??
+                        () {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Use Inicio → Registrar otro hogar y núcleo para un nuevo hogar.'),
+                            ),
+                          );
+                        },
                     icon: const Icon(Icons.add_home_work),
                     label: const Text('Registrar otro hogar'),
                     style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
@@ -1113,8 +1174,8 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
     final isLastStep = _step >= _totalSteps - 1;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+    return _buildWizardBody(
+      isLastStep: isLastStep,
       children: [
         if (_incluyeHogar)
           Card(
@@ -1134,35 +1195,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
         Form(
           key: _formKey,
           child: _buildStepContent(),
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            if (_step > 0)
-              OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
-            else
-              const SizedBox.shrink(),
-            const Spacer(),
-            if (!isLastStep)
-              FilledButton(
-                onPressed: _saving ? null : _nextStep,
-                style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-                child: const Text('Siguiente'),
-              )
-            else
-              FilledButton.icon(
-                onPressed: _saving ? null : _submit,
-                icon: _saving
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                      )
-                    : const Icon(Icons.check),
-                label: const Text('Registrar'),
-                style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-              ),
-          ],
         ),
       ],
     );

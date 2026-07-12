@@ -218,6 +218,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
         registrarNuevoHogar: _registrarNuevoHogar,
         onRegistered: _onRegistered,
         onUserUpdated: _handleUserUpdated,
+        onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
       ),
       GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
     ];
@@ -232,11 +233,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
       onLogout: widget.onLogout,
       onProfile: _openProfile,
       onRefreshComplete: _bumpRefresh,
-      body: IndexedStack(
-        index: _index,
-        sizing: StackFit.expand,
-        children: pages,
-      ),
+      body: pages[_index],
       bottomNav: NavigationBar(
         selectedIndex: _index,
         onDestinationSelected: _goTo,
