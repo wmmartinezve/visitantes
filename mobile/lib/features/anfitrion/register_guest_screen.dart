@@ -11,22 +11,13 @@ import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/media/photo_compression.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
+import 'package:visitantes_mobile/core/offline/geo_catalog_index.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/features/anfitrion/map_picker_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
-import 'package:visitantes_mobile/shared/widgets/centro_geolocalizacion_map.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/witness_photo_capture.dart';
-
-int? _catalogId(dynamic raw) {
-  if (raw == null) return null;
-  if (raw is int) return raw;
-  if (raw is num) return raw.toInt();
-  if (raw is String) return int.tryParse(raw.trim());
-  return null;
-}
-
-bool _catalogIdEquals(dynamic raw, int? id) => _catalogId(raw) == id;
 
 class RegisterGuestScreen extends StatefulWidget {
   const RegisterGuestScreen({
@@ -58,14 +49,13 @@ class RegisterGuestScreen extends StatefulWidget {
   State<RegisterGuestScreen> createState() => _RegisterGuestScreenState();
 }
 
-class _RegisterGuestScreenState extends State<RegisterGuestScreen> with AutomaticKeepAliveClientMixin {
-  @override
-  bool get wantKeepAlive => true;
+class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   final _formKey = GlobalKey<FormState>();
   int _step = 0;
   bool _saving = false;
   bool _loadingGps = false;
   bool _loadingCatalog = false;
+  GeoCatalogIndex? _geo;
 
   bool get _sinHogarAsignado =>
       widget.user.debeRegistrarHogar || widget.catalog.requiereRegistroHogar;
@@ -158,7 +148,8 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   }
 
   Future<void> _ensureCatalogReady() async {
-    if (widget.catalog.isReady) {
+    _refreshGeoIndex();
+    if (widget.catalog.isReady && _geo != null) {
       _applyDefaultHogarEstado();
       return;
     }
@@ -171,18 +162,25 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
       }
     } finally {
       if (mounted) {
-        setState(() => _loadingCatalog = false);
+        setState(() {
+          _loadingCatalog = false;
+          _refreshGeoIndex();
+        });
         _applyDefaultHogarEstado();
       }
     }
   }
 
-  void _applyDefaultHogarEstado() {
-    if (_hogarEstadoId != null) return;
+  void _refreshGeoIndex() {
+    _geo = GeoCatalogIndex.from(widget.catalog.cachedCatalog);
+  }
 
-    for (final estado in _estados) {
+  void _applyDefaultHogarEstado() {
+    if (_hogarEstadoId != null || _geo == null) return;
+
+    for (final estado in _geo!.estados) {
       if (estado['nombre'] == 'Anzoátegui') {
-        setState(() => _hogarEstadoId = _catalogId(estado['id']));
+        setState(() => _hogarEstadoId = GeoCatalogIndex.id(estado['id']));
         break;
       }
     }
@@ -517,81 +515,51 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
     }
   }
 
-  List<Map<String, dynamic>> get _estados {
-    final raw = widget.catalog.cachedCatalog?['estados'] as List<dynamic>? ?? [];
-    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+  Future<void> _abrirMapaPantallaCompleta() async {
+    final result = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute<LatLng>(
+        fullscreenDialog: true,
+        builder: (context) => MapPickerScreen(
+          initialLat: _hogarLatitud,
+          initialLng: _hogarLongitud,
+          title: 'Ubicación del hogar',
+        ),
+      ),
+    );
+    if (result != null) {
+      _actualizarUbicacionHogar(result);
+    }
   }
 
-  List<Map<String, dynamic>> get _municipios {
-    final raw = widget.catalog.cachedCatalog?['municipios'] as List<dynamic>? ?? [];
-    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  }
+  List<Map<String, dynamic>> get _estados => _geo?.estados ?? const [];
 
-  List<Map<String, dynamic>> get _parroquias {
-    final raw = widget.catalog.cachedCatalog?['parroquias'] as List<dynamic>? ?? [];
-    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  }
+  List<Map<String, dynamic>> get _municipiosHogar =>
+      _geo?.municipiosDeEstado(_hogarEstadoId) ?? const [];
 
-  List<Map<String, dynamic>> get _comunas {
-    final raw = widget.catalog.cachedCatalog?['comunas'] as List<dynamic>? ?? [];
-    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
-  }
+  List<Map<String, dynamic>> get _municipiosProcedencia =>
+      _geo?.municipiosDeEstado(_procedenciaEstadoId) ?? const [];
 
-  List<Map<String, dynamic>> get _municipiosHogar {
-    if (_hogarEstadoId == null) return const [];
-    return _municipios.where((m) => _catalogIdEquals(m['estado_id'], _hogarEstadoId)).toList();
-  }
+  List<Map<String, dynamic>> get _parroquiasProcedencia =>
+      _geo?.parroquiasDeMunicipio(_procedenciaMunicipioId) ?? const [];
 
-  List<Map<String, dynamic>> get _municipiosProcedencia {
-    if (_procedenciaEstadoId == null) return [];
-    return _municipios.where((m) => _catalogIdEquals(m['estado_id'], _procedenciaEstadoId)).toList();
-  }
+  List<Map<String, dynamic>> get _parroquiasHogar =>
+      _geo?.parroquiasDeMunicipio(_hogarMunicipioId) ?? const [];
 
-  List<Map<String, dynamic>> get _parroquiasProcedencia {
-    if (_procedenciaMunicipioId == null) return [];
-    return _parroquias.where((p) => _catalogIdEquals(p['municipio_id'], _procedenciaMunicipioId)).toList();
-  }
-
-  List<Map<String, dynamic>> get _parroquiasHogar {
-    if (_hogarMunicipioId == null) return [];
-    return _parroquias.where((p) => _catalogIdEquals(p['municipio_id'], _hogarMunicipioId)).toList();
-  }
-
-  List<Map<String, dynamic>> get _comunasHogar {
-    if (_hogarParroquiaId == null) return [];
-    return _comunas.where((c) => _catalogIdEquals(c['parroquia_id'], _hogarParroquiaId)).toList();
-  }
+  List<Map<String, dynamic>> get _comunasHogar =>
+      _geo?.comunasDeParroquia(_hogarParroquiaId) ?? const [];
 
   List<Map<String, String>> get _situacionesJefe {
-    final raw = widget.catalog.cachedCatalog?['situaciones_jefe'] as List<dynamic>?;
-    if (raw != null && raw.isNotEmpty) {
-      return raw
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .map((e) => {'value': e['value'].toString(), 'label': e['label'].toString()})
-          .toList();
-    }
+    if (_geo != null && _geo!.situacionesJefe.isNotEmpty) return _geo!.situacionesJefe;
     return AppConfig.situacionesJefe;
   }
 
   List<Map<String, String>> get _condiciones {
-    final raw = widget.catalog.cachedCatalog?['condiciones'] as List<dynamic>?;
-    if (raw != null && raw.isNotEmpty) {
-      return raw
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .map((e) => {'value': e['value'].toString(), 'label': e['label'].toString()})
-          .toList();
-    }
+    if (_geo != null && _geo!.condiciones.isNotEmpty) return _geo!.condiciones;
     return AppConfig.condiciones;
   }
 
   List<Map<String, String>> get _tiposVivienda {
-    final raw = widget.catalog.cachedCatalog?['tipos_vivienda'] as List<dynamic>?;
-    if (raw != null && raw.isNotEmpty) {
-      return raw
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .map((e) => {'value': e['value'].toString(), 'label': e['label'].toString()})
-          .toList();
-    }
+    if (_geo != null && _geo!.tiposVivienda.isNotEmpty) return _geo!.tiposVivienda;
     return const [
       {'value': 'casa', 'label': 'Casa'},
       {'value': 'edificio', 'label': 'Edificio'},
@@ -599,13 +567,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   }
 
   List<Map<String, String>> get _tiposAnfitrion {
-    final raw = widget.catalog.cachedCatalog?['tipos_anfitrion'] as List<dynamic>?;
-    if (raw != null && raw.isNotEmpty) {
-      return raw
-          .map((e) => Map<String, dynamic>.from(e as Map))
-          .map((e) => {'value': e['value'].toString(), 'label': e['label'].toString()})
-          .toList();
-    }
+    if (_geo != null && _geo!.tiposAnfitrion.isNotEmpty) return _geo!.tiposAnfitrion;
     return const [
       {'value': 'familiar', 'label': 'Familiar'},
       {'value': 'amigo', 'label': 'Amigo'},
@@ -613,10 +575,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   }
 
   List<String> get _parentescos {
-    final raw = widget.catalog.cachedCatalog?['parentescos'] as List<dynamic>?;
-    if (raw != null && raw.isNotEmpty) {
-      return raw.map((e) => e.toString()).toList();
-    }
+    if (_geo != null && _geo!.parentescos.isNotEmpty) return _geo!.parentescos;
     return AppConfig.parentescos;
   }
 
@@ -691,7 +650,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               if (v == null) return;
               for (final estado in _estados) {
                 if (estado['nombre'] == v) {
-                  setState(() => _hogarEstadoId = _catalogId(estado['id']));
+                  setState(() => _hogarEstadoId = GeoCatalogIndex.id(estado['id']));
                   return;
                 }
               }
@@ -709,7 +668,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               } else {
                 for (final municipio in _municipiosHogar) {
                   if (municipio['nombre'] == v) {
-                    _hogarMunicipioId = _catalogId(municipio['id']);
+                    _hogarMunicipioId = GeoCatalogIndex.id(municipio['id']);
                     break;
                   }
                 }
@@ -730,7 +689,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               } else {
                 for (final parroquia in _parroquiasHogar) {
                   if (parroquia['nombre'] == v) {
-                    _hogarParroquiaId = _catalogId(parroquia['id']);
+                    _hogarParroquiaId = GeoCatalogIndex.id(parroquia['id']);
                     break;
                   }
                 }
@@ -746,25 +705,26 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
                 style: Theme.of(context).textTheme.bodySmall?.copyWith(color: VenezuelaColors.red),
               ),
             ),
-          M3SelectField(
-            key: ValueKey('hogar-comuna-$_hogarParroquiaId'),
-            label: 'Comuna (opcional)',
-            icon: Icons.map_outlined,
-            value: _hogarComunaId == null ? null : _nombreComuna(_hogarComunaId),
-            items: ['Sin comuna', ..._comunasHogar.map((e) => e['nombre'] as String)],
-            onChanged: (v) => setState(() {
-              if (v == null || v == 'Sin comuna') {
-                _hogarComunaId = null;
-                return;
-              }
-              for (final comuna in _comunasHogar) {
-                if (comuna['nombre'] == v) {
-                  _hogarComunaId = _catalogId(comuna['id']);
+          if (_hogarParroquiaId != null)
+            M3SelectField(
+              key: ValueKey('hogar-comuna-$_hogarParroquiaId'),
+              label: 'Comuna (opcional)',
+              icon: Icons.map_outlined,
+              value: _hogarComunaId == null ? null : _nombreComuna(_hogarComunaId),
+              items: ['Sin comuna', ..._comunasHogar.map((e) => e['nombre'] as String)],
+              onChanged: (v) => setState(() {
+                if (v == null || v == 'Sin comuna') {
+                  _hogarComunaId = null;
                   return;
                 }
-              }
-            }),
-          ),
+                for (final comuna in _comunasHogar) {
+                  if (comuna['nombre'] == v) {
+                    _hogarComunaId = GeoCatalogIndex.id(comuna['id']);
+                    return;
+                  }
+                }
+              }),
+            ),
           M3TextField(
             controller: _hogarDireccion,
             label: 'Dirección exacta',
@@ -777,42 +737,62 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
             style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          RepaintBoundary(
-            child: CentroGeolocalizacionMap(
-              key: const ValueKey('hogar-geolocalizacion-map'),
-              latitud: _hogarLatitud,
-              longitud: _hogarLongitud,
-              editable: true,
-              height: 240,
-              scrollFriendly: true,
-              markerId: 'hogar_solidario',
-              emptyHint: 'Toque el mapa o use «Usar ubicación GPS» para marcar el hogar.',
-              onLocationChanged: _actualizarUbicacionHogar,
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.6)),
             ),
-          ),
-          if (_hogarLatitud != null && _hogarLongitud != null) ...[
-            const SizedBox(height: 8),
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.5),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Text(
-                'Lat: ${_hogarLatitud!.toStringAsFixed(6)} · Lng: ${_hogarLongitud!.toStringAsFixed(6)}',
-                style: Theme.of(context).textTheme.bodySmall,
-              ),
-            ),
-          ],
-          Align(
-            alignment: Alignment.centerLeft,
-            child: TextButton.icon(
-              onPressed: _loadingGps ? null : _capturarGps,
-              icon: _loadingGps
-                  ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
-                  : const Icon(Icons.gps_fixed),
-              label: Text(_loadingGps ? 'Obteniendo GPS…' : 'Usar ubicación GPS'),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  children: [
+                    Icon(
+                      _hogarLatitud != null ? Icons.location_on : Icons.location_searching,
+                      color: VenezuelaColors.blue,
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        _hogarLatitud != null && _hogarLongitud != null
+                            ? 'Lat: ${_hogarLatitud!.toStringAsFixed(6)} · Lng: ${_hogarLongitud!.toStringAsFixed(6)}'
+                            : 'Sin ubicación marcada. Use GPS o abra el mapa en pantalla completa.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _loadingGps ? null : _capturarGps,
+                        icon: _loadingGps
+                            ? const SizedBox(
+                                width: 16,
+                                height: 16,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            : const Icon(Icons.gps_fixed),
+                        label: Text(_loadingGps ? 'GPS…' : 'Usar GPS'),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: FilledButton.icon(
+                        onPressed: _abrirMapaPantallaCompleta,
+                        icon: const Icon(Icons.map_outlined),
+                        label: const Text('Abrir mapa'),
+                        style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
           ),
           const Divider(height: 24),
@@ -893,7 +873,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
                 items: _estados.map((e) => e['nombre'] as String).toList(),
                 onChanged: (v) => setState(() {
                   _procedenciaEstadoId =
-                      v == null ? null : _catalogId(_estados.firstWhere((e) => e['nombre'] == v)['id']);
+                      v == null ? null : GeoCatalogIndex.id(_estados.firstWhere((e) => e['nombre'] == v)['id']);
                   _procedenciaMunicipioId = null;
                   _procedenciaParroquiaId = null;
                 }),
@@ -907,7 +887,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
                 onChanged: (v) => setState(() {
                   _procedenciaMunicipioId = v == null
                       ? null
-                      : _catalogId(_municipiosProcedencia.firstWhere((e) => e['nombre'] == v)['id']);
+                      : GeoCatalogIndex.id(_municipiosProcedencia.firstWhere((e) => e['nombre'] == v)['id']);
                   _procedenciaParroquiaId = null;
                 }),
               ),
@@ -920,7 +900,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
                 onChanged: (v) => setState(() {
                   _procedenciaParroquiaId = v == null
                       ? null
-                      : _catalogId(_parroquiasProcedencia.firstWhere((e) => e['nombre'] == v)['id']);
+                      : GeoCatalogIndex.id(_parroquiasProcedencia.firstWhere((e) => e['nombre'] == v)['id']);
                 }),
               ),
               M3SelectField(
@@ -1137,41 +1117,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
     );
   }
 
-  String? _nombreEstado(int? id) {
-    if (id == null) return null;
-    for (final estado in _estados) {
-      if (_catalogIdEquals(estado['id'], id)) return estado['nombre'] as String?;
-    }
-    return null;
-  }
+  String? _nombreEstado(int? id) => _geo?.nombreEstado(id);
 
-  String? _nombreMunicipio(List<Map<String, dynamic>> source, int? id) {
-    if (id == null) return null;
-    for (final item in source) {
-      if (_catalogIdEquals(item['id'], id)) return item['nombre'] as String?;
-    }
-    return null;
-  }
+  String? _nombreMunicipio(List<Map<String, dynamic>> source, int? id) =>
+      _geo?.nombreEnLista(source, id);
 
-  String? _nombreParroquia(List<Map<String, dynamic>> source, int? id) {
-    if (id == null) return null;
-    for (final item in source) {
-      if (_catalogIdEquals(item['id'], id)) return item['nombre'] as String?;
-    }
-    return null;
-  }
+  String? _nombreParroquia(List<Map<String, dynamic>> source, int? id) =>
+      _geo?.nombreEnLista(source, id);
 
-  String? _nombreComuna(int? id) {
-    if (id == null) return null;
-    for (final item in _comunasHogar) {
-      if (_catalogIdEquals(item['id'], id)) return item['nombre'] as String?;
-    }
-    return null;
-  }
+  String? _nombreComuna(int? id) => _geo?.nombreEnLista(_comunasHogar, id);
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
 
     if (_loadingCatalog) {
       return Center(

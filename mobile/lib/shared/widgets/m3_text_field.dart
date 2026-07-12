@@ -208,7 +208,7 @@ class M3TextFieldRaw extends StatelessWidget {
 }
 
 /// Lista desplegable Material 3 con icono identificador.
-class M3SelectField extends StatelessWidget {
+class M3SelectField extends StatefulWidget {
   const M3SelectField({
     super.key,
     required this.label,
@@ -228,29 +228,55 @@ class M3SelectField extends StatelessWidget {
   final String? Function(String?)? validator;
   final bool includeSpacing;
 
-  String? get _effectiveValue {
-    final selected = value;
-    if (selected == null || selected.isEmpty) return null;
-    if (!items.contains(selected)) return null;
-    return selected;
+  @override
+  State<M3SelectField> createState() => _M3SelectFieldState();
+}
+
+class _M3SelectFieldState extends State<M3SelectField> {
+  String? _selected;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = _sanitize(widget.value);
+  }
+
+  @override
+  void didUpdateWidget(M3SelectField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value != oldWidget.value || widget.items != oldWidget.items) {
+      _selected = _sanitize(widget.value);
+    }
+  }
+
+  String? _sanitize(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    if (!widget.items.contains(raw)) return null;
+    return raw;
   }
 
   @override
   Widget build(BuildContext context) {
+    final items = widget.items;
     final menuItems = items.map((item) => DropdownMenuItem<String>(value: item, child: Text(item))).toList();
-    final fieldKey = ValueKey('$label|${items.length}|${_effectiveValue ?? ''}|${items.isEmpty ? 0 : items.first}');
+    final enabled = items.isNotEmpty;
 
     return Padding(
-      padding: EdgeInsets.only(bottom: includeSpacing ? M3InputStyles.fieldSpacing : 0),
+      padding: EdgeInsets.only(bottom: widget.includeSpacing ? M3InputStyles.fieldSpacing : 0),
       child: DropdownButtonFormField<String>(
-        key: fieldKey,
-        initialValue: _effectiveValue,
+        key: ValueKey('${widget.label}|${items.length}|${_selected ?? ''}'),
+        initialValue: enabled ? _selected : null,
         isExpanded: true,
-        decoration: M3InputStyles.decoration(context: context, label: label, icon: icon),
+        decoration: M3InputStyles.decoration(context: context, label: widget.label, icon: widget.icon),
         hint: Text('Seleccione…', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
         items: menuItems,
-        onChanged: items.isEmpty ? null : onChanged,
-        validator: validator,
+        onChanged: enabled
+            ? (value) {
+                setState(() => _selected = value);
+                widget.onChanged(value);
+              }
+            : null,
+        validator: widget.validator,
       ),
     );
   }
