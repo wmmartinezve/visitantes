@@ -146,7 +146,6 @@ class RegistrarInvitado extends Component
     public function updatedHogarParroquiaId(): void
     {
         $this->hogar_comuna_id = null;
-        $this->prefillProcedenciaDesdeHogar(force: true);
     }
 
     public function updatedHogarTipoAnfitrion(): void
@@ -178,34 +177,9 @@ class RegistrarInvitado extends Component
     {
         $this->validate($this->reglasPasoActual());
 
-        if ($this->requiereRegistroHogar && $this->paso === 0) {
-            $this->prefillProcedenciaDesdeHogar();
-        }
-
         if ($this->paso < $this->totalPasos - 1) {
             $this->paso++;
         }
-    }
-
-    private function prefillProcedenciaDesdeHogar(bool $force = false): void
-    {
-        if ($this->hogar_parroquia_id === null) {
-            return;
-        }
-
-        if (! $force && $this->procedencia_parroquia_id !== null) {
-            return;
-        }
-
-        $parroquia = Parroquia::query()->with('municipio')->find($this->hogar_parroquia_id);
-
-        if ($parroquia?->municipio === null) {
-            return;
-        }
-
-        $this->procedencia_estado_id = $parroquia->municipio->estado_id;
-        $this->procedencia_municipio_id = $parroquia->municipio_id;
-        $this->procedencia_parroquia_id = $parroquia->id;
     }
 
     /**

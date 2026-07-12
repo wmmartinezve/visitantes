@@ -11,7 +11,7 @@ use Filament\Forms\Set;
 final class ProcedenciaSelectFields
 {
     /**
-     * Selects en cascada: todos los estados de Venezuela → municipios → parroquias.
+     * Cascada independiente: todos los estados de Venezuela → municipios → parroquias.
      *
      * @return array<int, Forms\Components\Component>
      */
@@ -36,19 +36,27 @@ final class ProcedenciaSelectFields
 
             Forms\Components\Select::make($municipioField)
                 ->label('Municipio de procedencia')
-                ->options(fn (Get $get): array => GeografiaSelectOptions::municipios($get, $estadoField, $municipioField))
+                ->options(fn (Get $get): array => GeografiaSelectOptions::municipios($get, $estadoField))
                 ->searchable()
                 ->preload()
-                ->required()
                 ->live()
+                ->required()
+                ->disabled(fn (Get $get): bool => blank($get($estadoField)))
+                ->placeholder(fn (Get $get): string => blank($get($estadoField))
+                    ? 'Seleccione primero el estado'
+                    : 'Seleccione una opción')
                 ->afterStateUpdated(fn (Set $set) => $set($parroquiaField, null)),
 
             Forms\Components\Select::make($parroquiaField)
                 ->label('Parroquia de procedencia')
-                ->options(fn (Get $get): array => GeografiaSelectOptions::parroquias($get, $municipioField, $parroquiaField))
+                ->options(fn (Get $get): array => GeografiaSelectOptions::parroquias($get, $municipioField))
                 ->searchable()
                 ->preload()
-                ->required(),
+                ->required()
+                ->disabled(fn (Get $get): bool => blank($get($municipioField)))
+                ->placeholder(fn (Get $get): string => blank($get($municipioField))
+                    ? 'Seleccione primero el municipio'
+                    : 'Seleccione una opción'),
         ];
     }
 }

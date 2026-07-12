@@ -18,14 +18,16 @@ final class GeografiaSelectOptions
     }
 
     /**
+     * Municipios del estado elegido (sin inferir estado desde otros campos).
+     *
      * @return array<int|string, string>
      */
-    public static function municipios(Get $get, string $estadoField, string $municipioField): array
+    public static function municipios(Get $get, string $estadoField): array
     {
-        $estadoId = self::resolveEstadoId($get, $estadoField, $municipioField);
+        $estadoId = $get($estadoField);
 
-        if ($estadoId === null) {
-            return self::fallbackMunicipio($get($municipioField));
+        if (! filled($estadoId)) {
+            return [];
         }
 
         return Municipio::query()
@@ -36,14 +38,16 @@ final class GeografiaSelectOptions
     }
 
     /**
+     * Parroquias del municipio elegido.
+     *
      * @return array<int|string, string>
      */
-    public static function parroquias(Get $get, string $municipioField, string $parroquiaField): array
+    public static function parroquias(Get $get, string $municipioField): array
     {
-        $municipioId = self::resolveMunicipioId($get, $municipioField, $parroquiaField);
+        $municipioId = $get($municipioField);
 
-        if ($municipioId === null) {
-            return self::fallbackParroquia($get($parroquiaField));
+        if (! filled($municipioId)) {
+            return [];
         }
 
         return Parroquia::query()
@@ -51,63 +55,5 @@ final class GeografiaSelectOptions
             ->orderBy('nombre')
             ->pluck('nombre', 'id')
             ->all();
-    }
-
-    public static function resolveEstadoId(Get $get, string $estadoField, string $municipioField): ?int
-    {
-        if (filled($get($estadoField))) {
-            return (int) $get($estadoField);
-        }
-
-        $municipioId = $get($municipioField);
-
-        if (! filled($municipioId)) {
-            return null;
-        }
-
-        $estadoId = Municipio::query()->whereKey($municipioId)->value('estado_id');
-
-        return $estadoId !== null ? (int) $estadoId : null;
-    }
-
-    public static function resolveMunicipioId(Get $get, string $municipioField, string $parroquiaField): ?int
-    {
-        if (filled($get($municipioField))) {
-            return (int) $get($municipioField);
-        }
-
-        $parroquiaId = $get($parroquiaField);
-
-        if (! filled($parroquiaId)) {
-            return null;
-        }
-
-        $municipioId = Parroquia::query()->whereKey($parroquiaId)->value('municipio_id');
-
-        return $municipioId !== null ? (int) $municipioId : null;
-    }
-
-    /** @return array<int|string, string> */
-    private static function fallbackMunicipio(mixed $municipioId): array
-    {
-        if (! filled($municipioId)) {
-            return [];
-        }
-
-        $municipio = Municipio::query()->find($municipioId);
-
-        return $municipio !== null ? [$municipio->id => $municipio->nombre] : [];
-    }
-
-    /** @return array<int|string, string> */
-    private static function fallbackParroquia(mixed $parroquiaId): array
-    {
-        if (! filled($parroquiaId)) {
-            return [];
-        }
-
-        $parroquia = Parroquia::query()->find($parroquiaId);
-
-        return $parroquia !== null ? [$parroquia->id => $parroquia->nombre] : [];
     }
 }
