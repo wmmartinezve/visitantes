@@ -38,7 +38,10 @@ class GeoCatalogIndex {
     List<Map<String, dynamic>> parseList(String key) {
       final raw = catalog[key];
       if (raw is! List) return const [];
-      return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
+      return raw
+          .whereType<Map>()
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
     }
 
     List<Map<String, String>> parseEnumList(String key) {

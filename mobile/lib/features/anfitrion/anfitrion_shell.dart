@@ -7,8 +7,8 @@ import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 import 'package:visitantes_mobile/features/auth/auth_repository.dart';
 import 'package:visitantes_mobile/features/auth/profile_screen.dart';
 import 'package:visitantes_mobile/features/anfitrion/guests_list_screen.dart';
+import 'package:visitantes_mobile/features/anfitrion/register_guest_flow.dart';
 import 'package:visitantes_mobile/features/anfitrion/hogares_list_screen.dart';
-import 'package:visitantes_mobile/features/anfitrion/register_guest_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/app_scaffold.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/pending_queue_panel.dart';
@@ -181,8 +181,8 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   }
 
   Widget _buildRegisterPage() {
-    return RegisterGuestScreen(
-      key: ValueKey('register-wizard-$_registerWizardKey'),
+    return RegisterGuestFlow(
+      key: ValueKey('register-flow-$_registerWizardKey'),
       user: _user,
       catalog: widget.catalog,
       sync: widget.sync,
@@ -217,7 +217,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
           onCambiarHogar: _cambiarHogarActivo,
           onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
         ),
-      2 => SizedBox.expand(child: _buildRegisterPage()),
+      2 => _buildRegisterPage(),
       3 => GuestsListScreen(
           key: ValueKey('guests-$_refreshTick'),
           fieldApi: _fieldApi,

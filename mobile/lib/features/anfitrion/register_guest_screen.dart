@@ -117,6 +117,21 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     return null;
   }
 
+  String? _enumLabel(List<Map<String, String>> options, String value) {
+    for (final option in options) {
+      if (option['value'] == value) return option['label'];
+    }
+    return null;
+  }
+
+  String? _enumValue(List<Map<String, String>> options, String? label) {
+    if (label == null) return null;
+    for (final option in options) {
+      if (option['label'] == label) return option['value'];
+    }
+    return null;
+  }
+
   bool get _esAnfitrionFamiliar => _tipoAnfitrion == 'familiar';
 
   int get _totalSteps => _incluyeHogar ? 5 : 3;
@@ -156,6 +171,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   @override
   void initState() {
     super.initState();
+    _refreshGeoIndex();
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _applyDefaultHogarEstado();
       _ensureCatalogReady();
@@ -192,7 +208,11 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   void _refreshGeoIndex() {
-    _geo = GeoCatalogIndex.from(widget.catalog.cachedCatalog);
+    try {
+      _geo = GeoCatalogIndex.from(widget.catalog.cachedCatalog);
+    } catch (_) {
+      _geo = null;
+    }
   }
 
   void _applyDefaultHogarEstado() {
@@ -1004,24 +1024,19 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
               M3SelectField(
                 label: 'Situación del jefe de familia',
                 icon: Icons.work_outline,
-                value: _situacionJefe == null
-                    ? null
-                    : _situacionesJefe.firstWhere((e) => e['value'] == _situacionJefe)['label'],
+                value: _situacionJefe == null ? null : _enumLabel(_situacionesJefe, _situacionJefe!),
                 items: _situacionesJefe.map((e) => e['label']!).toList(),
                 onChanged: (v) => setState(() {
-                  _situacionJefe =
-                      v == null ? null : _situacionesJefe.firstWhere((e) => e['label'] == v)['value'];
+                  _situacionJefe = _enumValue(_situacionesJefe, v);
                 }),
               ),
               M3SelectField(
                 label: 'Condición',
                 icon: Icons.accessibility_new_outlined,
-                value: _condiciones.firstWhere((e) => e['value'] == _condicion)['label'],
+                value: _enumLabel(_condiciones, _condicion),
                 items: _condiciones.map((e) => e['label']!).toList(),
                 onChanged: (v) => setState(() {
-                  _condicion = v == null
-                      ? 'ninguna'
-                      : _condiciones.firstWhere((e) => e['label'] == v)['value']!;
+                  _condicion = _enumValue(_condiciones, v) ?? 'ninguna';
                 }),
               ),
             ],
@@ -1081,12 +1096,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                   M3SelectField(
                     label: 'Condición',
                     icon: Icons.accessibility_new_outlined,
-                    value: _condiciones.firstWhere((e) => e['value'] == f.condicion)['label'],
+                    value: _enumLabel(_condiciones, f.condicion),
                     items: _condiciones.map((e) => e['label']!).toList(),
                     onChanged: (v) => setState(() {
-                      f.condicion = v == null
-                          ? 'ninguna'
-                          : _condiciones.firstWhere((e) => e['label'] == v)['value']!;
+                      f.condicion = _enumValue(_condiciones, v) ?? 'ninguna';
                     }),
                   ),
                   M3TextField(
@@ -1151,7 +1164,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                 if (_incluyeHogar) ...[
                   const Text('Hogar: código automático al guardar'),
                   Text(
-                    'Acogida: ${_tiposAnfitrion.firstWhere((e) => e['value'] == _tipoAnfitrion)['label']}',
+                    'Acogida: ${_enumLabel(_tiposAnfitrion, _tipoAnfitrion) ?? _tipoAnfitrion}',
                   ),
                 ],
                 Text('Jefe: ${_nombre.text.trim()} ${_apellido.text.trim()}'),
@@ -1183,32 +1196,17 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildWizardBody(bool isLastStep) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: [
-              _buildStepIndicator(),
-              const SizedBox(height: 12),
-              _buildStepContent(),
-            ],
-          ),
-        ),
-        Material(
-          elevation: 8,
-          color: Theme.of(context).colorScheme.surface,
-          child: SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
-              child: _buildWizardFooter(isLastStep),
-            ),
-          ),
-        ),
+        _buildStepIndicator(),
+        const SizedBox(height: 12),
+        _buildStepContent(),
+        const SizedBox(height: 24),
+        _buildWizardFooter(isLastStep),
+        SizedBox(height: MediaQuery.viewPaddingOf(context).bottom),
       ],
     );
   }
@@ -1261,29 +1259,31 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return SizedBox.expand(child: _buildContent(context));
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: _buildContent(context),
+    );
   }
 
   Widget _buildContent(BuildContext context) {
     if (_loadingCatalog) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const CircularProgressIndicator(color: VenezuelaColors.blue),
-            const SizedBox(height: 16),
-            Text(
-              'Cargando catálogo geográfico…',
-              style: Theme.of(context).textTheme.bodyMedium,
-            ),
-            const SizedBox(height: 12),
-            OutlinedButton.icon(
-              onPressed: _ensureCatalogReady,
-              icon: const Icon(Icons.refresh),
-              label: const Text('Reintentar'),
-            ),
-          ],
-        ),
+      return ListView(
+        padding: const EdgeInsets.all(24),
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          const LinearProgressIndicator(color: VenezuelaColors.blue),
+          const SizedBox(height: 16),
+          Text(
+            'Cargando catálogo geográfico…',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 12),
+          OutlinedButton.icon(
+            onPressed: _ensureCatalogReady,
+            icon: const Icon(Icons.refresh),
+            label: const Text('Reintentar'),
+          ),
+        ],
       );
     }
 
