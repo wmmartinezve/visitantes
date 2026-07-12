@@ -777,14 +777,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
             style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
           ),
           const SizedBox(height: 8),
-          CentroGeolocalizacionMap(
-            latitud: _hogarLatitud,
-            longitud: _hogarLongitud,
-            editable: true,
-            height: 240,
-            markerId: 'hogar_solidario',
-            emptyHint: 'Toque el mapa o use «Usar ubicación GPS» para marcar el hogar.',
-            onLocationChanged: _actualizarUbicacionHogar,
+          RepaintBoundary(
+            child: CentroGeolocalizacionMap(
+              key: const ValueKey('hogar-geolocalizacion-map'),
+              latitud: _hogarLatitud,
+              longitud: _hogarLongitud,
+              editable: true,
+              height: 240,
+              scrollFriendly: true,
+              markerId: 'hogar_solidario',
+              emptyHint: 'Toque el mapa o use «Usar ubicación GPS» para marcar el hogar.',
+              onLocationChanged: _actualizarUbicacionHogar,
+            ),
           ),
           if (_hogarLatitud != null && _hogarLongitud != null) ...[
             const SizedBox(height: 8),
