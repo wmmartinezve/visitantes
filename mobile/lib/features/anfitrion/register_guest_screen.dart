@@ -487,6 +487,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   void _nextStep() {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (!_validateCurrentStep()) return;
     if (_step < _totalSteps - 1) {
       setState(() => _step++);
@@ -494,6 +495,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   void _prevStep() {
+    FocusManager.instance.primaryFocus?.unfocus();
     if (_step > 0) setState(() => _step--);
   }
 
@@ -1196,54 +1198,85 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildWizardBody(bool isLastStep) {
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      physics: const AlwaysScrollableScrollPhysics(),
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        _buildStepIndicator(),
-        const SizedBox(height: 12),
-        _buildStepContent(),
-        const SizedBox(height: 24),
-        _buildWizardFooter(isLastStep),
-        SizedBox(height: MediaQuery.viewPaddingOf(context).bottom),
+        ListView(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 88 + bottomInset),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            _buildStepIndicator(),
+            const SizedBox(height: 12),
+            _buildStepContent(),
+          ],
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Material(
+            elevation: 8,
+            color: Theme.of(context).colorScheme.surface,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                child: _buildWizardFooter(isLastStep),
+              ),
+            ),
+          ),
+        ),
       ],
     );
   }
 
   Widget _buildWizardFooter(bool isLastStep) {
-    return Row(
-      children: [
-        if (_step > 0)
-          OutlinedButton.icon(
-            onPressed: _saving ? null : _prevStep,
-            icon: const Icon(Icons.arrow_back, size: 18),
-            label: const Text('Anterior'),
-          )
-        else
-          const SizedBox.shrink(),
-        const Spacer(),
-        if (!isLastStep)
-          FilledButton.icon(
-            onPressed: _saving ? null : _nextStep,
-            icon: const Icon(Icons.arrow_forward, size: 18),
-            label: const Text('Siguiente'),
-            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-          )
-        else
-          FilledButton.icon(
-            onPressed: _saving ? null : _submit,
-            icon: _saving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                  )
-                : const Icon(Icons.check),
-            label: const Text('Registrar'),
-            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-          ),
-      ],
+    return SizedBox(
+      width: double.infinity,
+      child: Row(
+        children: [
+          if (_step > 0)
+            OutlinedButton.icon(
+              onPressed: _saving ? null : _prevStep,
+              icon: const Icon(Icons.arrow_back, size: 18),
+              label: const Text('Anterior'),
+            )
+          else
+            const SizedBox.shrink(),
+          const Spacer(),
+          if (!isLastStep)
+            FilledButton.icon(
+              onPressed: _saving ? null : _nextStep,
+              icon: const Icon(Icons.arrow_forward, size: 18),
+              label: const Text('Siguiente'),
+              style: FilledButton.styleFrom(
+                backgroundColor: VenezuelaColors.blue,
+                minimumSize: const Size(0, 48),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            )
+          else
+            FilledButton.icon(
+              onPressed: _saving ? null : _submit,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.check),
+              label: const Text('Registrar'),
+              style: FilledButton.styleFrom(
+                backgroundColor: VenezuelaColors.red,
+                minimumSize: const Size(0, 48),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+              ),
+            ),
+        ],
+      ),
     );
   }
 
@@ -1261,7 +1294,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   Widget build(BuildContext context) {
     return Material(
       color: Theme.of(context).colorScheme.surface,
-      child: _buildContent(context),
+      child: SizedBox.expand(child: _buildContent(context)),
     );
   }
 

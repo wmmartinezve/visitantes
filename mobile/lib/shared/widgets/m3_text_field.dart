@@ -140,6 +140,7 @@ class M3TextField extends StatelessWidget {
         obscureText: obscureText,
         readOnly: readOnly,
         enabled: enabled,
+        enableInteractiveSelection: !readOnly,
         onTap: onTap,
         onChanged: onChanged,
         onFieldSubmitted: onFieldSubmitted,
@@ -233,9 +234,10 @@ class M3SelectField extends StatelessWidget {
     FocusManager.instance.primaryFocus?.unfocus();
     final picked = await showModalBottomSheet<String>(
       context: context,
-      useRootNavigator: false,
+      useRootNavigator: true,
       isScrollControlled: true,
       showDragHandle: true,
+      barrierColor: Colors.black54,
       builder: (ctx) {
         final maxHeight = MediaQuery.sizeOf(ctx).height * 0.65;
         return SafeArea(
@@ -280,42 +282,74 @@ class M3SelectField extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final enabled = items.isNotEmpty;
-    final display = value != null && value!.isNotEmpty ? value! : 'Seleccione…';
-    final isPlaceholder = value == null || value!.isEmpty;
+    final hasValue = value != null && value!.isNotEmpty;
+    final display = hasValue ? value! : 'Seleccione…';
     final errorText = validator?.call(value);
+    final scheme = Theme.of(context).colorScheme;
 
     return Padding(
       padding: EdgeInsets.only(bottom: includeSpacing ? M3InputStyles.fieldSpacing : 0),
       child: Semantics(
         button: enabled,
         label: label,
-        child: Material(
-          color: Colors.transparent,
-          child: InkWell(
-            onTap: enabled ? () => _openPicker(context) : null,
-            borderRadius: BorderRadius.circular(M3InputStyles.borderRadius),
-            child: InputDecorator(
-              isEmpty: isPlaceholder,
-              decoration: M3InputStyles.decoration(
-                context: context,
-                label: label,
-                icon: icon,
-                errorText: errorText,
-                enabled: enabled,
-              ).copyWith(
-                suffixIcon: enabled
-                    ? Icon(Icons.expand_more, color: Theme.of(context).colorScheme.onSurfaceVariant)
-                    : null,
+        child: InkWell(
+          onTap: enabled ? () => _openPicker(context) : null,
+          borderRadius: BorderRadius.circular(M3InputStyles.borderRadius),
+          child: Ink(
+            decoration: BoxDecoration(
+              color: enabled ? Colors.white : VenezuelaColors.surfaceContainer,
+              borderRadius: BorderRadius.circular(M3InputStyles.borderRadius),
+              border: Border.all(
+                color: errorText != null
+                    ? scheme.error
+                    : scheme.outlineVariant.withValues(alpha: 0.6),
               ),
-              child: Text(
-                display,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: isPlaceholder
-                      ? Theme.of(context).colorScheme.onSurfaceVariant
-                      : Theme.of(context).colorScheme.onSurface,
-                ),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 12),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  _IconBadge(icon: icon),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: scheme.onSurfaceVariant,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          display,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 15,
+                            color: hasValue ? scheme.onSurface : scheme.onSurfaceVariant,
+                          ),
+                        ),
+                        if (errorText != null) ...[
+                          const SizedBox(height: 4),
+                          Text(
+                            errorText,
+                            style: TextStyle(fontSize: 12, color: scheme.error),
+                          ),
+                        ],
+                      ],
+                    ),
+                  ),
+                  if (enabled)
+                    Padding(
+                      padding: const EdgeInsets.only(right: 12),
+                      child: Icon(Icons.expand_more, color: scheme.onSurfaceVariant),
+                    ),
+                ],
               ),
             ),
           ),

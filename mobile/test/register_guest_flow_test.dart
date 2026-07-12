@@ -102,5 +102,6 @@ void main() {
 
     expect(find.textContaining('Paso 1 de 5'), findsOneWidget);
     expect(find.textContaining('Datos del hogar solidario'), findsOneWidget);
+    expect(find.text('Siguiente'), findsOneWidget);
   });
 }
