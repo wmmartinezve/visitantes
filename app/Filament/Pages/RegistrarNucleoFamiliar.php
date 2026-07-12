@@ -12,6 +12,7 @@ use App\Filament\Support\ComunaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
 use App\Filament\Support\HogarAnfitrionFields;
 use App\Filament\Support\ProcedenciaSelectFields;
+use App\Models\Parroquia;
 use App\Models\User;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\InvitadoFotoStorage;
@@ -25,8 +26,6 @@ use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
-use Filament\Forms\Get;
-use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
@@ -78,13 +77,11 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->required()
                                 ->default(TipoViviendaHogar::Casa->value),
                             ...HogarAnfitrionFields::make(),
-                            ...ComunaSelectFields::make(syncProcedenciaPrefix: 'jefe_procedencia'),
+                            ...ComunaSelectFields::make(),
                             ...GeolocalizacionFields::make(),
                         ])
                         ->columns(2)
-                        ->afterValidation(function (Get $get, Set $set): void {
-                            ComunaSelectFields::syncProcedenciaFromHogar($set, $get, 'jefe_procedencia', onlyIfEmpty: true);
-                        }),
+                        ->afterValidation(fn (): mixed => $this->syncJefeProcedenciaDesdeHogar()),
 
                     Step::make('Responsable del hogar')
                         ->description('Persona del hogar anfitrion que recibe al Invitado (puede ser distinta del jefe de familia hospedado).')
@@ -113,9 +110,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->columnSpanFull(),
                         ])
                         ->columns(2)
-                        ->afterValidation(function (Get $get, Set $set): void {
-                            ComunaSelectFields::syncProcedenciaFromHogar($set, $get, 'jefe_procedencia', onlyIfEmpty: true);
-                        }),
+                        ->afterValidation(fn (): mixed => $this->syncJefeProcedenciaDesdeHogar()),
 
                     Step::make('Jefe de familia (Invitado)')
                         ->description('Datos del jefe del núcleo familiar hospedado.')
@@ -246,6 +241,32 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             ->send();
 
         $this->redirect(\App\Filament\Resources\InvitadoResource::getUrl('edit', ['record' => $result['jefe']]));
+    }
+
+    /**
+     * Precarga procedencia del jefe con la parroquia del hogar (sin disparar hooks live de Filament).
+     */
+    private function syncJefeProcedenciaDesdeHogar(bool $onlyIfEmpty = true): void
+    {
+        $parroquiaId = $this->data['parroquia_id'] ?? null;
+
+        if ($parroquiaId === null) {
+            return;
+        }
+
+        if ($onlyIfEmpty && filled($this->data['jefe_procedencia_parroquia_id'] ?? null)) {
+            return;
+        }
+
+        $parroquia = Parroquia::query()->with('municipio')->find($parroquiaId);
+
+        if ($parroquia?->municipio === null) {
+            return;
+        }
+
+        $this->data['jefe_procedencia_estado_id'] = $parroquia->municipio->estado_id;
+        $this->data['jefe_procedencia_municipio_id'] = $parroquia->municipio_id;
+        $this->data['jefe_procedencia_parroquia_id'] = $parroquia->id;
     }
 
     private function resolveUploadedFoto(mixed $uploaded): ?\Illuminate\Http\UploadedFile

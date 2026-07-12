@@ -17,7 +17,7 @@ final class ComunaSelectFields
     /**
      * @return array<int, Forms\Components\Component>
      */
-    public static function make(?Model $record = null, ?string $syncProcedenciaPrefix = null): array
+    public static function make(?Model $record = null): array
     {
         return [
             Forms\Components\Select::make('municipio_id')
@@ -28,22 +28,9 @@ final class ComunaSelectFields
                 ->live()
                 ->dehydrated(false)
                 ->required()
-                ->afterStateUpdated(function (Set $set, ?int $state) use ($syncProcedenciaPrefix): void {
+                ->afterStateUpdated(function (Set $set): void {
                     $set('parroquia_id', null);
                     $set('comuna_id', null);
-
-                    if ($syncProcedenciaPrefix === null || $state === null) {
-                        return;
-                    }
-
-                    $municipio = Municipio::query()->find($state);
-                    if ($municipio === null) {
-                        return;
-                    }
-
-                    $set("{$syncProcedenciaPrefix}_estado_id", $municipio->estado_id);
-                    $set("{$syncProcedenciaPrefix}_municipio_id", $state);
-                    $set("{$syncProcedenciaPrefix}_parroquia_id", null);
                 })
                 ->default(fn (?Model $record): ?int => $record?->parroquia?->municipio_id),
 
@@ -65,13 +52,7 @@ final class ComunaSelectFields
                 ->searchable()
                 ->required()
                 ->live()
-                ->afterStateUpdated(function (Set $set, ?int $state) use ($syncProcedenciaPrefix): void {
-                    $set('comuna_id', null);
-
-                    if ($syncProcedenciaPrefix !== null && $state !== null) {
-                        self::applyProcedenciaFromParroquia($set, $state, $syncProcedenciaPrefix);
-                    }
-                }),
+                ->afterStateUpdated(fn (Set $set) => $set('comuna_id', null)),
 
             Forms\Components\Select::make('comuna_id')
                 ->label('Comuna')
@@ -91,33 +72,5 @@ final class ComunaSelectFields
                 ->searchable()
                 ->placeholder('Opcional'),
         ];
-    }
-
-    public static function syncProcedenciaFromHogar(Set $set, Get $get, string $prefix, bool $onlyIfEmpty = false): void
-    {
-        $parroquiaId = $get('parroquia_id');
-
-        if ($parroquiaId === null) {
-            return;
-        }
-
-        if ($onlyIfEmpty && filled($get("{$prefix}_parroquia_id"))) {
-            return;
-        }
-
-        self::applyProcedenciaFromParroquia($set, (int) $parroquiaId, $prefix);
-    }
-
-    private static function applyProcedenciaFromParroquia(Set $set, int $parroquiaId, string $prefix): void
-    {
-        $parroquia = Parroquia::query()->with('municipio')->find($parroquiaId);
-
-        if ($parroquia?->municipio === null) {
-            return;
-        }
-
-        $set("{$prefix}_estado_id", $parroquia->municipio->estado_id);
-        $set("{$prefix}_municipio_id", $parroquia->municipio_id);
-        $set("{$prefix}_parroquia_id", $parroquia->id);
     }
 }

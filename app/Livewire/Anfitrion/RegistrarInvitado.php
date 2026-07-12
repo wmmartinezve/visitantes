@@ -137,25 +137,16 @@ class RegistrarInvitado extends Component
         $this->foto = null;
     }
 
-    public function updatedHogarParroquiaId(): void
-    {
-        $this->hogar_comuna_id = null;
-        $this->prefillProcedenciaDesdeHogar();
-    }
-
     public function updatedHogarMunicipioId(): void
     {
         $this->hogar_parroquia_id = null;
         $this->hogar_comuna_id = null;
+    }
 
-        if ($this->hogar_municipio_id !== null && $this->procedencia_parroquia_id === null) {
-            $municipio = Municipio::query()->find($this->hogar_municipio_id);
-            if ($municipio !== null) {
-                $this->procedencia_estado_id = $municipio->estado_id;
-                $this->procedencia_municipio_id = $municipio->id;
-                $this->procedencia_parroquia_id = null;
-            }
-        }
+    public function updatedHogarParroquiaId(): void
+    {
+        $this->hogar_comuna_id = null;
+        $this->prefillProcedenciaDesdeHogar(force: true);
     }
 
     public function updatedHogarTipoAnfitrion(): void
@@ -196,9 +187,13 @@ class RegistrarInvitado extends Component
         }
     }
 
-    private function prefillProcedenciaDesdeHogar(): void
+    private function prefillProcedenciaDesdeHogar(bool $force = false): void
     {
-        if ($this->hogar_parroquia_id === null || $this->procedencia_parroquia_id !== null) {
+        if ($this->hogar_parroquia_id === null) {
+            return;
+        }
+
+        if (! $force && $this->procedencia_parroquia_id !== null) {
             return;
         }
 
