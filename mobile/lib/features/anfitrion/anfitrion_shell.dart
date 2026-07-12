@@ -57,22 +57,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
       !_sinHogar &&
       (_user.tieneNucleoFamiliar || widget.catalog.tieneNucleoFamiliarEnHogar);
 
-  String get _hogarEtiqueta {
-    if (_sinHogar) return 'Sin registrar';
-    final nombre = _user.refugioNombre ?? _nombreHogarEnCatalogo;
-    if (nombre != null && nombre.isNotEmpty) return nombre;
-    if (_user.refugioId != null) return 'Hogar #${_user.refugioId}';
-    return '—';
-  }
-
-  String? get _nombreHogarEnCatalogo {
-    final operador = widget.catalog.cachedCatalog?['operador'];
-    if (operador is! Map) return null;
-    final hogar = (operador['hogar_solidario'] ?? operador['refugio']) as Map?;
-    if (hogar is! Map) return null;
-    return (hogar['nombre'] ?? hogar['codigo']) as String?;
-  }
-
   @override
   void initState() {
     super.initState();
@@ -256,7 +240,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
           ? 'Nuevo hogar solidario'
           : _sinHogar
               ? 'Registre su primer hogar solidario'
-              : 'Hogar activo: $_hogarEtiqueta',
+              : 'Anfitrión',
       catalog: widget.catalog,
       sync: widget.sync,
       onLogout: widget.onLogout,

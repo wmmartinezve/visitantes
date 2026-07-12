@@ -18,6 +18,16 @@ import 'package:visitantes_mobile/shared/widgets/centro_geolocalizacion_map.dart
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/witness_photo_capture.dart';
 
+int? _catalogId(dynamic raw) {
+  if (raw == null) return null;
+  if (raw is int) return raw;
+  if (raw is num) return raw.toInt();
+  if (raw is String) return int.tryParse(raw.trim());
+  return null;
+}
+
+bool _catalogIdEquals(dynamic raw, int? id) => _catalogId(raw) == id;
+
 class RegisterGuestScreen extends StatefulWidget {
   const RegisterGuestScreen({
     super.key,
@@ -116,6 +126,8 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
     return null;
   }
 
+  bool get _esAnfitrionFamiliar => _tipoAnfitrion == 'familiar';
+
   int get _totalSteps => _incluyeHogar ? 4 : 3;
 
   List<String> get _stepTitles {
@@ -170,7 +182,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
 
     for (final estado in _estados) {
       if (estado['nombre'] == 'Anzoátegui') {
-        setState(() => _hogarEstadoId = estado['id'] as int?);
+        setState(() => _hogarEstadoId = _catalogId(estado['id']));
         break;
       }
     }
@@ -343,7 +355,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
         );
         return false;
       }
-      if (_tipoAnfitrion == 'familiar' && (_parentescoAnfitrion == null || _parentescoAnfitrion!.isEmpty)) {
+      if (_esAnfitrionFamiliar && (_parentescoAnfitrion == null || _parentescoAnfitrion!.isEmpty)) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Indique el parentesco cuando el hogar es de un familiar.')),
         );
@@ -527,27 +539,27 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
 
   List<Map<String, dynamic>> get _municipiosHogar {
     if (_hogarEstadoId == null) return const [];
-    return _municipios.where((m) => m['estado_id'] == _hogarEstadoId).toList();
+    return _municipios.where((m) => _catalogIdEquals(m['estado_id'], _hogarEstadoId)).toList();
   }
 
   List<Map<String, dynamic>> get _municipiosProcedencia {
     if (_procedenciaEstadoId == null) return [];
-    return _municipios.where((m) => m['estado_id'] == _procedenciaEstadoId).toList();
+    return _municipios.where((m) => _catalogIdEquals(m['estado_id'], _procedenciaEstadoId)).toList();
   }
 
   List<Map<String, dynamic>> get _parroquiasProcedencia {
     if (_procedenciaMunicipioId == null) return [];
-    return _parroquias.where((p) => p['municipio_id'] == _procedenciaMunicipioId).toList();
+    return _parroquias.where((p) => _catalogIdEquals(p['municipio_id'], _procedenciaMunicipioId)).toList();
   }
 
   List<Map<String, dynamic>> get _parroquiasHogar {
     if (_hogarMunicipioId == null) return [];
-    return _parroquias.where((p) => p['municipio_id'] == _hogarMunicipioId).toList();
+    return _parroquias.where((p) => _catalogIdEquals(p['municipio_id'], _hogarMunicipioId)).toList();
   }
 
   List<Map<String, dynamic>> get _comunasHogar {
     if (_hogarParroquiaId == null) return [];
-    return _comunas.where((c) => c['parroquia_id'] == _hogarParroquiaId).toList();
+    return _comunas.where((c) => _catalogIdEquals(c['parroquia_id'], _hogarParroquiaId)).toList();
   }
 
   List<Map<String, String>> get _situacionesJefe {
@@ -644,19 +656,26 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
             onChanged: (v) => setState(() => _tipoVivienda = _valueForLabel(_tiposVivienda, v)),
           ),
           M3SelectField(
+            key: ValueKey('tipo-anfitrion-$_tipoAnfitrion'),
             label: '¿Quién recibe al Invitado?',
             icon: Icons.group_outlined,
             value: _labelForValue(_tiposAnfitrion, _tipoAnfitrion),
             items: _tiposAnfitrion.map((e) => e['label']!).toList(),
-            onChanged: (v) => setState(() {
-              _tipoAnfitrion = _valueForLabel(_tiposAnfitrion, v) ?? 'familiar';
-              if (_tipoAnfitrion == 'amigo') {
-                _parentescoAnfitrion = null;
-              }
-            }),
+            onChanged: (v) {
+              if (v == null) return;
+              final nuevo = _valueForLabel(_tiposAnfitrion, v);
+              if (nuevo == null) return;
+              setState(() {
+                _tipoAnfitrion = nuevo;
+                if (!_esAnfitrionFamiliar) {
+                  _parentescoAnfitrion = null;
+                }
+              });
+            },
           ),
-          if (_tipoAnfitrion == 'familiar')
+          if (_esAnfitrionFamiliar)
             M3SelectField(
+              key: const ValueKey('parentesco-anfitrion'),
               label: 'Parentesco con el jefe de familia',
               icon: Icons.family_restroom_outlined,
               value: _parentescoAnfitrion,
@@ -672,7 +691,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               if (v == null) return;
               for (final estado in _estados) {
                 if (estado['nombre'] == v) {
-                  setState(() => _hogarEstadoId = estado['id'] as int?);
+                  setState(() => _hogarEstadoId = _catalogId(estado['id']));
                   return;
                 }
               }
@@ -690,7 +709,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               } else {
                 for (final municipio in _municipiosHogar) {
                   if (municipio['nombre'] == v) {
-                    _hogarMunicipioId = municipio['id'] as int?;
+                    _hogarMunicipioId = _catalogId(municipio['id']);
                     break;
                   }
                 }
@@ -711,7 +730,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               } else {
                 for (final parroquia in _parroquiasHogar) {
                   if (parroquia['nombre'] == v) {
-                    _hogarParroquiaId = parroquia['id'] as int?;
+                    _hogarParroquiaId = _catalogId(parroquia['id']);
                     break;
                   }
                 }
@@ -719,6 +738,14 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               _hogarComunaId = null;
             }),
           ),
+          if (_hogarMunicipioId != null && _parroquiasHogar.isEmpty)
+            Padding(
+              padding: const EdgeInsets.only(bottom: M3InputStyles.fieldSpacing),
+              child: Text(
+                'No hay parroquias en caché para este municipio. Actualice la caché desde Inicio.',
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: VenezuelaColors.red),
+              ),
+            ),
           M3SelectField(
             key: ValueKey('hogar-comuna-$_hogarParroquiaId'),
             label: 'Comuna (opcional)',
@@ -732,7 +759,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
               }
               for (final comuna in _comunasHogar) {
                 if (comuna['nombre'] == v) {
-                  _hogarComunaId = comuna['id'] as int?;
+                  _hogarComunaId = _catalogId(comuna['id']);
                   return;
                 }
               }
@@ -855,46 +882,41 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
             mainAxisSize: MainAxisSize.min,
             children: [
               M3SelectField(
+                key: ValueKey('proc-estado-$_procedenciaEstadoId'),
                 label: 'Estado de procedencia',
                 icon: Icons.public_outlined,
-                value: _procedenciaEstadoId == null
-                    ? null
-                    : _estados.firstWhere((e) => e['id'] == _procedenciaEstadoId)['nombre'] as String?,
+                value: _nombreEstado(_procedenciaEstadoId),
                 items: _estados.map((e) => e['nombre'] as String).toList(),
                 onChanged: (v) => setState(() {
                   _procedenciaEstadoId =
-                      v == null ? null : _estados.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+                      v == null ? null : _catalogId(_estados.firstWhere((e) => e['nombre'] == v)['id']);
                   _procedenciaMunicipioId = null;
                   _procedenciaParroquiaId = null;
                 }),
               ),
               M3SelectField(
+                key: ValueKey('proc-municipio-$_procedenciaMunicipioId'),
                 label: 'Municipio de procedencia',
                 icon: Icons.location_city_outlined,
-                value: _procedenciaMunicipioId == null
-                    ? null
-                    : _municipiosProcedencia.firstWhere((e) => e['id'] == _procedenciaMunicipioId)['nombre']
-                        as String?,
+                value: _nombreMunicipio(_municipiosProcedencia, _procedenciaMunicipioId),
                 items: _municipiosProcedencia.map((e) => e['nombre'] as String).toList(),
                 onChanged: (v) => setState(() {
                   _procedenciaMunicipioId = v == null
                       ? null
-                      : _municipiosProcedencia.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+                      : _catalogId(_municipiosProcedencia.firstWhere((e) => e['nombre'] == v)['id']);
                   _procedenciaParroquiaId = null;
                 }),
               ),
               M3SelectField(
+                key: ValueKey('proc-parroquia-$_procedenciaMunicipioId'),
                 label: 'Parroquia de procedencia',
                 icon: Icons.place_outlined,
-                value: _procedenciaParroquiaId == null
-                    ? null
-                    : _parroquiasProcedencia.firstWhere((e) => e['id'] == _procedenciaParroquiaId)['nombre']
-                        as String?,
+                value: _nombreParroquia(_parroquiasProcedencia, _procedenciaParroquiaId),
                 items: _parroquiasProcedencia.map((e) => e['nombre'] as String).toList(),
                 onChanged: (v) => setState(() {
                   _procedenciaParroquiaId = v == null
                       ? null
-                      : _parroquiasProcedencia.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+                      : _catalogId(_parroquiasProcedencia.firstWhere((e) => e['nombre'] == v)['id']);
                 }),
               ),
               M3SelectField(
@@ -1114,7 +1136,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   String? _nombreEstado(int? id) {
     if (id == null) return null;
     for (final estado in _estados) {
-      if (estado['id'] == id) return estado['nombre'] as String?;
+      if (_catalogIdEquals(estado['id'], id)) return estado['nombre'] as String?;
     }
     return null;
   }
@@ -1122,7 +1144,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   String? _nombreMunicipio(List<Map<String, dynamic>> source, int? id) {
     if (id == null) return null;
     for (final item in source) {
-      if (item['id'] == id) return item['nombre'] as String?;
+      if (_catalogIdEquals(item['id'], id)) return item['nombre'] as String?;
     }
     return null;
   }
@@ -1130,7 +1152,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   String? _nombreParroquia(List<Map<String, dynamic>> source, int? id) {
     if (id == null) return null;
     for (final item in source) {
-      if (item['id'] == id) return item['nombre'] as String?;
+      if (_catalogIdEquals(item['id'], id)) return item['nombre'] as String?;
     }
     return null;
   }
@@ -1138,7 +1160,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   String? _nombreComuna(int? id) {
     if (id == null) return null;
     for (final item in _comunasHogar) {
-      if (item['id'] == id) return item['nombre'] as String?;
+      if (_catalogIdEquals(item['id'], id)) return item['nombre'] as String?;
     }
     return null;
   }
