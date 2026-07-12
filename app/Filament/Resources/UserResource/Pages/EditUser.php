@@ -61,7 +61,12 @@ class EditUser extends EditRecord
             'centro_acopio_id' => $data['centro_acopio_id'] ?? null,
         ]);
 
-        if (($data['rol'] ?? null) !== \App\Enums\UserRole::Anfitrion->value) {
+        if (($data['rol'] ?? null) === \App\Enums\UserRole::Anfitrion->value) {
+            $record->forceFill([
+                'hogar_solidario_id' => null,
+                'hogar_vinculado_en' => null,
+            ]);
+        } elseif (($data['rol'] ?? null) !== \App\Enums\UserRole::Anfitrion->value) {
             $record->forceFill([
                 'hogar_solidario_id' => $data['hogar_solidario_id'] ?? null,
             ]);

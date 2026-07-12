@@ -53,7 +53,7 @@ class NucleoFamiliarOnboardingService
                     ]);
                 }
 
-                $hogar = $this->createHogar($hogarData);
+                $hogar = $this->createHogar($hogarData, $anfitrion);
                 $anfitrion->forceFill([
                     'hogar_solidario_id' => $hogar->id,
                     'hogar_vinculado_en' => now(),
@@ -99,7 +99,7 @@ class NucleoFamiliarOnboardingService
         ?int $anfitrionId = null,
     ): array {
         return DB::transaction(function () use ($hogarData, $jefeData, $foto, $familiares, $anfitrionId): array {
-            $hogar = $this->createHogar($hogarData);
+            $hogar = $this->createHogar($hogarData, $anfitrionId !== null ? User::query()->find($anfitrionId) : null);
 
             if ($anfitrionId !== null) {
                 $anfitrion = User::query()->findOrFail($anfitrionId);
@@ -137,7 +137,7 @@ class NucleoFamiliarOnboardingService
     /**
      * @param  array<string, mixed>  $data
      */
-    private function createHogar(array $data): HogarSolidario
+    private function createHogar(array $data, ?User $anfitrion = null): HogarSolidario
     {
         $parroquiaId = (int) $data['parroquia_id'];
         $comunaId = filled($data['comuna_id'] ?? null) ? (int) $data['comuna_id'] : null;
@@ -163,6 +163,7 @@ class NucleoFamiliarOnboardingService
         }
 
         $hogar = HogarSolidario::query()->create([
+            'anfitrion_user_id' => $anfitrion?->id,
             'parroquia_id' => $parroquiaId,
             'comuna_id' => $comunaId,
             'tipo_vivienda' => TipoViviendaHogar::from($data['tipo_vivienda']),

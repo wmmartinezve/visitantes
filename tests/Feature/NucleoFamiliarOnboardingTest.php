@@ -95,6 +95,7 @@ class NucleoFamiliarOnboardingTest extends TestCase
         $anfitrion->refresh();
         $this->assertNotNull($anfitrion->hogar_vinculado_en);
         $hogar = HogarSolidario::query()->findOrFail($anfitrion->hogar_solidario_id);
+        $this->assertSame($anfitrion->id, $hogar->anfitrion_user_id);
         $this->assertNotNull($hogar->codigo);
         $this->assertMatchesRegularExpression('/^[A-Z]{2,3}-[A-Z]{2,3}-\d{4}$/', $hogar->codigo);
         $this->assertSame('familiar', $hogar->tipo_anfitrion->value);

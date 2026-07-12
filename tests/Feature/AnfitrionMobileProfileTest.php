@@ -72,6 +72,7 @@ class AnfitrionMobileProfileTest extends TestCase
 
         $hogar = HogarSolidario::query()->create([
             'codigo' => 'HS-TEST-001',
+            'anfitrion_user_id' => $anfitrion->id,
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.0,
             'longitud' => -64.0,
@@ -95,5 +96,24 @@ class AnfitrionMobileProfileTest extends TestCase
         $this->assertSame($hogar->id, $normalized->hogar_solidario_id);
         $this->assertFalse(app(AnfitrionMobileProfileService::class)->requiereRegistroHogar($normalized));
         $this->assertTrue(app(AnfitrionMobileProfileService::class)->tieneNucleoFamiliar($normalized));
+    }
+
+    public function test_limpia_vinculo_falso_a_hogar_demo_con_nucleo_previo(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+        $this->seed(DemoOperacionSeeder::class);
+
+        $hogarDemo = HogarSolidario::query()->firstOrFail();
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'hogar_solidario_id' => $hogarDemo->id,
+            'hogar_vinculado_en' => $hogarDemo->created_at,
+        ]);
+
+        $normalized = app(AnfitrionMobileProfileService::class)->normalize($anfitrion->fresh(['hogarSolidario']));
+
+        $this->assertNull($normalized->hogar_solidario_id);
+        $this->assertNull($normalized->hogar_vinculado_en);
+        $this->assertTrue(app(AnfitrionMobileProfileService::class)->requiereRegistroHogar($normalized));
     }
 }

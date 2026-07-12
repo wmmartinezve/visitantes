@@ -21,6 +21,7 @@ class HogarSolidario extends Model
 
     protected $fillable = [
         'codigo',
+        'anfitrion_user_id',
         'parroquia_id',
         'comuna_id',
         'tipo_vivienda',
@@ -70,6 +71,11 @@ class HogarSolidario extends Model
     public function comuna(): BelongsTo
     {
         return $this->belongsTo(Comuna::class);
+    }
+
+    public function anfitrionCreador(): BelongsTo
+    {
+        return $this->belongsTo(User::class, 'anfitrion_user_id');
     }
 
     public function invitados(): HasMany

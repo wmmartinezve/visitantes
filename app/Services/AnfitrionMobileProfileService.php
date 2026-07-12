@@ -7,18 +7,20 @@ namespace App\Services;
 use App\Models\User;
 
 /**
- * Perfil móvil del anfitrión: el hogar solo es válido si fue vinculado vía wizard (hogar_vinculado_en).
+ * Perfil móvil del anfitrión: el hogar solo es válido si lo creó ese anfitrión (anfitrion_user_id).
  */
 class AnfitrionMobileProfileService
 {
     /**
-     * Elimina asignaciones admin/demo sin wizard (sin hogar_vinculado_en).
+     * Elimina asignaciones admin/demo/reutilizadas de hogares ajenos.
      */
     public function normalize(User $user): User
     {
         if (! $user->isAnfitrion() || $user->hogar_solidario_id === null) {
             return $user;
         }
+
+        $user->loadMissing('hogarSolidario');
 
         if ($this->asignacionHogarEsValida($user)) {
             return $user;
@@ -50,6 +52,14 @@ class AnfitrionMobileProfileService
 
     private function asignacionHogarEsValida(User $user): bool
     {
-        return $user->hogar_solidario_id !== null && $user->hogar_vinculado_en !== null;
+        if ($user->hogar_solidario_id === null) {
+            return false;
+        }
+
+        $hogar = $user->hogarSolidario;
+
+        return $hogar !== null
+            && $hogar->anfitrion_user_id !== null
+            && (int) $hogar->anfitrion_user_id === (int) $user->id;
     }
 }
