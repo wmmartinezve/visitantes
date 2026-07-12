@@ -137,15 +137,25 @@ class RegistrarInvitado extends Component
         $this->foto = null;
     }
 
+    public function updatedHogarParroquiaId(): void
+    {
+        $this->hogar_comuna_id = null;
+        $this->prefillProcedenciaDesdeHogar();
+    }
+
     public function updatedHogarMunicipioId(): void
     {
         $this->hogar_parroquia_id = null;
         $this->hogar_comuna_id = null;
-    }
 
-    public function updatedHogarParroquiaId(): void
-    {
-        $this->hogar_comuna_id = null;
+        if ($this->hogar_municipio_id !== null && $this->procedencia_parroquia_id === null) {
+            $municipio = Municipio::query()->find($this->hogar_municipio_id);
+            if ($municipio !== null) {
+                $this->procedencia_estado_id = $municipio->estado_id;
+                $this->procedencia_municipio_id = $municipio->id;
+                $this->procedencia_parroquia_id = null;
+            }
+        }
     }
 
     public function updatedHogarTipoAnfitrion(): void
@@ -176,9 +186,31 @@ class RegistrarInvitado extends Component
     public function siguiente(): void
     {
         $this->validate($this->reglasPasoActual());
+
+        if ($this->requiereRegistroHogar && $this->paso === 0) {
+            $this->prefillProcedenciaDesdeHogar();
+        }
+
         if ($this->paso < $this->totalPasos - 1) {
             $this->paso++;
         }
+    }
+
+    private function prefillProcedenciaDesdeHogar(): void
+    {
+        if ($this->hogar_parroquia_id === null || $this->procedencia_parroquia_id !== null) {
+            return;
+        }
+
+        $parroquia = Parroquia::query()->with('municipio')->find($this->hogar_parroquia_id);
+
+        if ($parroquia?->municipio === null) {
+            return;
+        }
+
+        $this->procedencia_estado_id = $parroquia->municipio->estado_id;
+        $this->procedencia_municipio_id = $parroquia->municipio_id;
+        $this->procedencia_parroquia_id = $parroquia->id;
     }
 
     /**

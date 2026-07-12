@@ -274,8 +274,42 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     return true;
   }
 
+  void _prefillProcedenciaDesdeHogar() {
+    if (_hogarParroquiaId == null || _procedenciaParroquiaId != null) return;
+
+    Map<String, dynamic>? parroquia;
+    for (final p in _parroquias) {
+      if (p['id'] == _hogarParroquiaId) {
+        parroquia = p;
+        break;
+      }
+    }
+    if (parroquia == null) return;
+
+    final municipioId = parroquia['municipio_id'] as int?;
+    if (municipioId == null) return;
+
+    Map<String, dynamic>? municipio;
+    for (final m in _municipios) {
+      if (m['id'] == municipioId) {
+        municipio = m;
+        break;
+      }
+    }
+    if (municipio == null) return;
+
+    setState(() {
+      _procedenciaEstadoId = municipio!['estado_id'] as int?;
+      _procedenciaMunicipioId = municipioId;
+      _procedenciaParroquiaId = _hogarParroquiaId;
+    });
+  }
+
   void _nextStep() {
     if (!_validateCurrentStep()) return;
+    if (_incluyeHogar && _logicalStep == 0) {
+      _prefillProcedenciaDesdeHogar();
+    }
     if (_step < _totalSteps - 1) {
       setState(() => _step++);
     }
@@ -587,11 +621,14 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                 ? null
                 : _parroquiasHogar.firstWhere((e) => e['id'] == _hogarParroquiaId)['nombre'] as String?,
             items: _parroquiasHogar.map((e) => e['nombre'] as String).toList(),
-            onChanged: (v) => setState(() {
-              _hogarParroquiaId =
-                  v == null ? null : _parroquiasHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
-              _hogarComunaId = null;
-            }),
+            onChanged: (v) {
+              setState(() {
+                _hogarParroquiaId =
+                    v == null ? null : _parroquiasHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+                _hogarComunaId = null;
+              });
+              _prefillProcedenciaDesdeHogar();
+            },
           ),
           M3SelectField(
             label: 'Comuna (opcional)',

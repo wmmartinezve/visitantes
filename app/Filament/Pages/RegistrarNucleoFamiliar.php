@@ -25,6 +25,8 @@ use Filament\Forms\Components\Wizard\Step;
 use Filament\Forms\Concerns\InteractsWithForms;
 use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
 use Illuminate\Support\Facades\Storage;
@@ -76,10 +78,13 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->required()
                                 ->default(TipoViviendaHogar::Casa->value),
                             ...HogarAnfitrionFields::make(),
-                            ...ComunaSelectFields::make(),
+                            ...ComunaSelectFields::make(syncProcedenciaPrefix: 'jefe_procedencia'),
                             ...GeolocalizacionFields::make(),
                         ])
-                        ->columns(2),
+                        ->columns(2)
+                        ->afterValidation(function (Get $get, Set $set): void {
+                            ComunaSelectFields::syncProcedenciaFromHogar($set, $get, 'jefe_procedencia', onlyIfEmpty: true);
+                        }),
 
                     Step::make('Responsable del hogar')
                         ->description('Persona del hogar anfitrion que recibe al Invitado (puede ser distinta del jefe de familia hospedado).')
@@ -107,7 +112,10 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->helperText('Si selecciona un anfitrión sin hogar, quedará vinculado automáticamente.')
                                 ->columnSpanFull(),
                         ])
-                        ->columns(2),
+                        ->columns(2)
+                        ->afterValidation(function (Get $get, Set $set): void {
+                            ComunaSelectFields::syncProcedenciaFromHogar($set, $get, 'jefe_procedencia', onlyIfEmpty: true);
+                        }),
 
                     Step::make('Jefe de familia (Invitado)')
                         ->description('Datos del jefe del núcleo familiar hospedado.')
