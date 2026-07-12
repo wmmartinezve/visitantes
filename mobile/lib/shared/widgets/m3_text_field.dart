@@ -207,8 +207,8 @@ class M3TextFieldRaw extends StatelessWidget {
   }
 }
 
-/// Lista desplegable Material 3 con icono identificador.
-class M3SelectField extends StatefulWidget {
+/// Selector Material 3 — bottom sheet (sin FormField, evita bloqueo de toques en scroll).
+class M3SelectField extends StatelessWidget {
   const M3SelectField({
     super.key,
     required this.label,
@@ -228,55 +228,98 @@ class M3SelectField extends StatefulWidget {
   final String? Function(String?)? validator;
   final bool includeSpacing;
 
-  @override
-  State<M3SelectField> createState() => _M3SelectFieldState();
-}
-
-class _M3SelectFieldState extends State<M3SelectField> {
-  String? _selected;
-
-  @override
-  void initState() {
-    super.initState();
-    _selected = _sanitize(widget.value);
-  }
-
-  @override
-  void didUpdateWidget(M3SelectField oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (widget.value != oldWidget.value || widget.items != oldWidget.items) {
-      _selected = _sanitize(widget.value);
+  Future<void> _openPicker(BuildContext context) async {
+    if (items.isEmpty) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+    final picked = await showModalBottomSheet<String>(
+      context: context,
+      useRootNavigator: false,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (ctx) {
+        final maxHeight = MediaQuery.sizeOf(ctx).height * 0.65;
+        return SafeArea(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 4, 20, 8),
+                child: Text(
+                  label,
+                  style: Theme.of(ctx).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.w600),
+                ),
+              ),
+              ConstrainedBox(
+                constraints: BoxConstraints(maxHeight: maxHeight),
+                child: ListView.builder(
+                  shrinkWrap: true,
+                  itemCount: items.length,
+                  itemBuilder: (context, index) {
+                    final item = items[index];
+                    final selected = item == value;
+                    return ListTile(
+                      title: Text(item),
+                      trailing: selected ? const Icon(Icons.check, color: VenezuelaColors.blue) : null,
+                      selected: selected,
+                      onTap: () => Navigator.of(ctx).pop(item),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+    if (picked != null) {
+      onChanged(picked);
     }
-  }
-
-  String? _sanitize(String? raw) {
-    if (raw == null || raw.isEmpty) return null;
-    if (!widget.items.contains(raw)) return null;
-    return raw;
   }
 
   @override
   Widget build(BuildContext context) {
-    final items = widget.items;
-    final menuItems = items.map((item) => DropdownMenuItem<String>(value: item, child: Text(item))).toList();
     final enabled = items.isNotEmpty;
+    final display = value != null && value!.isNotEmpty ? value! : 'Seleccione…';
+    final isPlaceholder = value == null || value!.isEmpty;
+    final errorText = validator?.call(value);
 
     return Padding(
-      padding: EdgeInsets.only(bottom: widget.includeSpacing ? M3InputStyles.fieldSpacing : 0),
-      child: DropdownButtonFormField<String>(
-        key: ValueKey('${widget.label}|${items.length}|${_selected ?? ''}'),
-        initialValue: enabled ? _selected : null,
-        isExpanded: true,
-        decoration: M3InputStyles.decoration(context: context, label: widget.label, icon: widget.icon),
-        hint: Text('Seleccione…', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        items: menuItems,
-        onChanged: enabled
-            ? (value) {
-                setState(() => _selected = value);
-                widget.onChanged(value);
-              }
-            : null,
-        validator: widget.validator,
+      padding: EdgeInsets.only(bottom: includeSpacing ? M3InputStyles.fieldSpacing : 0),
+      child: Semantics(
+        button: enabled,
+        label: label,
+        child: Material(
+          color: Colors.transparent,
+          child: InkWell(
+            onTap: enabled ? () => _openPicker(context) : null,
+            borderRadius: BorderRadius.circular(M3InputStyles.borderRadius),
+            child: InputDecorator(
+              isEmpty: isPlaceholder,
+              decoration: M3InputStyles.decoration(
+                context: context,
+                label: label,
+                icon: icon,
+                errorText: errorText,
+                enabled: enabled,
+              ).copyWith(
+                suffixIcon: enabled
+                    ? Icon(Icons.expand_more, color: Theme.of(context).colorScheme.onSurfaceVariant)
+                    : null,
+              ),
+              child: Text(
+                display,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: isPlaceholder
+                      ? Theme.of(context).colorScheme.onSurfaceVariant
+                      : Theme.of(context).colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

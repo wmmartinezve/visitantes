@@ -14,8 +14,8 @@ import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/geo_catalog_index.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
-import 'package:visitantes_mobile/features/anfitrion/map_picker_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
+import 'package:visitantes_mobile/shared/widgets/centro_geolocalizacion_map.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/witness_photo_capture.dart';
 
@@ -50,7 +50,6 @@ class RegisterGuestScreen extends StatefulWidget {
 }
 
 class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
-  final _formKey = GlobalKey<FormState>();
   int _step = 0;
   bool _saving = false;
   bool _loadingGps = false;
@@ -78,6 +77,8 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   int? _hogarMunicipioId;
   int? _hogarParroquiaId;
   int? _hogarComunaId;
+  DateTime? _ubicacionCapturadaAt;
+  String? _ubicacionOrigen;
 
   // Jefe de familia
   final _nombre = TextEditingController();
@@ -118,11 +119,17 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   bool get _esAnfitrionFamiliar => _tipoAnfitrion == 'familiar';
 
-  int get _totalSteps => _incluyeHogar ? 4 : 3;
+  int get _totalSteps => _incluyeHogar ? 5 : 3;
 
   List<String> get _stepTitles {
     if (_incluyeHogar) {
-      return const ['Hogar solidario', 'Jefe de familia', 'Familiares', 'Foto y confirmar'];
+      return const [
+        'Hogar solidario',
+        'Georeferenciación',
+        'Jefe de familia',
+        'Familiares',
+        'Foto y confirmar',
+      ];
     }
     return const ['Jefe de familia', 'Familiares', 'Foto y confirmar'];
   }
@@ -206,6 +213,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Future<void> _capturarGps() async {
+    FocusManager.instance.primaryFocus?.unfocus();
     setState(() => _loadingGps = true);
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
@@ -235,7 +243,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
         ),
       );
       if (!mounted) return;
-      _actualizarUbicacionHogar(LatLng(position.latitude, position.longitude));
+      _actualizarUbicacionHogar(LatLng(position.latitude, position.longitude), origen: 'gps');
     } finally {
       if (mounted) setState(() => _loadingGps = false);
     }
@@ -245,11 +253,30 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   double? get _hogarLongitud => double.tryParse(_hogarLng.text.trim());
 
-  void _actualizarUbicacionHogar(LatLng posicion) {
+  void _actualizarUbicacionHogar(LatLng posicion, {required String origen}) {
     setState(() {
       _hogarLat.text = posicion.latitude.toStringAsFixed(8);
       _hogarLng.text = posicion.longitude.toStringAsFixed(8);
+      _ubicacionCapturadaAt = DateTime.now();
+      _ubicacionOrigen = origen;
     });
+  }
+
+  String _formatCaptura(DateTime fecha) {
+    final local = fecha.toLocal();
+    final dd = local.day.toString().padLeft(2, '0');
+    final mm = local.month.toString().padLeft(2, '0');
+    final hh = local.hour.toString().padLeft(2, '0');
+    final min = local.minute.toString().padLeft(2, '0');
+    return '$dd/$mm/${local.year} $hh:$min';
+  }
+
+  String get _ubicacionOrigenLabel {
+    return switch (_ubicacionOrigen) {
+      'gps' => 'GPS del dispositivo',
+      'mapa' => 'selección en mapa',
+      _ => '—',
+    };
   }
 
   Future<void> _pickPhoto() async {
@@ -337,9 +364,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   bool _validateCurrentStep() {
-    final form = _formKey.currentState;
-    if (form == null || !form.validate()) return false;
-
     if (_incluyeHogar && _logicalStep == 0) {
       if (_tipoVivienda == null) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -359,16 +383,43 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
         );
         return false;
       }
-      if (_hogarLatitud == null || _hogarLongitud == null) {
+      if (_hogarDireccion.text.trim().isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Marque la ubicación del hogar en el mapa o use GPS.')),
+          const SnackBar(content: Text('Indique la dirección exacta del hogar.')),
+        );
+        return false;
+      }
+      if (_responsableNombre.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Indique el responsable del hogar.')),
         );
         return false;
       }
     }
 
-    final jefeStep = _incluyeHogar ? 1 : 0;
+    if (_incluyeHogar && _logicalStep == 1) {
+      if (_hogarLatitud == null || _hogarLongitud == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Marque la ubicación del hogar con GPS o tocando el mapa.')),
+        );
+        return false;
+      }
+    }
+
+    final jefeStep = _incluyeHogar ? 2 : 0;
     if (_logicalStep == jefeStep) {
+      if (_nombre.text.trim().isEmpty || _apellido.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Complete nombre y apellido del jefe de familia.')),
+        );
+        return false;
+      }
+      if (_fechaNacimiento.text.trim().isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Indique la fecha de nacimiento.')),
+        );
+        return false;
+      }
       if (_procedenciaEstadoId == null ||
           _procedenciaMunicipioId == null ||
           _procedenciaParroquiaId == null ||
@@ -377,6 +428,25 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           const SnackBar(content: Text('Complete procedencia y situación laboral.')),
         );
         return false;
+      }
+    }
+
+    final familiaresStep = _incluyeHogar ? 3 : 1;
+    if (_logicalStep == familiaresStep) {
+      for (var i = 0; i < _familiares.length; i++) {
+        final f = _familiares[i];
+        if (f.parentesco == null || f.parentesco!.isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Indique parentesco del familiar ${i + 1}.')),
+          );
+          return false;
+        }
+        if (f.nombre.text.trim().isEmpty || f.apellido.text.trim().isEmpty || f.fecha.text.trim().isEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Complete datos del familiar ${i + 1}.')),
+          );
+          return false;
+        }
       }
     }
 
@@ -490,6 +560,8 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     _hogarMunicipioId = null;
     _hogarParroquiaId = null;
     _hogarComunaId = null;
+    _ubicacionCapturadaAt = null;
+    _ubicacionOrigen = null;
     for (final f in _familiares) {
       f.dispose();
     }
@@ -512,22 +584,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     if (picked != null) {
       target.text =
           '${picked.year.toString().padLeft(4, '0')}-${picked.month.toString().padLeft(2, '0')}-${picked.day.toString().padLeft(2, '0')}';
-    }
-  }
-
-  Future<void> _abrirMapaPantallaCompleta() async {
-    final result = await Navigator.of(context).push<LatLng>(
-      MaterialPageRoute<LatLng>(
-        fullscreenDialog: true,
-        builder: (context) => MapPickerScreen(
-          initialLat: _hogarLatitud,
-          initialLng: _hogarLongitud,
-          title: 'Ubicación del hogar',
-        ),
-      ),
-    );
-    if (result != null) {
-      _actualizarUbicacionHogar(result);
     }
   }
 
@@ -731,70 +787,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
             icon: Icons.signpost_outlined,
             validator: (v) => (v == null || v.trim().isEmpty) ? 'Requerido' : null,
           ),
-          const SizedBox(height: 12),
-          Text(
-            'Ubicación del hogar',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(14),
-            decoration: BoxDecoration(
-              color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.6)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Row(
-                  children: [
-                    Icon(
-                      _hogarLatitud != null ? Icons.location_on : Icons.location_searching,
-                      color: VenezuelaColors.blue,
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        _hogarLatitud != null && _hogarLongitud != null
-                            ? 'Lat: ${_hogarLatitud!.toStringAsFixed(6)} · Lng: ${_hogarLongitud!.toStringAsFixed(6)}'
-                            : 'Sin ubicación marcada. Use GPS o abra el mapa en pantalla completa.',
-                        style: Theme.of(context).textTheme.bodySmall,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton.icon(
-                        onPressed: _loadingGps ? null : _capturarGps,
-                        icon: _loadingGps
-                            ? const SizedBox(
-                                width: 16,
-                                height: 16,
-                                child: CircularProgressIndicator(strokeWidth: 2),
-                              )
-                            : const Icon(Icons.gps_fixed),
-                        label: Text(_loadingGps ? 'GPS…' : 'Usar GPS'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: FilledButton.icon(
-                        onPressed: _abrirMapaPantallaCompleta,
-                        icon: const Icon(Icons.map_outlined),
-                        label: const Text('Abrir mapa'),
-                        style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-                      ),
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          ),
           const Divider(height: 24),
           M3TextField(
             controller: _responsableNombre,
@@ -811,6 +803,93 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildGeorefStep() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Text(
+          'Marca el punto del hogar con GPS (offline) o tocando el mapa '
+          '(requiere internet para ver el mapa).',
+          style: Theme.of(context).textTheme.bodySmall,
+        ),
+        const SizedBox(height: 12),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: Theme.of(context).colorScheme.surfaceContainerHighest.withValues(alpha: 0.45),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Theme.of(context).dividerColor.withValues(alpha: 0.6)),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text(
+                'Ubicación del hogar',
+                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Latitud: ${_hogarLatitud?.toStringAsFixed(6) ?? '—'}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Text(
+                'Longitud: ${_hogarLongitud?.toStringAsFixed(6) ?? '—'}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Text(
+                'Capturada: ${_ubicacionCapturadaAt == null ? '—' : _formatCaptura(_ubicacionCapturadaAt!)}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+              Text(
+                'Origen: $_ubicacionOrigenLabel',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 12),
+        FilledButton.icon(
+          onPressed: _loadingGps ? null : _capturarGps,
+          icon: _loadingGps
+              ? const SizedBox(
+                  width: 18,
+                  height: 18,
+                  child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                )
+              : const Icon(Icons.gps_fixed),
+          label: Text(_loadingGps ? 'Obteniendo GPS…' : 'Actualizar GPS'),
+          style: FilledButton.styleFrom(
+            backgroundColor: VenezuelaColors.blue,
+            padding: const EdgeInsets.symmetric(vertical: 14),
+          ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'O marca el punto en el mapa',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        Expanded(
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final mapHeight = constraints.maxHeight.clamp(180.0, double.infinity);
+              return CentroGeolocalizacionMap(
+                latitud: _hogarLatitud,
+                longitud: _hogarLongitud,
+                editable: true,
+                scrollFriendly: false,
+                height: mapHeight,
+                emptyHint: 'Toque el mapa para marcar la ubicación del hogar.',
+                onLocationChanged: (pos) => _actualizarUbicacionHogar(pos, origen: 'mapa'),
+              );
+            },
+          ),
+        ),
+      ],
     );
   }
 
@@ -1070,8 +1149,9 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     if (_incluyeHogar) {
       return switch (_logicalStep) {
         0 => _buildHogarStep(),
-        1 => _buildJefeStep(),
-        2 => _buildFamiliaresStep(),
+        1 => _buildGeorefStep(),
+        2 => _buildJefeStep(),
+        3 => _buildFamiliaresStep(),
         _ => _buildFotoStep(),
       };
     }
@@ -1083,37 +1163,73 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     };
   }
 
+  Widget _buildWizardScaffold({required bool isLastStep, required bool scrollable, required Widget body}) {
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+          child: _buildStepIndicator(),
+        ),
+        Expanded(
+          child: scrollable
+              ? SingleChildScrollView(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                  child: body,
+                )
+              : Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+                  child: body,
+                ),
+        ),
+        Material(
+          elevation: 8,
+          color: Theme.of(context).colorScheme.surface,
+          child: Padding(
+            padding: EdgeInsets.fromLTRB(16, 8, 16, 8 + bottomInset),
+            child: _buildWizardFooter(isLastStep),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _buildWizardFooter(bool isLastStep) {
-    return Padding(
-      padding: EdgeInsets.fromLTRB(0, 16, 0, 8 + MediaQuery.viewInsetsOf(context).bottom),
-      child: Row(
-        children: [
-          if (_step > 0)
-            OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
-          else
-            const SizedBox.shrink(),
-          const Spacer(),
-          if (!isLastStep)
-            FilledButton(
-              onPressed: _saving ? null : _nextStep,
-              style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-              child: const Text('Siguiente'),
-            )
-          else
-            FilledButton.icon(
-              onPressed: _saving ? null : _submit,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.check),
-              label: const Text('Registrar'),
-              style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-            ),
-        ],
-      ),
+    return Row(
+      children: [
+        if (_step > 0)
+          OutlinedButton.icon(
+            onPressed: _saving ? null : _prevStep,
+            icon: const Icon(Icons.arrow_back, size: 18),
+            label: const Text('Anterior'),
+          )
+        else
+          const SizedBox.shrink(),
+        const Spacer(),
+        if (!isLastStep)
+          FilledButton.icon(
+            onPressed: _saving ? null : _nextStep,
+            icon: const Icon(Icons.arrow_forward, size: 18),
+            label: const Text('Siguiente'),
+            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
+          )
+        else
+          FilledButton.icon(
+            onPressed: _saving ? null : _submit,
+            icon: _saving
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                  )
+                : const Icon(Icons.check),
+            label: const Text('Registrar'),
+            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+          ),
+      ],
     );
   }
 
@@ -1247,20 +1363,12 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     }
 
     final isLastStep = _step >= _totalSteps - 1;
+    final isGeorefStep = _incluyeHogar && _logicalStep == 1;
 
-    return ListView(
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-      physics: const AlwaysScrollableScrollPhysics(),
-      children: [
-        _buildStepIndicator(),
-        const SizedBox(height: 12),
-        Form(
-          key: _formKey,
-          child: _buildStepContent(),
-        ),
-        _buildWizardFooter(isLastStep),
-      ],
+    return _buildWizardScaffold(
+      isLastStep: isLastStep,
+      scrollable: !isGeorefStep,
+      body: _buildStepContent(),
     );
   }
 }

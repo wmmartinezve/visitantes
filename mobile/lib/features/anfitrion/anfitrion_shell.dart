@@ -42,8 +42,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   late int _index;
   int _refreshTick = 0;
   int _registerWizardKey = 0;
-  int _registerPageKey = -1;
-  Widget? _registerPage;
   bool _showProfile = false;
   bool _registrarNuevoHogar = false;
   late MobileUser _user = widget.user;
@@ -111,7 +109,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
     setState(() {
       _registrarNuevoHogar = true;
       _registerWizardKey++;
-      _registerPage = null;
       _index = _tabRegistrar;
     });
   }
@@ -147,7 +144,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
     setState(() {
       if (index == _tabRegistrar && index != _index && !_registrarNuevoHogar) {
         _registerWizardKey++;
-        _registerPage = null;
       }
       if (index != _tabRegistrar) {
         _registrarNuevoHogar = false;
@@ -185,62 +181,50 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   }
 
   Widget _buildRegisterPage() {
-    if (_registerPage == null || _registerPageKey != _registerWizardKey) {
-      _registerPageKey = _registerWizardKey;
-      _registerPage = RegisterGuestScreen(
-        key: ValueKey('register-wizard-$_registerWizardKey'),
-        user: _user,
-        catalog: widget.catalog,
-        sync: widget.sync,
-        fieldApi: _fieldApi,
-        nucleoYaRegistrado: _nucleoYaRegistrado,
-        requiereRegistroHogar: _requiereRegistroHogar,
-        registrarNuevoHogar: _registrarNuevoHogar,
-        onRegistered: _onRegistered,
-        onUserUpdated: _handleUserUpdated,
-        onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
-      );
-    }
-    return _registerPage!;
+    return RegisterGuestScreen(
+      key: ValueKey('register-wizard-$_registerWizardKey'),
+      user: _user,
+      catalog: widget.catalog,
+      sync: widget.sync,
+      fieldApi: _fieldApi,
+      nucleoYaRegistrado: _nucleoYaRegistrado,
+      requiereRegistroHogar: _requiereRegistroHogar,
+      registrarNuevoHogar: _registrarNuevoHogar,
+      onRegistered: _onRegistered,
+      onUserUpdated: _handleUserUpdated,
+      onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
+    );
   }
 
   Widget _buildBody() {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        if (_index == 0)
-          _HomeTab(
-            key: ValueKey('home-$_refreshTick'),
-            fieldApi: _fieldApi,
-            sync: widget.sync,
-            sinHogar: _sinHogar,
-            hogaresCountFallback: _user.hogaresCount,
-            invitadosCountFallback: 0,
-            onNavigate: _goTo,
-            onSync: _syncFromHome,
-          )
-        else if (_index == 1)
-          HogaresListScreen(
-            key: ValueKey('hogares-$_refreshTick'),
-            fieldApi: _fieldApi,
-            sync: widget.sync,
-            hogarActivoId: _user.refugioId,
-            puedeRegistrarOtro: _user.puedeRegistrarOtroHogar || widget.catalog.puedeRegistrarOtroHogar,
-            onCambiarHogar: _cambiarHogarActivo,
-            onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
-          )
-        else if (_index == 3)
-          GuestsListScreen(
-            key: ValueKey('guests-$_refreshTick'),
-            fieldApi: _fieldApi,
-            sync: widget.sync,
-          ),
-        Offstage(
-          offstage: _index != _tabRegistrar,
-          child: _buildRegisterPage(),
+    return switch (_index) {
+      0 => _HomeTab(
+          key: ValueKey('home-$_refreshTick'),
+          fieldApi: _fieldApi,
+          sync: widget.sync,
+          sinHogar: _sinHogar,
+          hogaresCountFallback: _user.hogaresCount,
+          invitadosCountFallback: 0,
+          onNavigate: _goTo,
+          onSync: _syncFromHome,
         ),
-      ],
-    );
+      1 => HogaresListScreen(
+          key: ValueKey('hogares-$_refreshTick'),
+          fieldApi: _fieldApi,
+          sync: widget.sync,
+          hogarActivoId: _user.refugioId,
+          puedeRegistrarOtro: _user.puedeRegistrarOtroHogar || widget.catalog.puedeRegistrarOtroHogar,
+          onCambiarHogar: _cambiarHogarActivo,
+          onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
+        ),
+      2 => _buildRegisterPage(),
+      3 => GuestsListScreen(
+          key: ValueKey('guests-$_refreshTick'),
+          fieldApi: _fieldApi,
+          sync: widget.sync,
+        ),
+      _ => const SizedBox.shrink(),
+    };
   }
 
   @override
@@ -384,7 +368,7 @@ class _HomeTabState extends State<_HomeTab> {
                         ),
                         const SizedBox(height: 8),
                         const Text(
-                          'Complete el wizard de 4 pasos: hogar → jefe de familia → familiares → foto.',
+                          'Complete el wizard de 5 pasos: hogar → georeferenciación → jefe → familiares → foto.',
                         ),
                         const SizedBox(height: 12),
                         FilledButton.icon(
