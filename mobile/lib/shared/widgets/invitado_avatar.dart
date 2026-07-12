@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 
-class InvitadoAvatar extends StatelessWidget {
+class InvitadoAvatar extends StatefulWidget {
   const InvitadoAvatar({
     super.key,
     required this.nombreCompleto,
@@ -21,41 +21,62 @@ class InvitadoAvatar extends StatelessWidget {
   final VoidCallback? onTap;
 
   @override
-  Widget build(BuildContext context) {
-    final initial = nombreCompleto.isNotEmpty ? nombreCompleto[0].toUpperCase() : '?';
+  State<InvitadoAvatar> createState() => _InvitadoAvatarState();
+}
 
-    if (fotoUrl == null || fotoUrl!.isEmpty) {
+class _InvitadoAvatarState extends State<InvitadoAvatar> {
+  late final Future<Map<String, String>> _headersFuture = _authHeaders();
+
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await ApiClient().tokenStorage.read();
+    if (token == null || token.isEmpty) {
+      return const {};
+    }
+    return {'Authorization': 'Bearer $token'};
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = widget.nombreCompleto.isNotEmpty ? widget.nombreCompleto[0].toUpperCase() : '?';
+
+    if (widget.fotoUrl == null || widget.fotoUrl!.isEmpty) {
       return CircleAvatar(
-        radius: radius,
-        backgroundColor: backgroundColor,
-        foregroundColor: foregroundColor,
-        child: Text(initial, style: TextStyle(fontWeight: FontWeight.w700, fontSize: radius * 0.75)),
+        radius: widget.radius,
+        backgroundColor: widget.backgroundColor,
+        foregroundColor: widget.foregroundColor,
+        child: Text(initial, style: TextStyle(fontWeight: FontWeight.w700, fontSize: widget.radius * 0.75)),
       );
     }
 
     final avatar = CircleAvatar(
-      radius: radius,
-      backgroundColor: backgroundColor,
+      radius: widget.radius,
+      backgroundColor: widget.backgroundColor,
       child: ClipOval(
         child: FutureBuilder<Map<String, String>>(
-          future: _authHeaders(),
+          future: _headersFuture,
           builder: (context, snapshot) {
+            if (!context.mounted) return const SizedBox.shrink();
             if (!snapshot.hasData) {
               return SizedBox(
-                width: radius * 2,
-                height: radius * 2,
-                child: Center(child: Text(initial, style: TextStyle(fontWeight: FontWeight.w700, color: foregroundColor))),
+                width: widget.radius * 2,
+                height: widget.radius * 2,
+                child: Center(
+                  child: Text(
+                    initial,
+                    style: TextStyle(fontWeight: FontWeight.w700, color: widget.foregroundColor),
+                  ),
+                ),
               );
             }
 
             return Image.network(
-              fotoUrl!,
-              width: radius * 2,
-              height: radius * 2,
+              widget.fotoUrl!,
+              width: widget.radius * 2,
+              height: widget.radius * 2,
               fit: BoxFit.cover,
               headers: snapshot.data,
               errorBuilder: (_, __, ___) => Center(
-                child: Text(initial, style: TextStyle(fontWeight: FontWeight.w700, color: foregroundColor)),
+                child: Text(initial, style: TextStyle(fontWeight: FontWeight.w700, color: widget.foregroundColor)),
               ),
             );
           },
@@ -63,17 +84,8 @@ class InvitadoAvatar extends StatelessWidget {
       ),
     );
 
-    if (onTap == null) return avatar;
+    if (widget.onTap == null) return avatar;
 
-    return GestureDetector(onTap: onTap, child: avatar);
-  }
-
-  Future<Map<String, String>> _authHeaders() async {
-    final token = await ApiClient().tokenStorage.read();
-    if (token == null || token.isEmpty) {
-      return const {};
-    }
-
-    return {'Authorization': 'Bearer $token'};
+    return GestureDetector(onTap: widget.onTap, child: avatar);
   }
 }

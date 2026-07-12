@@ -96,7 +96,10 @@ class _GuestsListScreenState extends State<GuestsListScreen> {
                                     ),
                                   ),
                                 );
-                                await _load();
+                                if (!mounted) return;
+                                WidgetsBinding.instance.addPostFrameCallback((_) {
+                                  if (mounted) _load();
+                                });
                               },
                             );
                           },

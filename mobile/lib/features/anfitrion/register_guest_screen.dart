@@ -522,30 +522,30 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
       if (online) {
         final result = await widget.fieldApi.registerInvitadoOnline(payload);
+        if (!mounted) return;
+        final message = result.updatedUser != null
+            ? 'Hogar solidario y núcleo familiar registrados.'
+            : 'Invitado registrado en el servidor.';
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
         if (result.updatedUser != null) {
           widget.onUserUpdated?.call(result.updatedUser!);
         }
         _clearForm();
-        widget.onRegistered?.call();
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              result.updatedUser != null
-                  ? 'Hogar solidario y núcleo familiar registrados.'
-                  : 'Invitado registrado en el servidor.',
-            ),
-          ),
-        );
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          widget.onRegistered?.call();
+        });
         return;
       }
 
       await widget.sync.enqueue('invitado.registro', payload);
-      _clearForm();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Sin conexión — registro guardado localmente. Se sincronizará al reconectar.')),
       );
+      _clearForm();
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        widget.onRegistered?.call();
+      });
     } on DioException catch (e) {
       if (!mounted) return;
       final data = e.response?.data;
@@ -1197,48 +1197,56 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildWizardBody(bool isLastStep) {
-    return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-        physics: const AlwaysScrollableScrollPhysics(),
-        children: [
-          _buildStepIndicator(),
-          const SizedBox(height: 12),
-          _buildStepContent(),
-          if (isLastStep) ...[
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: _saving ? null : _submit,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.save_outlined),
-              label: Text(_saving ? 'Guardando…' : 'Guardar registro'),
-              style: FilledButton.styleFrom(
-                backgroundColor: VenezuelaColors.red,
-                minimumSize: const Size.fromHeight(52),
+    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
+
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ListView(
+          padding: EdgeInsets.fromLTRB(16, 12, 16, 96 + bottomInset),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: [
+            _buildStepIndicator(),
+            const SizedBox(height: 12),
+            _buildStepContent(),
+            if (isLastStep) ...[
+              const SizedBox(height: 20),
+              FilledButton.icon(
+                onPressed: _saving ? null : _submit,
+                icon: _saving
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                      )
+                    : const Icon(Icons.save_outlined),
+                label: Text(_saving ? 'Guardando…' : 'Guardar registro'),
+                style: FilledButton.styleFrom(
+                  backgroundColor: VenezuelaColors.red,
+                  minimumSize: const Size.fromHeight(52),
+                ),
+              ),
+            ],
+          ],
+        ),
+        Positioned(
+          left: 0,
+          right: 0,
+          bottom: 0,
+          child: Material(
+            elevation: 12,
+            color: Theme.of(context).colorScheme.surface,
+            child: SafeArea(
+              top: false,
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+                child: _buildWizardFooter(isLastStep),
               ),
             ),
-            const SizedBox(height: 8),
-          ],
-        ],
-      ),
-      bottomNavigationBar: Material(
-        elevation: 12,
-        color: Theme.of(context).colorScheme.surface,
-        child: SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-            child: _buildWizardFooter(isLastStep),
           ),
         ),
-      ),
+      ],
     );
   }
 
@@ -1301,7 +1309,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return _buildContent(context);
+    return Material(
+      color: Theme.of(context).colorScheme.surface,
+      child: SizedBox.expand(child: _buildContent(context)),
+    );
   }
 
   Widget _buildContent(BuildContext context) {

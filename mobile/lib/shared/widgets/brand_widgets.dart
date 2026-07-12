@@ -225,19 +225,17 @@ class BrandedDetailScaffold extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          const VenezuelaTricolorBar(height: 4),
-          AppBar(
-            title: Text(title),
-            backgroundColor: VenezuelaColors.blue,
-            foregroundColor: VenezuelaColors.onBlue,
-            elevation: 0,
-          ),
-          Expanded(child: body),
-        ],
+      appBar: AppBar(
+        title: Text(title),
+        backgroundColor: VenezuelaColors.blue,
+        foregroundColor: VenezuelaColors.onBlue,
+        elevation: 0,
+        bottom: const PreferredSize(
+          preferredSize: Size.fromHeight(4),
+          child: VenezuelaTricolorBar(height: 4),
+        ),
       ),
+      body: body,
     );
   }
 }

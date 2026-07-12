@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 
-class InvitadoFotoPreview extends StatelessWidget {
+class InvitadoFotoPreview extends StatefulWidget {
   const InvitadoFotoPreview({
     super.key,
     this.fotoUrl,
@@ -19,20 +19,49 @@ class InvitadoFotoPreview extends StatelessWidget {
   final bool uploading;
 
   @override
+  State<InvitadoFotoPreview> createState() => _InvitadoFotoPreviewState();
+}
+
+class _InvitadoFotoPreviewState extends State<InvitadoFotoPreview> {
+  late final Future<Map<String, String>> _headersFuture = _authHeaders();
+
+  Future<Map<String, String>> _authHeaders() async {
+    final token = await ApiClient().tokenStorage.read();
+    if (token == null || token.isEmpty) {
+      return const {};
+    }
+    return {'Authorization': 'Bearer $token'};
+  }
+
+  void _openFullScreen(BuildContext context, String url, Map<String, String> headers) {
+    Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        fullscreenDialog: true,
+        builder: (context) => InvitadoFotoFullScreen(
+          fotoUrl: url,
+          headers: headers,
+          title: widget.nombreCompleto,
+        ),
+      ),
+    );
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final initial = nombreCompleto.isNotEmpty ? nombreCompleto[0].toUpperCase() : '?';
-    final hasFoto = fotoUrl != null && fotoUrl!.isNotEmpty;
+    final initial = widget.nombreCompleto.isNotEmpty ? widget.nombreCompleto[0].toUpperCase() : '?';
+    final hasFoto = widget.fotoUrl != null && widget.fotoUrl!.isNotEmpty;
 
     return Card(
       clipBehavior: Clip.antiAlias,
       margin: EdgeInsets.zero,
       child: SizedBox(
-        height: height,
+        height: widget.height,
         width: double.infinity,
         child: hasFoto
             ? FutureBuilder<Map<String, String>>(
-                future: _authHeaders(),
+                future: _headersFuture,
                 builder: (context, snapshot) {
+                  if (!context.mounted) return const SizedBox.shrink();
                   if (!snapshot.hasData) {
                     return const Center(child: CircularProgressIndicator());
                   }
@@ -42,12 +71,12 @@ class InvitadoFotoPreview extends StatelessWidget {
                   return Material(
                     color: VenezuelaColors.blueContainer,
                     child: InkWell(
-                      onTap: () => _openFullScreen(context, fotoUrl!, headers),
+                      onTap: () => _openFullScreen(context, widget.fotoUrl!, headers),
                       child: Stack(
                         fit: StackFit.expand,
                         children: [
                           Image.network(
-                            fotoUrl!,
+                            widget.fotoUrl!,
                             fit: BoxFit.cover,
                             headers: headers,
                             loadingBuilder: (context, child, progress) {
@@ -96,32 +125,10 @@ class InvitadoFotoPreview extends StatelessWidget {
               )
             : _Placeholder(
                 initial: initial,
-                label: uploading ? 'Subiendo foto…' : 'Sin foto de ingreso',
-                onAddFoto: uploading ? null : onAddFoto,
-                uploading: uploading,
+                label: widget.uploading ? 'Subiendo foto…' : 'Sin foto de ingreso',
+                onAddFoto: widget.uploading ? null : widget.onAddFoto,
+                uploading: widget.uploading,
               ),
-      ),
-    );
-  }
-
-  Future<Map<String, String>> _authHeaders() async {
-    final token = await ApiClient().tokenStorage.read();
-    if (token == null || token.isEmpty) {
-      return const {};
-    }
-
-    return {'Authorization': 'Bearer $token'};
-  }
-
-  void _openFullScreen(BuildContext context, String url, Map<String, String> headers) {
-    Navigator.of(context).push<void>(
-      MaterialPageRoute<void>(
-        fullscreenDialog: true,
-        builder: (context) => InvitadoFotoFullScreen(
-          fotoUrl: url,
-          headers: headers,
-          title: nombreCompleto,
-        ),
       ),
     );
   }
