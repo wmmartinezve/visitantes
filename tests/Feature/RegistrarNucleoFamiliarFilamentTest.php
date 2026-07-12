@@ -6,15 +6,19 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Filament\Pages\RegistrarNucleoFamiliar;
+use App\Models\Invitado;
+use App\Models\Parroquia;
 use App\Models\User;
 use Database\Seeders\VenezuelaEstadosSeeder;
 use Database\Seeders\VenezuelaGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\HasProcedenciaDemo;
 use Tests\TestCase;
 
 class RegistrarNucleoFamiliarFilamentTest extends TestCase
 {
+    use HasProcedenciaDemo;
     use RefreshDatabase;
 
     protected function setUp(): void
@@ -55,5 +59,57 @@ class RegistrarNucleoFamiliarFilamentTest extends TestCase
             ->test(RegistrarNucleoFamiliar::class)
             ->set('data.jefe_procedencia_estado_id', $estado->id)
             ->assertSet('data.jefe_procedencia_estado_id', $estado->id);
+    }
+
+    public function test_admin_registra_nucleo_completo_desde_wizard(): void
+    {
+        $admin = User::factory()->create(['rol' => UserRole::Admin]);
+        $parroquia = Parroquia::query()
+            ->whereHas('municipio', fn ($q) => $q->where('nombre', 'Anaco'))
+            ->firstOrFail();
+        $proc = $this->procedenciaDemo('Anaco');
+
+        Livewire::actingAs($admin)
+            ->test(RegistrarNucleoFamiliar::class)
+            ->fillForm([
+                'tipo_vivienda' => 'casa',
+                'tipo_anfitrion' => 'familiar',
+                'parentesco_anfitrion' => 'Padre',
+                'parroquia_id' => $parroquia->id,
+                'direccion_exacta' => 'Calle principal, Anaco',
+                'latitud' => 10.12345678,
+                'longitud' => -64.87654321,
+                'responsable_nombre' => 'María Responsable',
+                'jefe_nombre' => 'José',
+                'jefe_apellido' => 'Rivero',
+                'jefe_fecha_nacimiento' => '1985-05-15',
+                'jefe_procedencia_estado_id' => $proc['procedencia_estado_id'],
+                'jefe_procedencia_municipio_id' => $proc['procedencia_municipio_id'],
+                'jefe_procedencia_parroquia_id' => $proc['procedencia_parroquia_id'],
+                'jefe_situacion' => 'trabajando',
+                'familiares' => [
+                    [
+                        'parentesco' => 'Hijo(a)',
+                        'nombre' => 'Pedro',
+                        'apellido' => 'Rivero',
+                        'fecha_nacimiento' => '2022-04-16',
+                    ],
+                ],
+            ])
+            ->call('create')
+            ->assertHasNoErrors()
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('invitados', [
+            'nombre' => 'José',
+            'apellido' => 'Rivero',
+            'jefe_familia_id' => null,
+        ]);
+
+        $jefe = Invitado::query()->where('nombre', 'José')->firstOrFail();
+        $this->assertDatabaseHas('invitados', [
+            'nombre' => 'Pedro',
+            'jefe_familia_id' => $jefe->id,
+        ]);
     }
 }

@@ -192,7 +192,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                         ]),
                 ])
                     ->submitAction(
-                        Action::make('create')
+                        Action::make('submitRegistration')
                             ->label('Registrar y finalizar')
                             ->icon('heroicon-o-check')
                             ->submit('form'),
@@ -204,7 +204,27 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
 
     public function create(): void
     {
-        $data = $this->form->getState();
+        try {
+            $data = $this->form->getState();
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            Notification::make()
+                ->title('Revise los datos del formulario')
+                ->body('Complete los campos obligatorios de todos los pasos antes de finalizar.')
+                ->danger()
+                ->send();
+
+            throw $exception;
+        }
+
+        if (blank($data['parroquia_id'] ?? null)) {
+            Notification::make()
+                ->title('Falta la parroquia del hogar')
+                ->body('Regrese al paso «Hogar solidario» y seleccione municipio y parroquia.')
+                ->danger()
+                ->send();
+
+            return;
+        }
 
         $hogarData = [
             'tipo_vivienda' => $data['tipo_vivienda'],

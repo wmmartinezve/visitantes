@@ -43,13 +43,14 @@ final class GeografiaSelectFields
         $defaultEstadoId = self::defaultEstadoId($record, $estadoScope);
         $defaultMunicipioId = $record?->parroquia?->municipio_id;
         $estadoFijo = $estadoScope === 'anzoategui';
+        $requiereEstadoMunicipio = $persistEstadoMunicipio;
 
         $fields = [
             Forms\Components\Select::make($estadoField)
                 ->label($labels['estado'] ?? 'Estado')
                 ->options(fn (): array => GeografiaSelectOptions::estados($estadoScope))
                 ->searchable(! $estadoFijo)
-                ->required()
+                ->required($requiereEstadoMunicipio)
                 ->live()
                 ->dehydrated($persistEstadoMunicipio)
                 ->default($defaultEstadoId)
@@ -72,7 +73,7 @@ final class GeografiaSelectFields
                     $estadoFijo ? $defaultEstadoId : null,
                 ))
                 ->searchable()
-                ->required()
+                ->required($requiereEstadoMunicipio)
                 ->live()
                 ->dehydrated($persistEstadoMunicipio)
                 ->default($defaultMunicipioId)
