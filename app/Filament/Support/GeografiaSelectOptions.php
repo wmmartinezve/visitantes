@@ -11,15 +11,26 @@ use Filament\Forms\Get;
 
 final class GeografiaSelectOptions
 {
+    /** @var array<int|string, string>|null */
+    private static ?array $estadosCache = null;
+
     /** @return array<int|string, string> */
     public static function estados(): array
     {
-        return Estado::query()->orderBy('nombre')->pluck('nombre', 'id')->all();
+        if (self::$estadosCache !== null) {
+            return self::$estadosCache;
+        }
+
+        self::$estadosCache = Estado::query()
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
+            ->mapWithKeys(fn (string $nombre, int|string $id): array => [(string) $id => $nombre])
+            ->all();
+
+        return self::$estadosCache;
     }
 
     /**
-     * Municipios del estado elegido (sin inferir estado desde otros campos).
-     *
      * @return array<int|string, string>
      */
     public static function municipios(Get $get, string $estadoField): array
@@ -34,12 +45,11 @@ final class GeografiaSelectOptions
             ->where('estado_id', $estadoId)
             ->orderBy('nombre')
             ->pluck('nombre', 'id')
+            ->mapWithKeys(fn (string $nombre, int|string $id): array => [(string) $id => $nombre])
             ->all();
     }
 
     /**
-     * Parroquias del municipio elegido.
-     *
      * @return array<int|string, string>
      */
     public static function parroquias(Get $get, string $municipioField): array
@@ -54,6 +64,7 @@ final class GeografiaSelectOptions
             ->where('municipio_id', $municipioId)
             ->orderBy('nombre')
             ->pluck('nombre', 'id')
+            ->mapWithKeys(fn (string $nombre, int|string $id): array => [(string) $id => $nombre])
             ->all();
     }
 }

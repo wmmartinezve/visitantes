@@ -107,7 +107,8 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->helperText('Si selecciona un anfitrión sin hogar, quedará vinculado automáticamente.')
                                 ->columnSpanFull(),
                         ])
-                        ->columns(2),
+                        ->columns(2)
+                        ->afterValidation(fn (): mixed => $this->resetProcedenciaJefe()),
 
                     Step::make('Jefe de familia (Invitado)')
                         ->description('Datos del jefe del núcleo familiar hospedado.')
@@ -132,7 +133,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->required()
                                 ->maxDate(now())
                                 ->native(false),
-                            ...ProcedenciaSelectFields::make('jefe_procedencia'),
+                            ...ProcedenciaSelectFields::makeGrouped('jefe_procedencia'),
                             Select::make('jefe_situacion')
                                 ->label('Situación laboral del jefe')
                                 ->options(collect(SituacionJefeFamilia::cases())->mapWithKeys(
@@ -209,15 +210,17 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             'direccion_exacta' => $data['direccion_exacta'],
         ];
 
+        $proc = $data['jefe_procedencia'] ?? [];
+
         $jefeData = [
             'nombre' => $data['jefe_nombre'],
             'apellido' => $data['jefe_apellido'],
             'cedula' => $data['jefe_cedula'] ?? null,
             'telefono' => $data['jefe_telefono'] ?? null,
             'fecha_nacimiento' => $data['jefe_fecha_nacimiento'],
-            'procedencia_estado_id' => $data['jefe_procedencia_estado_id'],
-            'procedencia_municipio_id' => $data['jefe_procedencia_municipio_id'],
-            'procedencia_parroquia_id' => $data['jefe_procedencia_parroquia_id'],
+            'procedencia_estado_id' => $proc['estado_id'] ?? null,
+            'procedencia_municipio_id' => $proc['municipio_id'] ?? null,
+            'procedencia_parroquia_id' => $proc['parroquia_id'] ?? null,
             'situacion_jefe' => $data['jefe_situacion'],
         ];
 
@@ -238,6 +241,22 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             ->send();
 
         $this->redirect(\App\Filament\Resources\InvitadoResource::getUrl('edit', ['record' => $result['jefe']]));
+    }
+
+    /** Limpia procedencia incompleta antes del paso del jefe (evita municipio/parroquia huérfanos). */
+    private function resetProcedenciaJefe(): void
+    {
+        $proc = $this->data['jefe_procedencia'] ?? [];
+
+        if (filled($proc['estado_id'] ?? null)) {
+            return;
+        }
+
+        $this->data['jefe_procedencia'] = [
+            'estado_id' => null,
+            'municipio_id' => null,
+            'parroquia_id' => null,
+        ];
     }
 
     private function resolveUploadedFoto(mixed $uploaded): ?\Illuminate\Http\UploadedFile
