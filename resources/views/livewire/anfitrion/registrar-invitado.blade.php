@@ -142,6 +142,11 @@
                         <option value="{{ $situacion->value }}">{{ $situacion->label() }}</option>
                     @endforeach
                 </x-m3.select-field>
+                <x-m3.select-field label="Condición" icon="accessibility_new" wire:model="condicion" :error="$errors->first('condicion')">
+                    @foreach ($condiciones as $condicion)
+                        <option value="{{ $condicion->value }}">{{ $condicion->label() }}</option>
+                    @endforeach
+                </x-m3.select-field>
             </section>
         @endif
 
@@ -181,6 +186,17 @@
                             <option value="">Seleccione…</option>
                             @foreach(config('visitantes.parentescos') as $parentesco)
                                 <option value="{{ $parentesco }}">{{ $parentesco }}</option>
+                            @endforeach
+                        </x-m3.select-field>
+                        <x-m3.select-field
+                            label="Condición"
+                            icon="accessibility_new"
+                            wire:model="familiares.{{ $index }}.condicion"
+                            data-offline-field="condicion"
+                            :error="$errors->first('familiares.'.$index.'.condicion')"
+                        >
+                            @foreach ($condiciones as $condicion)
+                                <option value="{{ $condicion->value }}">{{ $condicion->label() }}</option>
                             @endforeach
                         </x-m3.select-field>
                         <x-m3.text-field label="Nombre" icon="person" wire:model="familiares.{{ $index }}.nombre" data-offline-field="nombre" />

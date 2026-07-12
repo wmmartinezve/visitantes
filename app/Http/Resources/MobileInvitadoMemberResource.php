@@ -22,6 +22,8 @@ class MobileInvitadoMemberResource extends JsonResource
             'apellido' => $this->apellido,
             'nombre_completo' => $this->nombreCompleto(),
             'parentesco' => $this->parentesco,
+            'condicion' => $this->condicion?->value,
+            'condicion_label' => $this->condicion?->label(),
             'cedula' => $this->cedula,
             'telefono' => $this->telefono,
             'fecha_nacimiento' => $this->fecha_nacimiento?->format('Y-m-d'),

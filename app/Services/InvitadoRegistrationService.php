@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Enums\CondicionInvitado;
 use App\Enums\InvitadoEstatus;
 use App\Enums\SituacionJefeFamilia;
 use App\Enums\ActivityAction;
@@ -59,6 +60,7 @@ class InvitadoRegistrationService
                 'situacion_jefe' => isset($jefeData['situacion_jefe'])
                     ? SituacionJefeFamilia::from($jefeData['situacion_jefe'])
                     : null,
+                'condicion' => CondicionInvitado::from($jefeData['condicion'] ?? CondicionInvitado::Ninguna->value),
                 'estatus' => InvitadoEstatus::Activo,
                 'jefe_familia_id' => null,
             ]);
@@ -92,6 +94,7 @@ class InvitadoRegistrationService
                     'cedula' => $familiar['cedula'] ?? null,
                     'fecha_nacimiento' => $familiar['fecha_nacimiento'],
                     'telefono' => $familiar['telefono'] ?? null,
+                    'condicion' => CondicionInvitado::from($familiar['condicion'] ?? CondicionInvitado::Ninguna->value),
                     'hogar_solidario_id' => $hogarId,
                     'estatus' => InvitadoEstatus::Activo,
                     'jefe_familia_id' => $jefe->id,

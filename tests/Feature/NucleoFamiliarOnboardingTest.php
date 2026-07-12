@@ -74,12 +74,14 @@ class NucleoFamiliarOnboardingTest extends TestCase
             'procedencia_municipio_id' => $procedencia['procedencia_municipio_id'],
             'procedencia_parroquia_id' => $procedencia['procedencia_parroquia_id'],
             'situacion_jefe' => $procedencia['situacion_jefe'],
+            'condicion' => $procedencia['condicion'],
             'familiares' => [
                 [
                     'nombre' => 'Lucía',
                     'apellido' => 'Pérez',
                     'parentesco' => 'Esposa(o)',
                     'fecha_nacimiento' => '1988-03-20',
+                    'condicion' => 'ninguna',
                 ],
             ],
         ]);
@@ -139,6 +141,7 @@ class NucleoFamiliarOnboardingTest extends TestCase
             'procedencia_municipio_id' => $procedencia['procedencia_municipio_id'],
             'procedencia_parroquia_id' => $procedencia['procedencia_parroquia_id'],
             'situacion_jefe' => $procedencia['situacion_jefe'],
+            'condicion' => $procedencia['condicion'],
         ])->assertCreated();
 
         $hogar = HogarSolidario::query()->findOrFail($anfitrion->fresh()->hogar_solidario_id);
@@ -175,6 +178,7 @@ class NucleoFamiliarOnboardingTest extends TestCase
             'procedencia_municipio_id' => $procedencia['procedencia_municipio_id'],
             'procedencia_parroquia_id' => $procedencia['procedencia_parroquia_id'],
             'situacion_jefe' => $procedencia['situacion_jefe'],
+            'condicion' => $procedencia['condicion'],
         ])->assertCreated();
 
         $hogar = HogarSolidario::query()->findOrFail($anfitrion->fresh()->hogar_solidario_id);
@@ -215,6 +219,7 @@ class NucleoFamiliarOnboardingTest extends TestCase
             'procedencia_municipio_id' => $procedencia['procedencia_municipio_id'],
             'procedencia_parroquia_id' => $procedencia['procedencia_parroquia_id'],
             'situacion_jefe' => $procedencia['situacion_jefe'],
+            'condicion' => $procedencia['condicion'],
         ])->assertUnprocessable();
     }
 }

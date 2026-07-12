@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Enums\CondicionInvitado;
 use App\Support\HogarSolidarioValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -31,12 +32,17 @@ class MobileInvitadoStoreRequest extends FormRequest
             'procedencia_municipio_id' => ['required', 'integer', 'exists:municipios,id'],
             'procedencia_parroquia_id' => ['required', 'integer', 'exists:parroquias,id'],
             'situacion_jefe' => ['required', 'string', 'in:trabajando,desempleado,pensionado,estudiante,otro'],
+            'condicion' => CondicionInvitado::validationRules(),
             'familiares' => ['array'],
             'familiares.*.nombre' => ['required_with:familiares.*.apellido', 'string', 'max:255'],
             'familiares.*.apellido' => ['required_with:familiares.*.nombre', 'string', 'max:255'],
             'familiares.*.cedula' => ['nullable', 'string', 'max:20'],
             'familiares.*.telefono' => ['nullable', 'string', 'max:30'],
             'familiares.*.parentesco' => ['required_with:familiares.*.nombre', 'string', 'max:50'],
+            'familiares.*.condicion' => array_merge(
+                ['required_with:familiares.*.nombre'],
+                CondicionInvitado::validationRules(false),
+            ),
             'familiares.*.fecha_nacimiento' => ['required_with:familiares.*.nombre', 'date', 'before_or_equal:today'],
             'foto_base64' => ['nullable', 'string', 'max:12000000'],
             'foto_mime' => ['nullable', 'string', 'in:image/jpeg,image/png,image/webp'],

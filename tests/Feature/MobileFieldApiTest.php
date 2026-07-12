@@ -128,6 +128,7 @@ class MobileFieldApiTest extends TestCase
                     'apellido' => 'Online',
                     'parentesco' => 'Hijo(a)',
                     'fecha_nacimiento' => '2018-08-20',
+                    'condicion' => 'ninguna',
                 ],
             ],
             'foto_base64' => 'data:image/jpeg;base64,'.$fotoBase64,

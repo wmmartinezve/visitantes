@@ -25,6 +25,7 @@ trait HasProcedenciaDemo
             'procedencia_municipio_id' => $parroquia->municipio_id,
             'procedencia_parroquia_id' => $parroquia->id,
             'situacion_jefe' => 'trabajando',
+            'condicion' => 'ninguna',
         ];
     }
 }

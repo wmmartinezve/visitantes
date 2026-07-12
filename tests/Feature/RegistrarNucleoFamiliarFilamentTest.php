@@ -87,12 +87,14 @@ class RegistrarNucleoFamiliarFilamentTest extends TestCase
                 'jefe_procedencia_municipio_id' => $proc['procedencia_municipio_id'],
                 'jefe_procedencia_parroquia_id' => $proc['procedencia_parroquia_id'],
                 'jefe_situacion' => 'trabajando',
+                'jefe_condicion' => 'ninguna',
                 'familiares' => [
                     [
                         'parentesco' => 'Hijo(a)',
                         'nombre' => 'Pedro',
                         'apellido' => 'Rivero',
                         'fecha_nacimiento' => '2022-04-16',
+                        'condicion' => 'ninguna',
                     ],
                 ],
             ])

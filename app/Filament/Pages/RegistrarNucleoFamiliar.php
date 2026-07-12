@@ -8,6 +8,7 @@ use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
 use App\Enums\UserRole;
+use App\Filament\Support\CondicionInvitadoSelectFields;
 use App\Filament\Support\GeografiaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
 use App\Filament\Support\HogarAnfitrionFields;
@@ -142,6 +143,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                     fn (SituacionJefeFamilia $s): array => [$s->value => $s->label()]
                                 ))
                                 ->required(),
+                            CondicionInvitadoSelectFields::make('jefe_condicion'),
                             FileUpload::make('foto_reemplazo')
                                 ->label('Foto testigo de ingreso')
                                 ->disk(InvitadoFotoStorage::privateDisk())
@@ -166,6 +168,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                         ))
                                         ->searchable()
                                         ->required(),
+                                    CondicionInvitadoSelectFields::make('condicion'),
                                     TextInput::make('nombre')
                                         ->label('Nombre')
                                         ->required()
@@ -251,6 +254,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             'procedencia_municipio_id' => $data['jefe_procedencia_municipio_id'] ?? null,
             'procedencia_parroquia_id' => $data['jefe_procedencia_parroquia_id'] ?? null,
             'situacion_jefe' => $data['jefe_situacion'],
+            'condicion' => $data['jefe_condicion'] ?? 'ninguna',
         ];
 
         $foto = $this->resolveUploadedFoto($data['foto_reemplazo'] ?? null);

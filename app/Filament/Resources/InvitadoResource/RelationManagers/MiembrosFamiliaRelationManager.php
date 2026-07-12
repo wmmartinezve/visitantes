@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources\InvitadoResource\RelationManagers;
 
+use App\Enums\CondicionInvitado;
 use App\Enums\InvitadoEstatus;
+use App\Filament\Support\CondicionInvitadoSelectFields;
 use App\Models\Invitado;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -47,6 +49,7 @@ class MiembrosFamiliaRelationManager extends RelationManager
                 ->required(),
             Forms\Components\TextInput::make('telefono')
                 ->label('Teléfono'),
+            CondicionInvitadoSelectFields::make(),
             Forms\Components\Select::make('estatus')
                 ->label('Estatus')
                 ->options(collect(InvitadoEstatus::cases())->mapWithKeys(
@@ -69,6 +72,10 @@ class MiembrosFamiliaRelationManager extends RelationManager
                     ->label('Apellido'),
                 Tables\Columns\TextColumn::make('cedula')
                     ->label('Cédula'),
+                Tables\Columns\TextColumn::make('condicion')
+                    ->label('Condición')
+                    ->badge()
+                    ->formatStateUsing(fn (?CondicionInvitado $state): string => $state?->label() ?? '—'),
                 Tables\Columns\TextColumn::make('estatus')
                     ->label('Estatus')
                     ->badge()

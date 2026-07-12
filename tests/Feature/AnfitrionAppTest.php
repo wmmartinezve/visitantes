@@ -93,10 +93,12 @@ class AnfitrionAppTest extends TestCase
             ->set('procedencia_municipio_id', $procedencia['procedencia_municipio_id'])
             ->set('procedencia_parroquia_id', $procedencia['procedencia_parroquia_id'])
             ->set('situacion_jefe', $procedencia['situacion_jefe'])
+            ->set('condicion', $procedencia['condicion'])
             ->set('familiares', [[
                 'nombre' => 'José',
                 'apellido' => 'Pérez',
                 'parentesco' => 'Hijo(a)',
+                'condicion' => 'ninguna',
                 'cedula' => null,
                 'telefono' => null,
                 'fecha_nacimiento' => '2015-03-01',

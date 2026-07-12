@@ -28,6 +28,8 @@ class MobileInvitadoResource extends JsonResource
             'registrado_el' => $this->created_at?->format('Y-m-d'),
             'es_jefe_familia' => $this->jefe_familia_id === null,
             'parentesco' => $this->parentesco,
+            'condicion' => $this->condicion?->value,
+            'condicion_label' => $this->condicion?->label(),
             'jefe_familia_id' => $this->jefe_familia_id,
             'detail_invitado_id' => $this->jefe_familia_id ?? $this->id,
             'estatus' => $this->estatus?->value,

@@ -91,6 +91,7 @@ class MobileInvitadoController extends Controller
                 'procedencia_municipio_id' => $validated['procedencia_municipio_id'],
                 'procedencia_parroquia_id' => $validated['procedencia_parroquia_id'],
                 'situacion_jefe' => $validated['situacion_jefe'],
+                'condicion' => $validated['condicion'],
             ],
             $foto,
             $validated['familiares'] ?? [],

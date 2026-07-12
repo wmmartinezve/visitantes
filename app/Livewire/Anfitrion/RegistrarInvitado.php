@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Livewire\Anfitrion;
 
+use App\Enums\CondicionInvitado;
 use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
@@ -72,6 +73,8 @@ class RegistrarInvitado extends Component
 
     public ?string $situacion_jefe = null;
 
+    public string $condicion = 'ninguna';
+
     public $foto = null;
 
     /** @var list<array{nombre: string, apellido: string, cedula: ?string, telefono: ?string, parentesco: string, fecha_nacimiento: string}> */
@@ -124,6 +127,7 @@ class RegistrarInvitado extends Component
             'nombre' => '',
             'apellido' => '',
             'parentesco' => '',
+            'condicion' => CondicionInvitado::Ninguna->value,
             'cedula' => null,
             'telefono' => null,
             'fecha_nacimiento' => '',
@@ -215,6 +219,7 @@ class RegistrarInvitado extends Component
                 'procedencia_municipio_id' => ['required', 'integer', 'exists:municipios,id'],
                 'procedencia_parroquia_id' => ['required', 'integer', 'exists:parroquias,id'],
                 'situacion_jefe' => ['required', 'string', 'in:trabajando,desempleado,pensionado,estudiante,otro'],
+                'condicion' => CondicionInvitado::validationRules(),
             ];
         }
 
@@ -236,6 +241,7 @@ class RegistrarInvitado extends Component
             'procedencia_municipio_id' => ['required', 'integer', 'exists:municipios,id'],
             'procedencia_parroquia_id' => ['required', 'integer', 'exists:parroquias,id'],
             'situacion_jefe' => ['required', 'string', 'in:trabajando,desempleado,pensionado,estudiante,otro'],
+            'condicion' => CondicionInvitado::validationRules(),
             'foto' => ['nullable', 'image', 'max:10240'],
             'familiares' => ['array'],
             'familiares.*.nombre' => ['required_with:familiares.*.apellido', 'string', 'max:255'],
@@ -243,6 +249,10 @@ class RegistrarInvitado extends Component
             'familiares.*.cedula' => ['nullable', 'string', 'max:20'],
             'familiares.*.telefono' => ['nullable', 'string', 'max:30'],
             'familiares.*.parentesco' => ['required_with:familiares.*.nombre', 'string', 'max:50'],
+            'familiares.*.condicion' => array_merge(
+                ['required_with:familiares.*.nombre'],
+                CondicionInvitado::validationRules(false),
+            ),
             'familiares.*.fecha_nacimiento' => ['required_with:familiares.*.nombre', 'date', 'before_or_equal:today'],
         ];
 
@@ -292,6 +302,7 @@ class RegistrarInvitado extends Component
                 'procedencia_municipio_id' => $validated['procedencia_municipio_id'],
                 'procedencia_parroquia_id' => $validated['procedencia_parroquia_id'],
                 'situacion_jefe' => $validated['situacion_jefe'],
+                'condicion' => $validated['condicion'],
             ],
             $this->foto,
             $validated['familiares'] ?? [],
@@ -325,6 +336,7 @@ class RegistrarInvitado extends Component
             'tiposVivienda' => TipoViviendaHogar::cases(),
             'tiposAnfitrion' => TipoAnfitrionHogar::cases(),
             'situacionesJefe' => SituacionJefeFamilia::cases(),
+            'condiciones' => CondicionInvitado::cases(),
             'parroquiasHogar' => $this->hogar_municipio_id
                 ? Parroquia::query()->where('municipio_id', $this->hogar_municipio_id)->orderBy('nombre')->get()
                 : collect(),

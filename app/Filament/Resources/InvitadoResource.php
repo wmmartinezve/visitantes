@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Enums\CondicionInvitado;
 use App\Enums\InvitadoEstatus;
 use App\Enums\SituacionJefeFamilia;
+use App\Filament\Support\CondicionInvitadoSelectFields;
 use App\Filament\Support\ProcedenciaSelectFields;
 use App\Filament\Resources\InvitadoResource\Pages;
 use App\Filament\Resources\InvitadoResource\RelationManagers\MiembrosFamiliaRelationManager;
@@ -100,6 +102,7 @@ class InvitadoResource extends Resource
                         ->label('Teléfono')
                         ->tel()
                         ->maxLength(30),
+                    CondicionInvitadoSelectFields::make(),
                     Forms\Components\Select::make('estatus')
                         ->label('Estatus')
                         ->options(collect(InvitadoEstatus::cases())->mapWithKeys(
@@ -198,6 +201,17 @@ class InvitadoResource extends Resource
                 Tables\Columns\TextColumn::make('cedula')
                     ->label('Cédula')
                     ->searchable(),
+                Tables\Columns\TextColumn::make('condicion')
+                    ->label('Condición')
+                    ->badge()
+                    ->formatStateUsing(fn (?CondicionInvitado $state): string => $state?->label() ?? '—')
+                    ->color(fn (?CondicionInvitado $state): string => match ($state) {
+                        CondicionInvitado::Ninguna => 'gray',
+                        CondicionInvitado::Discapacidad => 'warning',
+                        CondicionInvitado::Embarazada => 'info',
+                        CondicionInvitado::AdultoMayor => 'primary',
+                        default => 'gray',
+                    }),
                 Tables\Columns\TextColumn::make('refugio.codigo')
                     ->label('Hogar solidario')
                     ->sortable(),

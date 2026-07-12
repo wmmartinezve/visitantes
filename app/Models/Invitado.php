@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Models;
 
+use App\Enums\CondicionInvitado;
 use App\Enums\InvitadoEstatus;
 use App\Enums\SituacionJefeFamilia;
 use App\Support\InvitadoFotoStorage;
@@ -19,6 +20,7 @@ class Invitado extends Model
     protected $fillable = [
         'jefe_familia_id',
         'parentesco',
+        'condicion',
         'nombre',
         'apellido',
         'cedula',
@@ -38,6 +40,7 @@ class Invitado extends Model
         return [
             'fecha_nacimiento' => 'date',
             'estatus' => InvitadoEstatus::class,
+            'condicion' => CondicionInvitado::class,
             'situacion_jefe' => SituacionJefeFamilia::class,
         ];
     }

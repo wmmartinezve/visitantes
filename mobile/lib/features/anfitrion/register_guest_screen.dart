@@ -71,6 +71,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   int? _procedenciaMunicipioId;
   int? _procedenciaParroquiaId;
   String? _situacionJefe;
+  String _condicion = 'ninguna';
 
   XFile? _foto;
   Uint8List? _fotoPreview;
@@ -214,6 +215,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       'procedencia_municipio_id': _procedenciaMunicipioId,
       'procedencia_parroquia_id': _procedenciaParroquiaId,
       'situacion_jefe': _situacionJefe,
+      'condicion': _condicion,
       'familiares': _familiares
           .where((f) =>
               f.nombre.text.trim().isNotEmpty &&
@@ -223,6 +225,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                 'nombre': f.nombre.text.trim(),
                 'apellido': f.apellido.text.trim(),
                 'parentesco': f.parentesco,
+                'condicion': f.condicion,
                 'cedula': f.cedula.text.trim().isEmpty ? null : f.cedula.text.trim(),
                 'telefono': f.telefono.text.trim().isEmpty ? null : f.telefono.text.trim(),
                 'fecha_nacimiento': f.fecha.text.trim(),
@@ -396,6 +399,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     _procedenciaMunicipioId = null;
     _procedenciaParroquiaId = null;
     _situacionJefe = null;
+    _condicion = 'ninguna';
     _tipoVivienda = null;
     _tipoAnfitrion = 'familiar';
     _parentescoAnfitrion = null;
@@ -480,13 +484,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           .map((e) => {'value': e['value'].toString(), 'label': e['label'].toString()})
           .toList();
     }
-    return const [
-      {'value': 'trabajando', 'label': 'Trabajando'},
-      {'value': 'desempleado', 'label': 'Desempleado'},
-      {'value': 'pensionado', 'label': 'Pensionado'},
-      {'value': 'estudiante', 'label': 'Estudiante'},
-      {'value': 'otro', 'label': 'Otro'},
-    ];
+    return AppConfig.situacionesJefe;
+  }
+
+  List<Map<String, String>> get _condiciones {
+    final raw = widget.catalog.cachedCatalog?['condiciones'] as List<dynamic>?;
+    if (raw != null && raw.isNotEmpty) {
+      return raw
+          .map((e) => Map<String, dynamic>.from(e as Map))
+          .map((e) => {'value': e['value'].toString(), 'label': e['label'].toString()})
+          .toList();
+    }
+    return AppConfig.condiciones;
   }
 
   List<Map<String, String>> get _tiposVivienda {
@@ -810,6 +819,17 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                       v == null ? null : _situacionesJefe.firstWhere((e) => e['label'] == v)['value'];
                 }),
               ),
+              M3SelectField(
+                label: 'Condición',
+                icon: Icons.accessibility_new_outlined,
+                value: _condiciones.firstWhere((e) => e['value'] == _condicion)['label'],
+                items: _condiciones.map((e) => e['label']!).toList(),
+                onChanged: (v) => setState(() {
+                  _condicion = v == null
+                      ? 'ninguna'
+                      : _condiciones.firstWhere((e) => e['label'] == v)['value']!;
+                }),
+              ),
             ],
           ),
         ),
@@ -862,6 +882,17 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                     items: _parentescos,
                     onChanged: (v) => setState(() => f.parentesco = v),
                     validator: (v) => (v == null || v.isEmpty) ? 'Requerido' : null,
+                  ),
+                  M3SelectField(
+                    label: 'Condición',
+                    icon: Icons.accessibility_new_outlined,
+                    value: _condiciones.firstWhere((e) => e['value'] == f.condicion)['label'],
+                    items: _condiciones.map((e) => e['label']!).toList(),
+                    onChanged: (v) => setState(() {
+                      f.condicion = v == null
+                          ? 'ninguna'
+                          : _condiciones.firstWhere((e) => e['label'] == v)['value']!;
+                    }),
                   ),
                   M3TextField(
                     controller: f.nombre,
@@ -1062,6 +1093,7 @@ class _FamiliarForm {
         fecha = TextEditingController();
 
   String? parentesco;
+  String condicion = 'ninguna';
   final TextEditingController nombre;
   final TextEditingController apellido;
   final TextEditingController cedula;

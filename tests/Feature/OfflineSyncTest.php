@@ -115,6 +115,7 @@ class OfflineSyncTest extends TestCase
                                     'apellido' => 'Offline',
                                     'parentesco' => 'Hijo(a)',
                                     'fecha_nacimiento' => '2015-03-01',
+                                    'condicion' => 'ninguna',
                                 ],
                             ],
                             'foto_base64' => 'data:image/jpeg;base64,'.$fotoBase64,

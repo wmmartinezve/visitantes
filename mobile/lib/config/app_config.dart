@@ -20,4 +20,19 @@ class AppConfig {
     'Suegro(a)',
     'Otro',
   ];
+
+  static const situacionesJefe = [
+    {'value': 'trabajando', 'label': 'Trabajando'},
+    {'value': 'desempleado', 'label': 'Desempleado'},
+    {'value': 'pensionado', 'label': 'Pensionado'},
+    {'value': 'estudiante', 'label': 'Estudiante'},
+    {'value': 'otro', 'label': 'Otro'},
+  ];
+
+  static const condiciones = [
+    {'value': 'ninguna', 'label': 'Ninguna'},
+    {'value': 'discapacidad', 'label': 'Discapacidad'},
+    {'value': 'embarazada', 'label': 'Embarazada'},
+    {'value': 'adulto_mayor', 'label': 'Adulto mayor'},
+  ];
 }

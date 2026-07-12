@@ -11,6 +11,7 @@ use App\Models\Inventario;
 use App\Models\HogarSolidario;
 use App\Models\Municipio;
 use App\Models\User;
+use App\Enums\CondicionInvitado;
 use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
@@ -154,6 +155,10 @@ class OfflineCatalogService
             'parentescos' => config('visitantes.parentescos'),
             'situaciones_jefe' => collect(SituacionJefeFamilia::cases())
                 ->map(fn (SituacionJefeFamilia $s) => ['value' => $s->value, 'label' => $s->label()])
+                ->values()
+                ->all(),
+            'condiciones' => collect(CondicionInvitado::cases())
+                ->map(fn (CondicionInvitado $c) => ['value' => $c->value, 'label' => $c->label()])
                 ->values()
                 ->all(),
             'tipos_vivienda' => collect(TipoViviendaHogar::cases())
