@@ -116,6 +116,20 @@ final class InvitadoFotoStorage
         return $finalPath;
     }
 
+    /**
+     * Mueve un archivo ya subido (p. ej. tmp de Filament en S3) a la ruta final del Invitado.
+     *
+     * @throws \RuntimeException
+     */
+    public static function attachTemporaryUpload(string $uploadedPath, int $invitadoId): string
+    {
+        if (! self::exists($uploadedPath)) {
+            throw new \RuntimeException('No se encontró la foto temporal subida.');
+        }
+
+        return self::finalizeUploadedPath($uploadedPath, $invitadoId);
+    }
+
     public static function fotoUploadDirectory(?Invitado $record): string
     {
         if ($record === null) {

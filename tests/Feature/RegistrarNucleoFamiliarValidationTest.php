@@ -13,6 +13,7 @@ use App\Models\User;
 use Database\Seeders\VenezuelaEstadosSeeder;
 use Database\Seeders\VenezuelaGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\Concerns\HasProcedenciaDemo;
 use Tests\TestCase;
@@ -62,5 +63,49 @@ class RegistrarNucleoFamiliarValidationTest extends TestCase
             ->call('create')
             ->assertHasNoErrors()
             ->assertRedirect();
+    }
+
+    public function test_registra_nucleo_con_foto_temporal_en_disco_remoto(): void
+    {
+        config(['visitantes.invitado_fotos_disk' => 's3']);
+        Storage::fake('s3');
+
+        $admin = User::factory()->create(['rol' => UserRole::Admin]);
+        $parroquia = Parroquia::query()
+            ->whereHas('municipio', fn ($q) => $q->where('nombre', 'Anaco'))
+            ->firstOrFail();
+        $proc = $this->procedenciaDemo('Anaco');
+
+        $tmpPath = 'invitados/tmp/foto-testigo.png';
+        Storage::disk('s3')->put($tmpPath, 'fake-image-content');
+
+        Livewire::actingAs($admin)
+            ->test(RegistrarNucleoFamiliar::class)
+            ->fillForm([
+                'tipo_vivienda' => 'casa',
+                'tipo_anfitrion' => 'familiar',
+                'parentesco_anfitrion' => 'Padre',
+                'parroquia_id' => $parroquia->id,
+                'direccion_exacta' => 'Calle principal, Anaco',
+                'latitud' => 10.12345678,
+                'longitud' => -64.87654321,
+                'responsable_nombre' => 'María Responsable',
+                'jefe_nombre' => 'José',
+                'jefe_apellido' => 'Rivero',
+                'jefe_fecha_nacimiento' => '1985-05-15',
+                'jefe_procedencia_estado_id' => $proc['procedencia_estado_id'],
+                'jefe_procedencia_municipio_id' => $proc['procedencia_municipio_id'],
+                'jefe_procedencia_parroquia_id' => $proc['procedencia_parroquia_id'],
+                'jefe_situacion' => 'trabajando',
+                'jefe_condicion' => 'ninguna',
+            ])
+            ->set('data.foto_reemplazo', [$tmpPath])
+            ->call('create')
+            ->assertHasNoErrors()
+            ->assertRedirect();
+
+        $jefe = \App\Models\Invitado::query()->where('nombre', 'José')->firstOrFail();
+        $this->assertNotNull($jefe->foto_ingreso);
+        $this->assertTrue(Storage::disk('s3')->exists($jefe->foto_ingreso));
     }
 }

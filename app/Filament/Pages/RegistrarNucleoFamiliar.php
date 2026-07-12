@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Enums\ActivityAction;
+use App\Enums\ActivityChannel;
 use App\Enums\CondicionInvitado;
 use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
@@ -13,8 +15,9 @@ use App\Filament\Support\CondicionInvitadoSelectFields;
 use App\Filament\Support\GeografiaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
 use App\Filament\Support\HogarAnfitrionFields;
-use App\Models\User;
 use App\Models\Estado;
+use App\Models\User;
+use App\Services\ActivityLogService;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\InvitadoFotoStorage;
 use Filament\Actions\Action;
@@ -30,8 +33,6 @@ use Filament\Forms\Contracts\HasForms;
 use Filament\Forms\Form;
 use Filament\Notifications\Notification;
 use Filament\Pages\Page;
-use Illuminate\Support\Facades\Storage;
-use Livewire\Features\SupportFileUploads\TemporaryUploadedFile;
 
 class RegistrarNucleoFamiliar extends Page implements HasForms
 {
@@ -271,13 +272,13 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                 : CondicionInvitado::Ninguna->value,
         ];
 
-        $foto = $this->resolveUploadedFoto($data['foto_reemplazo'] ?? null);
+        $fotoPath = $this->resolveFotoStoragePath($data['foto_reemplazo'] ?? null);
 
         try {
             $result = app(NucleoFamiliarOnboardingService::class)->registerFromAdmin(
                 $hogarData,
                 $jefeData,
-                $foto,
+                null,
                 $familiares,
                 isset($data['anfitrion_id']) ? (int) $data['anfitrion_id'] : null,
             );
@@ -301,6 +302,29 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             return;
         }
 
+        if ($fotoPath !== null) {
+            try {
+                $finalPath = InvitadoFotoStorage::attachTemporaryUpload($fotoPath, $result['jefe']->id);
+                $result['jefe']->update(['foto_ingreso' => $finalPath]);
+
+                app(ActivityLogService::class)->log(
+                    ActivityAction::FotoAttached,
+                    $result['jefe']->fresh(),
+                    'Foto testigo de ingreso (registro núcleo familiar)',
+                    ['new' => ['foto_ingreso' => $finalPath]],
+                    channel: ActivityChannel::Admin,
+                );
+            } catch (\Throwable $exception) {
+                report($exception);
+
+                Notification::make()
+                    ->title('Núcleo registrado sin foto')
+                    ->body('El hogar y el jefe se guardaron, pero la foto testigo no pudo procesarse. Puede subirla desde la ficha del Invitado.')
+                    ->warning()
+                    ->send();
+            }
+        }
+
         Notification::make()
             ->title('Núcleo familiar registrado')
             ->body("Hogar {$result['hogar']->codigo} y jefe {$result['jefe']->nombreCompleto()} creados.")
@@ -322,7 +346,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
         $this->data['jefe_procedencia_parroquia_id'] = null;
     }
 
-    private function resolveUploadedFoto(mixed $uploaded): ?\Illuminate\Http\UploadedFile
+    private function resolveFotoStoragePath(mixed $uploaded): ?string
     {
         if (blank($uploaded)) {
             return null;
@@ -334,20 +358,6 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             return null;
         }
 
-        $disk = InvitadoFotoStorage::privateDisk();
-
-        if (! Storage::disk($disk)->exists($path)) {
-            return null;
-        }
-
-        $absolute = Storage::disk($disk)->path($path);
-
-        return new \Illuminate\Http\UploadedFile(
-            $absolute,
-            basename($absolute),
-            mime_content_type($absolute) ?: 'image/jpeg',
-            null,
-            true,
-        );
+        return InvitadoFotoStorage::exists($path) ? $path : null;
     }
 }
