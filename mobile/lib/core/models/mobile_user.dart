@@ -110,6 +110,7 @@ class HogarSolidarioDetail {
     this.registradoEl,
     this.jefeFamiliar,
     this.invitados = const [],
+    this.partial = false,
   });
 
   final int id;
@@ -131,6 +132,7 @@ class HogarSolidarioDetail {
   final String? registradoEl;
   final InvitadoModel? jefeFamiliar;
   final List<InvitadoModel> invitados;
+  final bool partial;
 
   String? get ubicacionLabel {
     final parts = [municipio, parroquia, comuna].whereType<String>().where((s) => s.isNotEmpty).toList();
@@ -168,6 +170,7 @@ class HogarSolidarioDetail {
       invitados: (json['invitados'] as List<dynamic>? ?? [])
           .map((e) => InvitadoModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
+      partial: json['partial'] == true,
     );
   }
 

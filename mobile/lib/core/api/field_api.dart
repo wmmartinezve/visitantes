@@ -18,11 +18,15 @@ class FieldApi {
     return raw.map((e) => fromJson(Map<String, dynamic>.from(e as Map))).toList();
   }
 
-  Future<List<InvitadoModel>> fetchInvitados({String query = ''}) async {
+  Future<List<InvitadoModel>> fetchInvitados({String query = '', bool forceRefresh = false}) async {
     final trimmedQuery = query.trim();
 
     if (!await _catalog.isOnline) {
       return _filterInvitados(_cachedInvitados(), trimmedQuery);
+    }
+
+    if (forceRefresh && trimmedQuery.isEmpty) {
+      await LocalDb.meta.delete('invitados_cache');
     }
 
     try {
@@ -36,7 +40,6 @@ class FieldApi {
         unique[invitado.id] = invitado;
       }
       final deduped = unique.values.toList();
-      // Solo actualizar caché con el listado completo; no sobrescribir con resultados filtrados.
       if (trimmedQuery.isEmpty) {
         await LocalDb.meta.put('invitados_cache', deduped.map((e) => _invitadoToMap(e)).toList());
       }
@@ -44,6 +47,87 @@ class FieldApi {
     } catch (_) {
       return _filterInvitados(_cachedInvitados(), trimmedQuery);
     }
+  }
+
+  /// Actualiza cachés locales de hogares e Invitados del anfitrión.
+  Future<bool> refreshAnfitrionCaches() async {
+    if (!await _catalog.isOnline) {
+      return false;
+    }
+
+    try {
+      await LocalDb.meta.delete('invitados_cache');
+      await fetchInvitados(forceRefresh: true);
+      await fetchHogaresResumen();
+      return true;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  Future<HogarSolidarioDetail?> fetchHogarDetail(int id, {HogarSolidarioInfo? preview}) async {
+    if (await _catalog.isOnline) {
+      try {
+        final response = await _api.dio.get<Map<String, dynamic>>('/hogares/$id');
+        final data = response.data?['data'];
+        if (data is Map) {
+          final detail = HogarSolidarioDetail.fromJson(Map<String, dynamic>.from(data));
+          await _cacheHogarDetail(detail);
+          return detail;
+        }
+      } on DioException catch (e) {
+        if (e.response?.statusCode == 404) {
+          return _buildHogarDetailFallback(id, preview: preview, partial: true);
+        }
+      } catch (_) {}
+    }
+
+    final cached = _cachedHogarDetail(id);
+    if (cached != null) {
+      return cached;
+    }
+
+    return _buildHogarDetailFallback(id, preview: preview);
+  }
+
+  Future<void> _cacheHogarDetail(HogarSolidarioDetail detail) async {
+    final raw = LocalDb.meta.get('hogares_detail_cache');
+    final map = raw is Map ? Map<String, dynamic>.from(raw) : <String, dynamic>{};
+    map['${detail.id}'] = _hogarDetailToMap(detail);
+    await LocalDb.meta.put('hogares_detail_cache', map);
+  }
+
+  HogarSolidarioDetail? _cachedHogarDetail(int id) {
+    final raw = LocalDb.meta.get('hogares_detail_cache');
+    if (raw is! Map) return null;
+    final entry = raw['$id'];
+    if (entry is! Map) return null;
+    return HogarSolidarioDetail.fromJson(Map<String, dynamic>.from(entry));
+  }
+
+  HogarSolidarioDetail? _buildHogarDetailFallback(
+    int id, {
+    HogarSolidarioInfo? preview,
+    bool partial = false,
+  }) {
+    final hogarPreview = preview ?? _cachedHogares().where((h) => h.id == id).firstOrNull;
+    final invitados = _cachedInvitados().where((i) => i.hogarSolidarioId == id).toList();
+    if (hogarPreview == null && invitados.isEmpty) {
+      return null;
+    }
+
+    final jefe = invitados.where((i) => i.esJefeFamilia).firstOrNull;
+
+    return HogarSolidarioDetail(
+      id: id,
+      codigo: hogarPreview?.codigo ?? 'Hogar',
+      direccionExacta: hogarPreview?.direccionExacta,
+      tieneNucleoFamiliar: hogarPreview?.tieneNucleoFamiliar ?? jefe != null,
+      invitadosCount: hogarPreview?.invitadosCount ?? invitados.length,
+      jefeFamiliar: jefe,
+      invitados: invitados,
+      partial: partial,
+    );
   }
 
   Future<InvitadoModel?> fetchInvitado(int id) async {
@@ -79,21 +163,6 @@ class FieldApi {
     }
   }
 
-  Future<HogarSolidarioDetail?> fetchHogarDetail(int id) async {
-    if (!await _catalog.isOnline) {
-      return null;
-    }
-
-    try {
-      final response = await _api.dio.get<Map<String, dynamic>>('/hogares/$id');
-      final data = response.data?['data'];
-      if (data is! Map) return null;
-      return HogarSolidarioDetail.fromJson(Map<String, dynamic>.from(data));
-    } catch (_) {
-      return null;
-    }
-  }
-
   Future<HogaresResumen> fetchHogaresResumen() async {
     try {
       final response = await _api.dio.get<Map<String, dynamic>>('/hogares');
@@ -111,6 +180,20 @@ class FieldApi {
         return null;
       }
 
+      await LocalDb.meta.put(
+        'hogares_cache',
+        hogares
+            .map((h) => {
+                  'id': h.id,
+                  'codigo': h.codigo,
+                  'direccion_exacta': h.direccionExacta,
+                  'tiene_nucleo_familiar': h.tieneNucleoFamiliar,
+                  'invitados_count': h.invitadosCount,
+                })
+            .toList(),
+      );
+      await LocalDb.meta.put('hogares_invitados_count', parseInt(data['invitados_count']) ?? 0);
+
       return HogaresResumen(
         hogares: hogares,
         hogaresCount: parseInt(data['hogares_count']) ?? hogares.length,
@@ -118,7 +201,11 @@ class FieldApi {
         hogarActivoId: parseInt(data['hogar_activo_id']),
       );
     } catch (_) {
-      return const HogaresResumen(hogares: [], hogaresCount: 0, invitadosCount: 0);
+      return HogaresResumen(
+        hogares: _cachedHogares(),
+        hogaresCount: _cachedHogares().length,
+        invitadosCount: _cachedInvitadosCount(),
+      );
     }
   }
 
@@ -235,6 +322,45 @@ class FieldApi {
         .map((e) => InvitadoModel.fromJson(Map<String, dynamic>.from(e)))
         .toList();
   }
+
+  List<HogarSolidarioInfo> _cachedHogares() {
+    final raw = LocalDb.meta.get('hogares_cache');
+    if (raw is! List) return [];
+    return raw
+        .whereType<Map>()
+        .map((e) => HogarSolidarioInfo.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+
+  int _cachedInvitadosCount() {
+    final explicit = LocalDb.meta.get('hogares_invitados_count');
+    if (explicit is int) return explicit;
+    if (explicit is num) return explicit.toInt();
+    return _cachedInvitados().length;
+  }
+
+  Map<String, dynamic> _hogarDetailToMap(HogarSolidarioDetail detail) => {
+        'id': detail.id,
+        'codigo': detail.codigo,
+        'direccion_exacta': detail.direccionExacta,
+        'tipo_vivienda_label': detail.tipoViviendaLabel,
+        'tipo_anfitrion_label': detail.tipoAnfitrionLabel,
+        'parentesco_anfitrion': detail.parentescoAnfitrion,
+        'responsable_nombre': detail.responsableNombre,
+        'responsable_cedula': detail.responsableCedula,
+        'responsable_telefono': detail.responsableTelefono,
+        'latitud': detail.latitud,
+        'longitud': detail.longitud,
+        'municipio': detail.municipio,
+        'parroquia': detail.parroquia,
+        'comuna': detail.comuna,
+        'tiene_nucleo_familiar': detail.tieneNucleoFamiliar,
+        'invitados_count': detail.invitadosCount,
+        'registrado_el': detail.registradoEl,
+        'jefe_familiar': detail.jefeFamiliar != null ? _invitadoToMap(detail.jefeFamiliar!) : null,
+        'invitados': detail.invitados.map(_invitadoToMap).toList(),
+        'partial': detail.partial,
+      };
 
   List<InvitadoModel> _filterInvitados(List<InvitadoModel> list, String query) {
     if (query.isEmpty) return list;

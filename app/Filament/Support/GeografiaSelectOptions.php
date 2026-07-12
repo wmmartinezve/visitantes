@@ -37,6 +37,22 @@ final class GeografiaSelectOptions
         return self::$estadosCache[$cacheKey];
     }
 
+    /** @return array<int|string, string> */
+    public static function municipiosAnzoategui(): array
+    {
+        $estadoId = array_key_first(self::estados('anzoategui'));
+
+        if ($estadoId === null) {
+            return [];
+        }
+
+        return Municipio::query()
+            ->where('estado_id', $estadoId)
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
+            ->all();
+    }
+
     /**
      * @return array<int|string, string>
      */

@@ -4,19 +4,22 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:uuid/uuid.dart';
+import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
 
 class SyncService extends ChangeNotifier {
-  SyncService({ApiClient? apiClient, CatalogService? catalogService, Connectivity? connectivity})
+  SyncService({ApiClient? apiClient, CatalogService? catalogService, Connectivity? connectivity, FieldApi? fieldApi})
       : _api = apiClient ?? ApiClient(),
         _catalog = catalogService ?? CatalogService(apiClient: apiClient),
-        _connectivity = connectivity ?? Connectivity();
+        _connectivity = connectivity ?? Connectivity(),
+        _fieldApi = fieldApi;
 
   final ApiClient _api;
   final CatalogService _catalog;
   final Connectivity _connectivity;
+  final FieldApi? _fieldApi;
   final _uuid = const Uuid();
 
   StreamSubscription<List<ConnectivityResult>>? _connectivitySub;
@@ -277,12 +280,17 @@ class SyncService extends ChangeNotifier {
 
     final syncResult = syncQueue ? await syncPending() : SyncResult(ok: 0, failed: 0);
     final catalog = await _catalog.ensureCached(force: true);
+    var fieldDataRefreshed = false;
+    if (_fieldApi != null) {
+      fieldDataRefreshed = await _fieldApi.refreshAnfitrionCaches();
+    }
     notifyListeners();
 
     return RefreshAllResult(
       online: true,
       sync: syncResult,
       catalogRefreshed: catalog != null,
+      fieldDataRefreshed: fieldDataRefreshed,
       hadSyncActivity: syncResult.ok > 0,
     );
   }
@@ -303,11 +311,13 @@ class RefreshAllResult {
     required this.online,
     required this.sync,
     required this.catalogRefreshed,
+    this.fieldDataRefreshed = false,
     this.hadSyncActivity = false,
   });
 
   final bool online;
   final SyncResult sync;
   final bool catalogRefreshed;
+  final bool fieldDataRefreshed;
   final bool hadSyncActivity;
 }

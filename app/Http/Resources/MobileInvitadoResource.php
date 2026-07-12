@@ -40,11 +40,13 @@ class MobileInvitadoResource extends JsonResource
                 fn () => $this->hogarSolidario?->codigo,
             ),
             'foto_url' => $this->fotoUrl('api.mobile.invitados.foto'),
-            'miembros_familia' => MobileInvitadoMemberResource::collection(
-                $this->whenLoaded('miembrosFamilia'),
+            'miembros_familia' => $this->when(
+                $this->relationLoaded('miembrosFamilia'),
+                fn () => MobileInvitadoMemberResource::collection($this->miembrosFamilia)->toArray($request),
             ),
-            'requerimientos' => MobileRequerimientoResource::collection(
-                $this->whenLoaded('requerimientos'),
+            'requerimientos' => $this->when(
+                $this->relationLoaded('requerimientos'),
+                fn () => MobileRequerimientoResource::collection($this->requerimientos)->toArray($request),
             ),
         ];
     }

@@ -6,11 +6,15 @@ namespace Tests\Feature;
 
 use App\Enums\UserRole;
 use App\Filament\Pages\MapaOperacion;
+use App\Filament\Support\GeografiaSelectOptions;
+use App\Models\Estado;
 use App\Models\Municipio;
 use App\Models\Parroquia;
 use App\Models\User;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
+use Database\Seeders\VenezuelaEstadosSeeder;
+use Database\Seeders\VenezuelaGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -57,6 +61,33 @@ class MapaOperacionTest extends TestCase
             ->assertOk()
             ->assertSee('maps.googleapis.com/maps/api/js?key=test-google-maps-key', false)
             ->assertSee('/vendor/leaflet/google-mutant.js', false);
+    }
+
+    public function test_filtro_municipios_solo_muestra_anzoategui(): void
+    {
+        $this->seed(VenezuelaEstadosSeeder::class);
+        $this->seed(VenezuelaGeografiaSeeder::class);
+
+        $anzoategui = Estado::query()->where('nombre', 'Anzoátegui')->firstOrFail();
+        $miranda = Estado::query()->where('nombre', 'Miranda')->firstOrFail();
+
+        $municipioAnzoategui = Municipio::query()
+            ->where('estado_id', $anzoategui->id)
+            ->where('nombre', 'Simón Bolívar')
+            ->firstOrFail();
+
+        $municipioMiranda = Municipio::query()
+            ->where('estado_id', $miranda->id)
+            ->where('nombre', 'Acevedo')
+            ->firstOrFail();
+
+        $opciones = GeografiaSelectOptions::municipiosAnzoategui();
+
+        $this->assertArrayHasKey($municipioAnzoategui->id, $opciones);
+        $this->assertArrayNotHasKey($municipioMiranda->id, $opciones);
+        $this->assertTrue(
+            Municipio::query()->where('estado_id', $anzoategui->id)->count() === count($opciones),
+        );
     }
 
     public function test_filtro_por_municipio_reduce_puntos_en_mapa(): void

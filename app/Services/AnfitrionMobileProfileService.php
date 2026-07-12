@@ -190,6 +190,13 @@ class AnfitrionMobileProfileService
         ]);
 
         $jefe = $hogar->jefeFamilia;
+        $request = request();
+
+        $invitadoPayload = static function (Invitado $invitado) use ($request): array {
+            return (new MobileInvitadoResource(
+                $invitado->loadMissing('miembrosFamilia'),
+            ))->toArray($request);
+        };
 
         return [
             'id' => $hogar->id,
@@ -211,10 +218,8 @@ class AnfitrionMobileProfileService
             'tiene_nucleo_familiar' => $hogar->tieneNucleoFamiliar(),
             'invitados_count' => $hogar->invitados->count(),
             'registrado_el' => $hogar->created_at?->format('Y-m-d H:i'),
-            'jefe_familiar' => $jefe !== null
-                ? (new MobileInvitadoResource($jefe))->resolve()
-                : null,
-            'invitados' => MobileInvitadoResource::collection($hogar->invitados)->resolve(),
+            'jefe_familiar' => $jefe !== null ? $invitadoPayload($jefe) : null,
+            'invitados' => $hogar->invitados->map($invitadoPayload)->values()->all(),
         ];
     }
 }

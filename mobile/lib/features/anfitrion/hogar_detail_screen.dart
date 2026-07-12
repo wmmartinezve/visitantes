@@ -37,7 +37,11 @@ class _HogarDetailScreenState extends State<HogarDetailScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
-    final hogar = await widget.fieldApi.fetchHogarDetail(widget.hogarId);
+    await widget.fieldApi.refreshAnfitrionCaches();
+    final hogar = await widget.fieldApi.fetchHogarDetail(
+      widget.hogarId,
+      preview: widget.preview,
+    );
     if (!mounted) return;
     setState(() {
       _hogar = hogar;
@@ -95,6 +99,19 @@ class _HogarDetailScreenState extends State<HogarDetailScreen> {
                           : 'Revise su conexión e intente de nuevo.',
                     )
                   else ...[
+                    if (hogar.partial)
+                      Card(
+                        color: VenezuelaColors.yellow.withValues(alpha: 0.15),
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Text(
+                            'Vista parcial sin conexión completa al servidor. '
+                            'Use el botón de sincronizar para cargar todos los datos.',
+                            style: Theme.of(context).textTheme.bodySmall,
+                          ),
+                        ),
+                      ),
+                    if (hogar.partial) const SizedBox(height: 12),
                     Card(
                       clipBehavior: Clip.antiAlias,
                       child: IntrinsicHeight(

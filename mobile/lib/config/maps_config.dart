@@ -1,6 +1,9 @@
 import 'package:visitantes_mobile/config/production_env.dart';
 
-/// Clave de Google Maps para mapas embebidos en la app.
+/// Google Maps en la app móvil (Android/iOS).
+///
+/// Dejar [kGoogleMapsAndroidEnabled] en `false` hasta registrar en Google Cloud:
+/// Maps SDK for Android, package `com.visitantes.anzoategui.visitantes_mobile` y SHA-1 del keystore.
 class MapsConfig {
   MapsConfig._();
 
@@ -9,5 +12,6 @@ class MapsConfig {
   static String get apiKey =>
       _fromEnv.isNotEmpty ? _fromEnv : kGoogleMapsApiKey;
 
-  static bool get isConfigured => apiKey.isNotEmpty;
+  /// `true` solo cuando la clave Android esté restringa y probada en dispositivo.
+  static bool get useGoogleMapsOnMobile => kGoogleMapsAndroidEnabled && apiKey.isNotEmpty;
 }

@@ -43,10 +43,15 @@ class MobileFieldApiTest extends TestCase
         $anfitrion = $this->anfitrion();
 
         if ($anfitrion->hogar_solidario_id !== null) {
+            HogarSolidario::query()
+                ->whereKey($anfitrion->hogar_solidario_id)
+                ->update(['anfitrion_user_id' => $anfitrion->id]);
+
             return $anfitrion;
         }
 
         $hogar = HogarSolidario::query()->firstOrFail();
+        $hogar->forceFill(['anfitrion_user_id' => $anfitrion->id])->save();
         $anfitrion->forceFill(['hogar_solidario_id' => $hogar->id])->save();
 
         return $anfitrion->fresh();
@@ -180,6 +185,10 @@ class MobileFieldApiTest extends TestCase
         $anfitrion = $this->anfitrionConHogar();
         $this->limpiarNucleoDeHogar((int) $anfitrion->hogar_solidario_id);
         Sanctum::actingAs($anfitrion);
+
+        HogarSolidario::query()
+            ->whereKey($anfitrion->hogar_solidario_id)
+            ->update(['anfitrion_user_id' => $anfitrion->id]);
 
         $jefe = Invitado::query()->create([
             'nombre' => 'Padre',

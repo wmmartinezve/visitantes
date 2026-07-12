@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Filament\Support\GeografiaSelectOptions;
 use App\Models\CentroAcopio;
 use App\Models\Invitado;
-use App\Models\Municipio;
 use App\Models\Parroquia;
 use App\Models\HogarSolidario;
 use App\Support\VisitantesFeatures;
@@ -54,7 +54,7 @@ class MapaOperacion extends Page implements HasForms
                 Select::make('municipio_id')
                     ->label('Municipio')
                     ->placeholder('Todos los municipios')
-                    ->options(fn (): array => Municipio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
+                    ->options(fn (): array => GeografiaSelectOptions::municipiosAnzoategui())
                     ->searchable()
                     ->preload()
                     ->live()

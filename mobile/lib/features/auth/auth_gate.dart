@@ -1,5 +1,6 @@
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
@@ -18,7 +19,8 @@ class AuthGate extends StatefulWidget {
 class _AuthGateState extends State<AuthGate> {
   final _auth = AuthRepository();
   final _catalog = CatalogService();
-  final _sync = SyncService();
+  late final _fieldApi = FieldApi(catalogService: _catalog);
+  late final _sync = SyncService(catalogService: _catalog, fieldApi: _fieldApi);
 
   bool _loading = true;
   bool _showForgotPassword = false;
@@ -38,6 +40,7 @@ class _AuthGateState extends State<AuthGate> {
       try {
         user = await _auth.fetchCurrentUser();
         await _catalog.syncOperadorFromUser(user);
+        await _fieldApi.refreshAnfitrionCaches();
       } catch (_) {}
       await _sync.syncPending();
     }
@@ -66,6 +69,7 @@ class _AuthGateState extends State<AuthGate> {
       await _catalog.ensureCached(force: true);
       user = await _auth.fetchCurrentUser();
       await _catalog.syncOperadorFromUser(user);
+      await _fieldApi.refreshAnfitrionCaches();
       await _sync.syncPending();
       setState(() => _user = user);
     } on DioException catch (e) {

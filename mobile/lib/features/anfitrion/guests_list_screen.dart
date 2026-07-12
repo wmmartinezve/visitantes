@@ -38,6 +38,9 @@ class _GuestsListScreenState extends State<GuestsListScreen> {
 
   Future<void> _load() async {
     setState(() => _loading = true);
+    if (_search.text.trim().isEmpty) {
+      await widget.fieldApi.refreshAnfitrionCaches();
+    }
     final list = await widget.fieldApi.fetchInvitados(query: _search.text.trim());
     if (!mounted) return;
     setState(() {
