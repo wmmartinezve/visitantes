@@ -54,6 +54,8 @@ class MobileProfileController extends Controller
             'password' => Hash::make($data['password']),
         ]);
 
+        $user->tokens()->delete();
+
         app(ActivityLogService::class)->log(
             ActivityAction::PasswordChanged,
             $user,

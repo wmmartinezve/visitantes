@@ -12,6 +12,8 @@ use App\Models\HogarSolidario;
 use App\Models\Municipio;
 use App\Models\User;
 use App\Enums\CondicionInvitado;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Collection;
 use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
@@ -49,26 +51,7 @@ class OfflineCatalogService
             ])
             ->values();
 
-        $hogaresSolidarios = HogarSolidario::query()
-            ->with(['parroquia:id,nombre,municipio_id', 'comuna:id,nombre,parroquia_id'])
-            ->orderBy('codigo')
-            ->get()
-            ->map(fn (HogarSolidario $h) => [
-                'id' => $h->id,
-                'codigo' => $h->codigo,
-                'nombre' => $h->codigo,
-                'parroquia_id' => $h->parroquia_id,
-                'comuna_id' => $h->comuna_id,
-                'parroquia' => $h->parroquia?->nombre,
-                'comuna' => $h->comuna?->nombre,
-                'tipo_vivienda' => $h->tipo_vivienda?->value,
-                'tipo_anfitrion' => $h->tipo_anfitrion?->value,
-                'parentesco_anfitrion' => $h->parentesco_anfitrion,
-                'latitud' => (float) $h->latitud,
-                'longitud' => (float) $h->longitud,
-                'direccion_exacta' => $h->direccion_exacta,
-            ])
-            ->values();
+        $hogaresSolidarios = $this->hogaresSolidariosParaOperador($user);
 
         $centrosAcopio = CentroAcopio::query()
             ->with('parroquia:id,nombre,municipio_id')
@@ -180,5 +163,48 @@ class OfflineCatalogService
             'operador' => $operador,
             'inventario_local' => $inventarioLocal,
         ];
+    }
+
+    /**
+     * Hogares visibles en catálogo offline — mínimo privilegio por rol.
+     *
+     * @return Collection<int, array<string, mixed>>
+     */
+    private function hogaresSolidariosParaOperador(User $user): Collection
+    {
+        $query = HogarSolidario::query()
+            ->with(['parroquia:id,nombre,municipio_id', 'comuna:id,nombre,parroquia_id']);
+
+        if ($user->isAnfitrion()) {
+            $query->where('anfitrion_user_id', $user->id);
+        } elseif ($user->isCentroAcopio() && $user->centro_acopio_id !== null) {
+            $centroId = (int) $user->centro_acopio_id;
+            $query->whereHas(
+                'invitados.requerimientos',
+                fn (Builder $q) => $q->where('centro_acopio_id', $centroId),
+            );
+        } else {
+            $query->whereRaw('1 = 0');
+        }
+
+        return $query
+            ->orderBy('codigo')
+            ->get()
+            ->map(fn (HogarSolidario $h) => [
+                'id' => $h->id,
+                'codigo' => $h->codigo,
+                'nombre' => $h->codigo,
+                'parroquia_id' => $h->parroquia_id,
+                'comuna_id' => $h->comuna_id,
+                'parroquia' => $h->parroquia?->nombre,
+                'comuna' => $h->comuna?->nombre,
+                'tipo_vivienda' => $h->tipo_vivienda?->value,
+                'tipo_anfitrion' => $h->tipo_anfitrion?->value,
+                'parentesco_anfitrion' => $h->parentesco_anfitrion,
+                'latitud' => (float) $h->latitud,
+                'longitud' => (float) $h->longitud,
+                'direccion_exacta' => $h->direccion_exacta,
+            ])
+            ->values();
     }
 }

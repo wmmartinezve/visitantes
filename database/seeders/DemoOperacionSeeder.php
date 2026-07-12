@@ -62,6 +62,8 @@ class DemoOperacionSeeder extends Seeder
             ],
         );
 
+        $this->vincularAnfitrionHogar($anfitrion, $refugioPlc);
+
         if (VisitantesFeatures::logistica() && $centroPlc !== null) {
             User::query()->updateOrCreate(
                 ['email' => 'acopio@visitantes.test'],
@@ -174,6 +176,8 @@ class DemoOperacionSeeder extends Seeder
             ],
         );
 
+        $this->vincularAnfitrionHogar($anfitrion, $refugio);
+
         $invitado = Invitado::query()->firstOrCreate(
             [
                 'nombre' => 'María',
@@ -256,6 +260,9 @@ class DemoOperacionSeeder extends Seeder
                 'centro_acopio_id' => null,
             ],
         );
+
+        $anfitrionTigre = User::query()->where('email', 'anfitrion.tigre@visitantes.test')->firstOrFail();
+        $this->vincularAnfitrionHogar($anfitrionTigre, $refugio);
 
         if (VisitantesFeatures::logistica() && $centro !== null) {
             User::query()->updateOrCreate(
@@ -403,6 +410,16 @@ class DemoOperacionSeeder extends Seeder
             'subcategoria' => $subcategoria,
             'item_nombre' => InsumoCatalog::etiqueta($categoria, $subcategoria),
         ];
+    }
+
+    private function vincularAnfitrionHogar(User $anfitrion, HogarSolidario $hogar): void
+    {
+        $hogar->forceFill(['anfitrion_user_id' => $anfitrion->id])->save();
+
+        $anfitrion->forceFill([
+            'hogar_solidario_id' => $hogar->id,
+            'hogar_vinculado_en' => $anfitrion->hogar_vinculado_en ?? now(),
+        ])->save();
     }
 
     /** @return array{categoria: string, subcategoria: string, item_solicitado: string} */

@@ -24,11 +24,13 @@ use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\CreatesAnfitrionWithHogar;
 use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class ActivityLogTest extends TestCase
 {
+    use CreatesAnfitrionWithHogar;
     use RefreshDatabase;
 
     public function test_registro_invitado_genera_entradas_en_bitacora(): void
@@ -170,20 +172,9 @@ class ActivityLogTest extends TestCase
     /** @return array{0: User, 1: HogarSolidario} */
     private function anfitrionConRefugio(): array
     {
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'PLC',
-        ]);
+        $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        $anfitrion = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugio->id,
-        ]);
-
-        return [$anfitrion, $refugio];
+        return $this->createAnfitrionWithHogar();
     }
 
     private function centroDemo(): CentroAcopio

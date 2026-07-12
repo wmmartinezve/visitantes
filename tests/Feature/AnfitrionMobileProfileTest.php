@@ -25,9 +25,13 @@ class AnfitrionMobileProfileTest extends TestCase
         $this->seed(DemoOperacionSeeder::class);
 
         $anfitrion = User::query()->where('email', 'anfitrion@visitantes.test')->firstOrFail();
-        $hogarDemo = HogarSolidario::query()->firstOrFail();
 
-        $anfitrion->forceFill(['hogar_solidario_id' => $hogarDemo->id])->save();
+        HogarSolidario::query()
+            ->where('anfitrion_user_id', $anfitrion->id)
+            ->update(['anfitrion_user_id' => null]);
+
+        $hogarAjeno = HogarSolidario::query()->firstOrFail();
+        $anfitrion->forceFill(['hogar_solidario_id' => $hogarAjeno->id])->save();
 
         $response = $this->actingAs($anfitrion)->getJson('/api/mobile/me');
 
@@ -45,8 +49,13 @@ class AnfitrionMobileProfileTest extends TestCase
         $this->seed(DemoOperacionSeeder::class);
 
         $anfitrion = User::query()->where('email', 'anfitrion@visitantes.test')->firstOrFail();
-        $hogarDemo = HogarSolidario::query()->firstOrFail();
-        $anfitrion->forceFill(['hogar_solidario_id' => $hogarDemo->id])->save();
+
+        HogarSolidario::query()
+            ->where('anfitrion_user_id', $anfitrion->id)
+            ->update(['anfitrion_user_id' => null]);
+
+        $hogarAjeno = HogarSolidario::query()->firstOrFail();
+        $anfitrion->forceFill(['hogar_solidario_id' => $hogarAjeno->id])->save();
 
         $this->postJson('/api/mobile/login', [
             'email' => 'anfitrion@visitantes.test',

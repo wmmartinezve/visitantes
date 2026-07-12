@@ -59,6 +59,28 @@ class UserProfileAndPasswordResetTest extends TestCase
 
         $operador->refresh();
         $this->assertTrue(Hash::check('nueva-clave-segura', $operador->password));
+        $this->assertSame(0, $operador->tokens()->count());
+    }
+
+    public function test_reset_password_revoca_tokens_sanctum(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+        $this->seed(DemoOperacionSeeder::class);
+
+        $anfitrion = User::query()->where('email', 'anfitrion@visitantes.test')->firstOrFail();
+        $anfitrion->createToken('test-device');
+        $this->assertSame(1, $anfitrion->tokens()->count());
+
+        $token = Password::createToken($anfitrion);
+
+        $this->postJson('/api/mobile/reset-password', [
+            'token' => $token,
+            'email' => $anfitrion->email,
+            'password' => 'clave-restaurada',
+            'password_confirmation' => 'clave-restaurada',
+        ])->assertOk();
+
+        $this->assertSame(0, $anfitrion->fresh()->tokens()->count());
     }
 
     public function test_forgot_password_envia_notificacion_a_operador_de_campo(): void

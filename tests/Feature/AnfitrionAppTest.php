@@ -14,11 +14,13 @@ use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\VenezuelaEstadosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\CreatesAnfitrionWithHogar;
 use Tests\Concerns\HasProcedenciaDemo;
 use Tests\TestCase;
 
 class AnfitrionAppTest extends TestCase
 {
+    use CreatesAnfitrionWithHogar;
     use HasProcedenciaDemo;
     use RefreshDatabase;
 
@@ -28,22 +30,19 @@ class AnfitrionAppTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         if ($hogarId === null) {
-            $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-
-            $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-                'latitud' => 10.214,
-                'longitud' => -64.633,
+            [$anfitrion] = $this->createAnfitrionWithHogar([
                 'direccion_exacta' => 'Dirección test',
                 'responsable_nombre' => 'Responsable Test',
             ]);
 
-            $hogarId = $refugio->id;
+            return $anfitrion;
         }
 
         $user = User::factory()->create([
             'rol' => UserRole::Anfitrion,
         ]);
+        $hogar = HogarSolidario::query()->findOrFail($hogarId);
+        $hogar->forceFill(['anfitrion_user_id' => $user->id])->save();
         $user->forceFill(['hogar_solidario_id' => $hogarId])->save();
 
         return $user->fresh();

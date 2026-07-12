@@ -14,8 +14,7 @@ fun readGoogleMapsApiKey(): String {
         localFile.inputStream().use { props.load(it) }
         props.getProperty("GOOGLE_MAPS_API_KEY")?.takeIf { it.isNotBlank() }?.let { return it }
     }
-    // Sincronizado con lib/config/production_env.dart
-    return "AIzaSyAHBteh9phME2UGVEPYFXc-_ovWEcYONxE"
+    return ""
 }
 
 android {

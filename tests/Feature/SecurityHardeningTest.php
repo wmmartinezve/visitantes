@@ -20,11 +20,13 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Support\Facades\Storage;
 use Laravel\Sanctum\Sanctum;
+use Tests\Concerns\CreatesAnfitrionWithHogar;
 use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class SecurityHardeningTest extends TestCase
 {
+    use CreatesAnfitrionWithHogar;
     use RefreshDatabase;
 
     /** JPEG mínimo válido (1×1 px). */
@@ -42,13 +44,7 @@ class SecurityHardeningTest extends TestCase
 
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'PLC',
-        ]);
+        [, $refugio] = $this->createAnfitrionWithHogar();
 
         User::factory()->create([
             'email' => 'attacker@example.com',
@@ -116,21 +112,8 @@ class SecurityHardeningTest extends TestCase
 
         Storage::fake(InvitadoFotoStorage::privateDisk());
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-
-        $refugioA = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'A',
-        ]);
-
-        $refugioB = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.220,
-            'longitud' => -64.640,
-            'direccion_exacta' => 'B',
-        ]);
+        [$anfitrionA, $refugioA] = $this->createAnfitrionWithHogar(['direccion_exacta' => 'A']);
+        [, $refugioB] = $this->createAnfitrionWithHogar(['direccion_exacta' => 'B']);
 
         $path = InvitadoFotoStorage::storePath(99, 'privada.jpg');
         Storage::disk(InvitadoFotoStorage::privateDisk())->put($path, $this->tinyJpegBytes());
@@ -144,10 +127,7 @@ class SecurityHardeningTest extends TestCase
             'foto_ingreso' => $path,
         ]);
 
-        $anfitrionA = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugioA->id,
-        ]);
+        $anfitrionA = User::query()->findOrFail($anfitrionA->id);
 
         Sanctum::actingAs($anfitrionA);
 
@@ -161,13 +141,7 @@ class SecurityHardeningTest extends TestCase
 
         Storage::fake(InvitadoFotoStorage::privateDisk());
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'PLC',
-        ]);
+        [$anfitrion, $refugio] = $this->createAnfitrionWithHogar(['direccion_exacta' => 'PLC']);
 
         $path = InvitadoFotoStorage::storePath(2, 'propia.jpg');
         Storage::disk(InvitadoFotoStorage::privateDisk())->put($path, $this->tinyJpegBytes());
@@ -181,10 +155,7 @@ class SecurityHardeningTest extends TestCase
             'foto_ingreso' => $path,
         ]);
 
-        $anfitrion = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugio->id,
-        ]);
+        $anfitrion = User::query()->findOrFail($anfitrion->id);
 
         Sanctum::actingAs($anfitrion);
 

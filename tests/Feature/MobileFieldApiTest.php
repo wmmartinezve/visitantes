@@ -59,7 +59,14 @@ class MobileFieldApiTest extends TestCase
 
     public function test_lista_invitados_vacia_sin_hogar_asignado(): void
     {
-        Sanctum::actingAs($this->anfitrion());
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'hogar_solidario_id' => null,
+        ]);
+
+        Sanctum::actingAs($anfitrion);
 
         $this->getJson('/api/mobile/invitados')
             ->assertOk()

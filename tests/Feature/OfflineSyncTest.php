@@ -16,11 +16,13 @@ use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
+use Tests\Concerns\CreatesAnfitrionWithHogar;
 use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class OfflineSyncTest extends TestCase
 {
+    use CreatesAnfitrionWithHogar;
     use RefreshDatabase;
 
     public function test_anfitrion_puede_descargar_catalogo_offline(): void
@@ -45,8 +47,8 @@ class OfflineSyncTest extends TestCase
                 'operador',
             ])
             ->assertJsonPath('operador.rol', 'anfitrion')
-            ->assertJsonPath('operador.requiere_registro_hogar', true)
-            ->assertJsonPath('operador.tiene_nucleo_familiar', false);
+            ->assertJsonPath('operador.requiere_registro_hogar', false)
+            ->assertJsonPath('operador.tiene_nucleo_familiar', true);
     }
 
     public function test_acopio_puede_descargar_catalogo_con_inventario_local(): void
@@ -74,23 +76,31 @@ class OfflineSyncTest extends TestCase
             ->assertForbidden();
     }
 
+    public function test_catalogo_offline_solo_expone_hogares_del_anfitrion(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+        $this->seed(DemoOperacionSeeder::class);
+
+        [$anfitrionA, $hogarA] = $this->createAnfitrionWithHogar(['direccion_exacta' => 'Hogar A privado']);
+        [, $hogarB] = $this->createAnfitrionWithHogar(['direccion_exacta' => 'Hogar B ajeno']);
+
+        $response = $this->actingAs($anfitrionA)
+            ->getJson(route('api.offline.catalog'));
+
+        $response->assertOk();
+
+        $ids = collect($response->json('hogares_solidarios'))->pluck('id')->all();
+
+        $this->assertContains($hogarA->id, $ids);
+        $this->assertNotContains($hogarB->id, $ids);
+    }
+
     public function test_sincroniza_registro_de_invitado_offline(): void
     {
         Storage::fake(InvitadoFotoStorage::privateDisk());
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'PLC',
-        ]);
-
-        $anfitrion = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugio->id,
-        ]);
+        [$anfitrion, $refugio] = $this->createAnfitrionWithHogar();
 
         $clientId = 'offline-client-1';
         $fotoBase64 = base64_encode(
@@ -149,18 +159,7 @@ class OfflineSyncTest extends TestCase
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'PLC',
-        ]);
-
-        $anfitrion = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugio->id,
-        ]);
+        [$anfitrion] = $this->createAnfitrionWithHogar();
 
         $clientId = 'offline-client-dup';
         $payload = [
@@ -202,18 +201,7 @@ class OfflineSyncTest extends TestCase
 
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'PLC',
-        ]);
-
-        $anfitrion = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugio->id,
-        ]);
+        [$anfitrion] = $this->createAnfitrionWithHogar();
 
         $fotoBase64 = base64_encode(
             base64_decode(
@@ -256,18 +244,7 @@ class OfflineSyncTest extends TestCase
         VisitantesFeatureTest::skipUnlessLogistica($this);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
-        $refugio = HogarSolidario::query()->create([
-            'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'PLC',
-        ]);
-
-        $anfitrion = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugio->id,
-        ]);
+        [$anfitrion] = $this->createAnfitrionWithHogar();
 
         $invitadoClientId = 'inv-offline-1';
 

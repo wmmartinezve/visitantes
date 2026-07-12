@@ -14,7 +14,12 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->trustProxies(at: '*');
+        $trustedProxies = env('TRUSTED_PROXIES');
+        $middleware->trustProxies(
+            at: filled($trustedProxies)
+                ? array_map(trim(...), explode(',', (string) $trustedProxies))
+                : null,
+        );
 
         $middleware->redirectGuestsTo(fn () => url('/'));
 
