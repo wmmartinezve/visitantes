@@ -14,8 +14,8 @@ import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/geo_catalog_index.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/features/anfitrion/map_picker_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
-import 'package:visitantes_mobile/shared/widgets/centro_geolocalizacion_map.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 import 'package:visitantes_mobile/shared/widgets/witness_photo_capture.dart';
 
@@ -134,7 +134,15 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     return const ['Jefe de familia', 'Familiares', 'Foto y confirmar'];
   }
 
-  int get _logicalStep => _step;
+  int get _logicalStep => _step.clamp(0, _totalSteps - 1);
+
+  @override
+  void didUpdateWidget(covariant RegisterGuestScreen oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_step >= _totalSteps) {
+      _step = 0;
+    }
+  }
 
   void _agregarFamiliar() => setState(() => _familiares.add(_FamiliarForm()));
 
@@ -156,12 +164,17 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   Future<void> _ensureCatalogReady() async {
     _refreshGeoIndex();
-    if (widget.catalog.isReady && _geo != null) {
+    if (widget.catalog.isReady) {
       _applyDefaultHogarEstado();
+      if (_loadingCatalog && mounted) {
+        setState(() => _loadingCatalog = false);
+      }
       return;
     }
 
-    setState(() => _loadingCatalog = true);
+    if (!_loadingCatalog && mounted) {
+      setState(() => _loadingCatalog = true);
+    }
     try {
       await widget.catalog.ensureCached();
       if (!widget.catalog.isReady) {
@@ -587,6 +600,23 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     }
   }
 
+  Future<void> _abrirMapa() async {
+    FocusManager.instance.primaryFocus?.unfocus();
+    final result = await Navigator.of(context).push<LatLng>(
+      MaterialPageRoute<LatLng>(
+        fullscreenDialog: true,
+        builder: (context) => MapPickerScreen(
+          initialLat: _hogarLatitud,
+          initialLng: _hogarLongitud,
+          title: 'Ubicación del hogar',
+        ),
+      ),
+    );
+    if (result != null) {
+      _actualizarUbicacionHogar(result, origen: 'mapa');
+    }
+  }
+
   List<Map<String, dynamic>> get _estados => _geo?.estados ?? const [];
 
   List<Map<String, dynamic>> get _municipiosHogar =>
@@ -636,17 +666,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildStepIndicator() {
+    final step = _logicalStep;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Paso ${_step + 1} de $_totalSteps · ${_stepTitles[_step]}',
+          'Paso ${step + 1} de $_totalSteps · ${_stepTitles[step]}',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
         LinearProgressIndicator(
-          value: (_step + 1) / _totalSteps,
+          value: (step + 1) / _totalSteps,
           backgroundColor: VenezuelaColors.blue.withValues(alpha: 0.15),
           color: VenezuelaColors.red,
           minHeight: 6,
@@ -809,9 +840,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   Widget _buildGeorefStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
         Text(
-          'Marca el punto del hogar con GPS (offline) o tocando el mapa '
+          'Marca el punto del hogar con GPS (offline) o abriendo el mapa '
           '(requiere internet para ver el mapa).',
           style: Theme.of(context).textTheme.bodySmall,
         ),
@@ -867,26 +899,13 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
             padding: const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
-        const SizedBox(height: 12),
-        Text(
-          'O marca el punto en el mapa',
-          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-        ),
-        const SizedBox(height: 8),
-        Expanded(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              final mapHeight = constraints.maxHeight.clamp(180.0, double.infinity);
-              return CentroGeolocalizacionMap(
-                latitud: _hogarLatitud,
-                longitud: _hogarLongitud,
-                editable: true,
-                scrollFriendly: false,
-                height: mapHeight,
-                emptyHint: 'Toque el mapa para marcar la ubicación del hogar.',
-                onLocationChanged: (pos) => _actualizarUbicacionHogar(pos, origen: 'mapa'),
-              );
-            },
+        const SizedBox(height: 10),
+        OutlinedButton.icon(
+          onPressed: _abrirMapa,
+          icon: const Icon(Icons.map_outlined),
+          label: const Text('Abrir mapa y marcar punto'),
+          style: OutlinedButton.styleFrom(
+            padding: const EdgeInsets.symmetric(vertical: 14),
           ),
         ),
       ],
@@ -1163,34 +1182,31 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     };
   }
 
-  Widget _buildWizardScaffold({required bool isLastStep, required bool scrollable, required Widget body}) {
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-
+  Widget _buildWizardBody(bool isLastStep) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-          child: _buildStepIndicator(),
-        ),
         Expanded(
-          child: scrollable
-              ? SingleChildScrollView(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
-                  keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-                  child: body,
-                )
-              : Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-                  child: body,
-                ),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              _buildStepIndicator(),
+              const SizedBox(height: 12),
+              _buildStepContent(),
+            ],
+          ),
         ),
         Material(
           elevation: 8,
           color: Theme.of(context).colorScheme.surface,
-          child: Padding(
-            padding: EdgeInsets.fromLTRB(16, 8, 16, 8 + bottomInset),
-            child: _buildWizardFooter(isLastStep),
+          child: SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 8),
+              child: _buildWizardFooter(isLastStep),
+            ),
           ),
         ),
       ],
@@ -1245,7 +1261,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    return SizedBox.expand(child: _buildContent(context));
+  }
 
+  Widget _buildContent(BuildContext context) {
     if (_loadingCatalog) {
       return Center(
         child: Column(
@@ -1362,14 +1381,8 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       );
     }
 
-    final isLastStep = _step >= _totalSteps - 1;
-    final isGeorefStep = _incluyeHogar && _logicalStep == 1;
-
-    return _buildWizardScaffold(
-      isLastStep: isLastStep,
-      scrollable: !isGeorefStep,
-      body: _buildStepContent(),
-    );
+    final isLastStep = _logicalStep >= _totalSteps - 1;
+    return _buildWizardBody(isLastStep);
   }
 }
 

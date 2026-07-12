@@ -217,7 +217,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
           onCambiarHogar: _cambiarHogarActivo,
           onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
         ),
-      2 => _buildRegisterPage(),
+      2 => SizedBox.expand(child: _buildRegisterPage()),
       3 => GuestsListScreen(
           key: ValueKey('guests-$_refreshTick'),
           fieldApi: _fieldApi,
