@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Pages;
 
+use App\Enums\CondicionInvitado;
 use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
@@ -60,6 +61,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             'tipo_anfitrion' => TipoAnfitrionHogar::Familiar->value,
             'familiares' => [],
             'estado_id' => Estado::query()->where('nombre', 'Anzoátegui')->value('id'),
+            'jefe_condicion' => CondicionInvitado::Ninguna->value,
         ]);
     }
 
@@ -216,7 +218,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                 ->danger()
                 ->send();
 
-            throw $exception;
+            return;
         }
 
         if (blank($data['parroquia_id'] ?? null)) {
@@ -228,6 +230,16 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
 
             return;
         }
+
+        $familiares = collect($data['familiares'] ?? [])
+            ->map(function (array $familiar): array {
+                $familiar['condicion'] = filled($familiar['condicion'] ?? null)
+                    ? $familiar['condicion']
+                    : CondicionInvitado::Ninguna->value;
+
+                return $familiar;
+            })
+            ->all();
 
         $hogarData = [
             'tipo_vivienda' => $data['tipo_vivienda'],
@@ -254,18 +266,40 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             'procedencia_municipio_id' => $data['jefe_procedencia_municipio_id'] ?? null,
             'procedencia_parroquia_id' => $data['jefe_procedencia_parroquia_id'] ?? null,
             'situacion_jefe' => $data['jefe_situacion'],
-            'condicion' => $data['jefe_condicion'] ?? 'ninguna',
+            'condicion' => filled($data['jefe_condicion'] ?? null)
+                ? $data['jefe_condicion']
+                : CondicionInvitado::Ninguna->value,
         ];
 
         $foto = $this->resolveUploadedFoto($data['foto_reemplazo'] ?? null);
 
-        $result = app(NucleoFamiliarOnboardingService::class)->registerFromAdmin(
-            $hogarData,
-            $jefeData,
-            $foto,
-            $data['familiares'] ?? [],
-            isset($data['anfitrion_id']) ? (int) $data['anfitrion_id'] : null,
-        );
+        try {
+            $result = app(NucleoFamiliarOnboardingService::class)->registerFromAdmin(
+                $hogarData,
+                $jefeData,
+                $foto,
+                $familiares,
+                isset($data['anfitrion_id']) ? (int) $data['anfitrion_id'] : null,
+            );
+        } catch (\Illuminate\Validation\ValidationException $exception) {
+            Notification::make()
+                ->title('No se pudo registrar el núcleo')
+                ->body(collect($exception->errors())->flatten()->first() ?? 'Revise los datos e intente de nuevo.')
+                ->danger()
+                ->send();
+
+            return;
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            Notification::make()
+                ->title('Error al registrar el núcleo familiar')
+                ->body('Ocurrió un error inesperado. Si acaba de desplegar cambios, verifique que las migraciones se hayan ejecutado.')
+                ->danger()
+                ->send();
+
+            return;
+        }
 
         Notification::make()
             ->title('Núcleo familiar registrado')

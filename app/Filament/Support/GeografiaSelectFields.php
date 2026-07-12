@@ -22,6 +22,8 @@ final class GeografiaSelectFields
      *     estadoScope?: 'all'|'anzoategui'|null,
      *     estadoHelper?: string|null,
      *     persistEstadoMunicipio?: bool,
+     *     dehydrateEstadoMunicipio?: bool,
+     *     requireEstadoMunicipio?: bool,
      *     record?: Model|null,
      * }  $options
      * @return array<int, Forms\Components\Component>
@@ -34,6 +36,8 @@ final class GeografiaSelectFields
         $estadoScope = $options['estadoScope'] ?? 'all';
         $record = $options['record'] ?? null;
         $persistEstadoMunicipio = $options['persistEstadoMunicipio'] ?? false;
+        $dehydrateEstadoMunicipio = $options['dehydrateEstadoMunicipio'] ?? $persistEstadoMunicipio;
+        $requireEstadoMunicipio = $options['requireEstadoMunicipio'] ?? $persistEstadoMunicipio;
 
         $estadoField = $prefix.'estado_id';
         $municipioField = $prefix.'municipio_id';
@@ -43,16 +47,15 @@ final class GeografiaSelectFields
         $defaultEstadoId = self::defaultEstadoId($record, $estadoScope);
         $defaultMunicipioId = $record?->parroquia?->municipio_id;
         $estadoFijo = $estadoScope === 'anzoategui';
-        $requiereEstadoMunicipio = $persistEstadoMunicipio;
 
         $fields = [
             Forms\Components\Select::make($estadoField)
                 ->label($labels['estado'] ?? 'Estado')
                 ->options(fn (): array => GeografiaSelectOptions::estados($estadoScope))
                 ->searchable(! $estadoFijo)
-                ->required($requiereEstadoMunicipio)
+                ->required($requireEstadoMunicipio)
                 ->live()
-                ->dehydrated($persistEstadoMunicipio)
+                ->dehydrated($dehydrateEstadoMunicipio)
                 ->default($defaultEstadoId)
                 ->helperText($options['estadoHelper'] ?? ($estadoFijo
                     ? 'Los hogares solidarios operan en el estado Anzoátegui.'
@@ -73,9 +76,9 @@ final class GeografiaSelectFields
                     $estadoFijo ? $defaultEstadoId : null,
                 ))
                 ->searchable()
-                ->required($requiereEstadoMunicipio)
+                ->required($requireEstadoMunicipio)
                 ->live()
-                ->dehydrated($persistEstadoMunicipio)
+                ->dehydrated($dehydrateEstadoMunicipio)
                 ->default($defaultMunicipioId)
                 ->placeholder(fn (Get $get): string => filled($get($estadoField) ?? ($estadoFijo ? $defaultEstadoId : null))
                     ? 'Seleccione un municipio'
@@ -142,6 +145,10 @@ final class GeografiaSelectFields
             'includeComuna' => true,
             'estadoScope' => 'anzoategui',
             'record' => $record,
+            // Incluir estado/municipio en el estado del formulario para validar parroquia,
+            // pero no exigirlos al guardar (solo persiste parroquia_id en el hogar).
+            'dehydrateEstadoMunicipio' => true,
+            'requireEstadoMunicipio' => false,
         ]);
     }
 
