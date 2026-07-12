@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Pages;
 
 use App\Models\CentroAcopio;
+use App\Models\Invitado;
 use App\Models\Municipio;
 use App\Models\Parroquia;
 use App\Models\HogarSolidario;
@@ -161,6 +162,25 @@ class MapaOperacion extends Page implements HasForms
             'refugios' => $refugios,
             'centros' => $centros,
         ];
+    }
+
+    /**
+     * @return array{hogares_solidarios: int, invitados: int}
+     */
+    public function getResumenProperty(): array
+    {
+        return [
+            'hogares_solidarios' => $this->refugiosQuery()->count(),
+            'invitados' => $this->invitadosQuery()->count(),
+        ];
+    }
+
+    /** @return Builder<Invitado> */
+    private function invitadosQuery(): Builder
+    {
+        return Invitado::query()->whereHas('hogarSolidario', function (Builder $query): void {
+            $this->aplicarFiltroTerritorial($query);
+        });
     }
 
     /** @return Builder<HogarSolidario> */

@@ -20,6 +20,12 @@ class GuestCard extends StatelessWidget {
     return parts.join(' · ');
   }
 
+  String? get _hogarLabel {
+    final codigo = invitado.hogarCodigo;
+    if (codigo == null || codigo.isEmpty) return null;
+    return 'Hogar: $codigo';
+  }
+
   @override
   Widget build(BuildContext context) {
     return Card(
@@ -58,6 +64,16 @@ class GuestCard extends StatelessWidget {
                               _subtitle(),
                               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurfaceVariant),
                             ),
+                            if (_hogarLabel != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                _hogarLabel!,
+                                style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                  color: VenezuelaColors.blue,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                             if (invitado.registradoEl != null) ...[
                               const SizedBox(height: 2),
                               Text(

@@ -19,6 +19,7 @@ class RegisterGuestFlow extends StatelessWidget {
     this.onRegistered,
     this.onUserUpdated,
     this.onRegistrarOtroHogar,
+    this.onExitWizard,
   });
 
   final MobileUser user;
@@ -31,6 +32,7 @@ class RegisterGuestFlow extends StatelessWidget {
   final VoidCallback? onRegistered;
   final ValueChanged<MobileUser>? onUserUpdated;
   final VoidCallback? onRegistrarOtroHogar;
+  final VoidCallback? onExitWizard;
 
   @override
   Widget build(BuildContext context) {
@@ -45,6 +47,7 @@ class RegisterGuestFlow extends StatelessWidget {
       onRegistered: onRegistered,
       onUserUpdated: onUserUpdated,
       onRegistrarOtroHogar: onRegistrarOtroHogar,
+      onExitWizard: onExitWizard,
     );
   }
 }

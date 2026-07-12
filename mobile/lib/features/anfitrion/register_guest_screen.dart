@@ -3,6 +3,7 @@ import 'dart:typed_data';
 
 import 'package:dio/dio.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:image_picker/image_picker.dart';
@@ -32,6 +33,7 @@ class RegisterGuestScreen extends StatefulWidget {
     this.onRegistered,
     this.onUserUpdated,
     this.onRegistrarOtroHogar,
+    this.onExitWizard,
   });
 
   final MobileUser user;
@@ -44,6 +46,7 @@ class RegisterGuestScreen extends StatefulWidget {
   final VoidCallback? onRegistered;
   final ValueChanged<MobileUser>? onUserUpdated;
   final VoidCallback? onRegistrarOtroHogar;
+  final VoidCallback? onExitWizard;
 
   @override
   State<RegisterGuestScreen> createState() => _RegisterGuestScreenState();
@@ -150,6 +153,20 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   int get _logicalStep => _step.clamp(0, _totalSteps - 1);
+
+  bool get _wizardActivo =>
+      !_loadingCatalog &&
+      widget.catalog.isReady &&
+      !(widget.nucleoYaRegistrado && !widget.registrarNuevoHogar);
+
+  bool get _tieneBorrador =>
+      _hogarDireccion.text.trim().isNotEmpty ||
+      _responsableNombre.text.trim().isNotEmpty ||
+      _nombre.text.trim().isNotEmpty ||
+      _apellido.text.trim().isNotEmpty ||
+      _fotoPreview != null ||
+      _familiares.isNotEmpty ||
+      _step > 0;
 
   @override
   void didUpdateWidget(covariant RegisterGuestScreen oldWidget) {
@@ -499,6 +516,92 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     if (_step > 0) setState(() => _step--);
   }
 
+  Future<void> _handleSystemBack() async {
+    if (_saving) return;
+    FocusManager.instance.primaryFocus?.unfocus();
+
+    if (_wizardActivo) {
+      if (_step > 0) {
+        _prevStep();
+        return;
+      }
+      await _confirmAbandonarRegistro();
+      return;
+    }
+
+    await _confirmSalirApp();
+  }
+
+  Future<void> _confirmSalirApp() async {
+    final salir = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Salir de la aplicación?'),
+        content: const Text(
+          'Se cerrará Visitantes. Los registros pendientes de sincronización '
+          'permanecen guardados en el teléfono.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+            child: const Text('Salir de la app'),
+          ),
+        ],
+      ),
+    );
+    if (salir == true) {
+      await SystemNavigator.pop();
+    }
+  }
+
+  Future<void> _confirmAbandonarRegistro() async {
+    if (!_tieneBorrador && !widget.requiereRegistroHogar) {
+      widget.onExitWizard?.call();
+      return;
+    }
+
+    final puedeIrInicio = !widget.requiereRegistroHogar;
+
+    final accion = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Abandonar el registro?'),
+        content: Text(
+          widget.requiereRegistroHogar
+              ? 'Aún no completa el registro de su hogar solidario. '
+                  'Si sale, perderá los datos ingresados en este wizard.'
+              : 'Si sale ahora, perderá los datos ingresados en este wizard.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'continuar'),
+            child: const Text('Continuar registrando'),
+          ),
+          if (puedeIrInicio)
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, 'inicio'),
+              child: const Text('Ir a Inicio'),
+            ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, 'salir'),
+            child: const Text('Salir de la app', style: TextStyle(color: VenezuelaColors.red)),
+          ),
+        ],
+      ),
+    );
+
+    switch (accion) {
+      case 'inicio':
+        widget.onExitWizard?.call();
+      case 'salir':
+        await SystemNavigator.pop();
+      default:
+        break;
+    }
+  }
+
   Future<void> _submit() async {
     if (widget.nucleoYaRegistrado) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -688,10 +791,24 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   Widget _buildStepIndicator() {
     final step = _logicalStep;
+    final pasoAnterior = step > 0 ? _stepTitles[step - 1] : null;
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       mainAxisSize: MainAxisSize.min,
       children: [
+        if (pasoAnterior != null)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 8),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: TextButton.icon(
+                onPressed: _saving ? null : _prevStep,
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: Text('Paso anterior: $pasoAnterior'),
+              ),
+            ),
+          ),
         Text(
           'Paso ${step + 1} de $_totalSteps · ${_stepTitles[step]}',
           style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
@@ -1255,43 +1372,47 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       width: double.infinity,
       child: Row(
         children: [
-          if (_step > 0)
-            OutlinedButton.icon(
-              onPressed: _saving ? null : _prevStep,
+          Expanded(
+            child: OutlinedButton.icon(
+              onPressed: _step > 0 && !_saving ? _prevStep : null,
               icon: const Icon(Icons.arrow_back, size: 18),
-              label: const Text('Anterior'),
-            )
-          else
-            const SizedBox.shrink(),
-          const Spacer(),
-          if (!isLastStep)
-            FilledButton.icon(
-              onPressed: _saving ? null : _nextStep,
-              icon: const Icon(Icons.arrow_forward, size: 18),
-              label: const Text('Siguiente'),
-              style: FilledButton.styleFrom(
-                backgroundColor: VenezuelaColors.blue,
-                minimumSize: const Size(0, 48),
-                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-              ),
-            )
-          else
-            FilledButton.icon(
-              onPressed: _saving ? null : _submit,
-              icon: _saving
-                  ? const SizedBox(
-                      width: 18,
-                      height: 18,
-                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                    )
-                  : const Icon(Icons.check),
-              label: Text(_saving ? 'Guardando…' : 'Guardar registro'),
-              style: FilledButton.styleFrom(
-                backgroundColor: VenezuelaColors.red,
+              label: Text(_step > 0 ? 'Anterior' : 'Paso 1'),
+              style: OutlinedButton.styleFrom(
                 minimumSize: const Size(0, 48),
                 tapTargetSize: MaterialTapTargetSize.shrinkWrap,
               ),
             ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: !isLastStep
+                ? FilledButton.icon(
+                    onPressed: _saving ? null : _nextStep,
+                    icon: const Icon(Icons.arrow_forward, size: 18),
+                    label: const Text('Siguiente'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: VenezuelaColors.blue,
+                      minimumSize: const Size(0, 48),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  )
+                : FilledButton.icon(
+                    onPressed: _saving ? null : _submit,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check),
+                    label: Text(_saving ? 'Guardando…' : 'Guardar registro'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: VenezuelaColors.red,
+                      minimumSize: const Size(0, 48),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                  ),
+          ),
         ],
       ),
     );
@@ -1309,9 +1430,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
+    final content = Material(
       color: Theme.of(context).colorScheme.surface,
       child: SizedBox.expand(child: _buildContent(context)),
+    );
+
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleSystemBack();
+      },
+      child: content,
     );
   }
 

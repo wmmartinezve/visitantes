@@ -1,3 +1,5 @@
+import 'package:visitantes_mobile/core/models/field_models.dart';
+
 class CentroAcopioInfo {
   CentroAcopioInfo({
     required this.id,
@@ -60,7 +62,6 @@ class HogarSolidarioInfo {
     this.direccionExacta,
     this.tieneNucleoFamiliar = false,
     this.invitadosCount = 0,
-    this.activo = false,
   });
 
   final int id;
@@ -68,7 +69,6 @@ class HogarSolidarioInfo {
   final String? direccionExacta;
   final bool tieneNucleoFamiliar;
   final int invitadosCount;
-  final bool activo;
 
   factory HogarSolidarioInfo.fromJson(Map<String, dynamic> json) {
     return HogarSolidarioInfo(
@@ -77,7 +77,6 @@ class HogarSolidarioInfo {
       direccionExacta: json['direccion_exacta'] as String?,
       tieneNucleoFamiliar: json['tiene_nucleo_familiar'] == true,
       invitadosCount: _parseInt(json['invitados_count']) ?? 0,
-      activo: json['activo'] == true,
     );
   }
 
@@ -86,6 +85,97 @@ class HogarSolidarioInfo {
     if (value is int) return value;
     if (value is num) return value.toInt();
     if (value is String && value.isNotEmpty) return int.tryParse(value);
+    return null;
+  }
+}
+
+class HogarSolidarioDetail {
+  HogarSolidarioDetail({
+    required this.id,
+    required this.codigo,
+    this.direccionExacta,
+    this.tipoViviendaLabel,
+    this.tipoAnfitrionLabel,
+    this.parentescoAnfitrion,
+    this.responsableNombre,
+    this.responsableCedula,
+    this.responsableTelefono,
+    this.latitud,
+    this.longitud,
+    this.municipio,
+    this.parroquia,
+    this.comuna,
+    this.tieneNucleoFamiliar = false,
+    this.invitadosCount = 0,
+    this.registradoEl,
+    this.jefeFamiliar,
+    this.invitados = const [],
+  });
+
+  final int id;
+  final String codigo;
+  final String? direccionExacta;
+  final String? tipoViviendaLabel;
+  final String? tipoAnfitrionLabel;
+  final String? parentescoAnfitrion;
+  final String? responsableNombre;
+  final String? responsableCedula;
+  final String? responsableTelefono;
+  final double? latitud;
+  final double? longitud;
+  final String? municipio;
+  final String? parroquia;
+  final String? comuna;
+  final bool tieneNucleoFamiliar;
+  final int invitadosCount;
+  final String? registradoEl;
+  final InvitadoModel? jefeFamiliar;
+  final List<InvitadoModel> invitados;
+
+  String? get ubicacionLabel {
+    final parts = [municipio, parroquia, comuna].whereType<String>().where((s) => s.isNotEmpty).toList();
+    if (parts.isEmpty) return null;
+    return parts.join(' · ');
+  }
+
+  bool get tieneCoordenadas => latitud != null && longitud != null;
+
+  factory HogarSolidarioDetail.fromJson(Map<String, dynamic> json) {
+    InvitadoModel? parseInvitado(dynamic raw) {
+      if (raw is! Map) return null;
+      return InvitadoModel.fromJson(Map<String, dynamic>.from(raw));
+    }
+
+    return HogarSolidarioDetail(
+      id: json['id'] as int,
+      codigo: (json['codigo'] ?? 'Hogar') as String,
+      direccionExacta: json['direccion_exacta'] as String?,
+      tipoViviendaLabel: json['tipo_vivienda_label'] as String?,
+      tipoAnfitrionLabel: json['tipo_anfitrion_label'] as String?,
+      parentescoAnfitrion: json['parentesco_anfitrion'] as String?,
+      responsableNombre: json['responsable_nombre'] as String?,
+      responsableCedula: json['responsable_cedula'] as String?,
+      responsableTelefono: json['responsable_telefono'] as String?,
+      latitud: _parseDouble(json['latitud']),
+      longitud: _parseDouble(json['longitud']),
+      municipio: json['municipio'] as String?,
+      parroquia: json['parroquia'] as String?,
+      comuna: json['comuna'] as String?,
+      tieneNucleoFamiliar: json['tiene_nucleo_familiar'] == true,
+      invitadosCount: HogarSolidarioInfo._parseInt(json['invitados_count']) ?? 0,
+      registradoEl: json['registrado_el'] as String?,
+      jefeFamiliar: parseInvitado(json['jefe_familiar']),
+      invitados: (json['invitados'] as List<dynamic>? ?? [])
+          .map((e) => InvitadoModel.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
+    );
+  }
+
+  static double? _parseDouble(dynamic value) {
+    if (value == null) return null;
+    if (value is double) return value;
+    if (value is num) return value.toDouble();
+    if (value is String && value.isNotEmpty) return double.tryParse(value);
     return null;
   }
 }

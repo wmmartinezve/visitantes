@@ -34,6 +34,11 @@ class MobileInvitadoResource extends JsonResource
             'detail_invitado_id' => $this->jefe_familia_id ?? $this->id,
             'estatus' => $this->estatus?->value,
             'estatus_label' => $this->estatus?->label(),
+            'hogar_solidario_id' => $this->hogar_solidario_id,
+            'hogar_codigo' => $this->whenLoaded(
+                'hogarSolidario',
+                fn () => $this->hogarSolidario?->codigo,
+            ),
             'foto_url' => $this->fotoUrl('api.mobile.invitados.foto'),
             'miembros_familia' => MobileInvitadoMemberResource::collection(
                 $this->whenLoaded('miembrosFamilia'),

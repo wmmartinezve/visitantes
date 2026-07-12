@@ -79,6 +79,21 @@ class FieldApi {
     }
   }
 
+  Future<HogarSolidarioDetail?> fetchHogarDetail(int id) async {
+    if (!await _catalog.isOnline) {
+      return null;
+    }
+
+    try {
+      final response = await _api.dio.get<Map<String, dynamic>>('/hogares/$id');
+      final data = response.data?['data'];
+      if (data is! Map) return null;
+      return HogarSolidarioDetail.fromJson(Map<String, dynamic>.from(data));
+    } catch (_) {
+      return null;
+    }
+  }
+
   Future<HogaresResumen> fetchHogaresResumen() async {
     try {
       final response = await _api.dio.get<Map<String, dynamic>>('/hogares');
@@ -231,6 +246,7 @@ class FieldApi {
       if (invitado.cedula?.toLowerCase().contains(q) ?? false) return true;
       if (invitado.parentesco?.toLowerCase().contains(q) ?? false) return true;
       if (invitado.telefono?.toLowerCase().contains(q) ?? false) return true;
+      if (invitado.hogarCodigo?.toLowerCase().contains(q) ?? false) return true;
 
       return false;
     }).toList();
@@ -267,6 +283,8 @@ class FieldApi {
         'es_jefe_familia': i.esJefeFamilia,
         'parentesco': i.parentesco,
         'detail_invitado_id': i.detailInvitadoId,
+        'hogar_solidario_id': i.hogarSolidarioId,
+        'hogar_codigo': i.hogarCodigo,
       };
 
   Map<String, dynamic> _requerimientoToMap(RequerimientoModel r) => {

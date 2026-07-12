@@ -12,6 +12,8 @@ class InvitadoModel {
     this.esJefeFamilia = true,
     this.parentesco,
     this.detailInvitadoId,
+    this.hogarSolidarioId,
+    this.hogarCodigo,
     this.miembrosFamilia = const [],
     this.requerimientos = const [],
   });
@@ -28,6 +30,8 @@ class InvitadoModel {
   final bool esJefeFamilia;
   final String? parentesco;
   final int? detailInvitadoId;
+  final int? hogarSolidarioId;
+  final String? hogarCodigo;
   final List<InvitadoMemberModel> miembrosFamilia;
   final List<RequerimientoModel> requerimientos;
 
@@ -56,6 +60,8 @@ class InvitadoModel {
       esJefeFamilia: json['es_jefe_familia'] as bool? ?? json['jefe_familia_id'] == null,
       parentesco: json['parentesco'] as String?,
       detailInvitadoId: json['detail_invitado_id'] as int?,
+      hogarSolidarioId: json['hogar_solidario_id'] as int?,
+      hogarCodigo: json['hogar_codigo'] as String?,
       miembrosFamilia: (json['miembros_familia'] as List<dynamic>? ?? [])
           .map((e) => InvitadoMemberModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),

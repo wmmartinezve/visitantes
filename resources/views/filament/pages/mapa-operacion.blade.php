@@ -1,5 +1,6 @@
 <x-filament-panels::page>
     @php($puntos = $this->puntos)
+    @php($resumen = $this->resumen)
 
     @push('styles')
         <link rel="stylesheet" href="{{ asset('vendor/leaflet/leaflet.css') }}" />
@@ -378,11 +379,11 @@
         >
             <span class="inline-flex items-center gap-2">
                 <span class="inline-block h-3 w-3 rounded-full bg-blue-600"></span>
-                Refugios ({{ count($puntos['refugios']) }})
+                Hogares solidarios ({{ $resumen['hogares_solidarios'] }})
             </span>
             <span class="inline-flex items-center gap-2">
                 <span class="inline-block h-3 w-3 rounded-full bg-emerald-600"></span>
-                Centros de acopio ({{ count($puntos['centros']) }})
+                Invitados ({{ $resumen['invitados'] }})
             </span>
             <span class="text-gray-500 dark:text-gray-400">
                 {{ config('visitantes.estado') }}, {{ config('visitantes.pais') }}
@@ -404,7 +405,7 @@
                 wire:ignore
                 class="h-full w-full"
                 role="region"
-                aria-label="Mapa operativo de refugios y centros de acopio"
+                aria-label="Mapa operativo de hogares solidarios y centros de acopio"
             ></div>
         </div>
     </div>

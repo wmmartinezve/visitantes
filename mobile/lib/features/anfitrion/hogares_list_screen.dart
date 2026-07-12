@@ -3,6 +3,7 @@ import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/features/anfitrion/hogar_detail_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
 
@@ -11,17 +12,13 @@ class HogaresListScreen extends StatefulWidget {
     super.key,
     required this.fieldApi,
     required this.sync,
-    required this.hogarActivoId,
     required this.puedeRegistrarOtro,
-    required this.onCambiarHogar,
     required this.onRegistrarOtroHogar,
   });
 
   final FieldApi fieldApi;
   final SyncService sync;
-  final int? hogarActivoId;
   final bool puedeRegistrarOtro;
-  final ValueChanged<int> onCambiarHogar;
   final VoidCallback onRegistrarOtroHogar;
 
   @override
@@ -31,13 +28,11 @@ class HogaresListScreen extends StatefulWidget {
 class _HogaresListScreenState extends State<HogaresListScreen> {
   final _search = TextEditingController();
   List<HogarSolidarioInfo> _hogares = [];
-  int? _hogarActivoId;
   bool _loading = true;
 
   @override
   void initState() {
     super.initState();
-    _hogarActivoId = widget.hogarActivoId;
     widget.sync.addListener(_load);
     _load();
   }
@@ -49,21 +44,12 @@ class _HogaresListScreenState extends State<HogaresListScreen> {
     super.dispose();
   }
 
-  @override
-  void didUpdateWidget(covariant HogaresListScreen oldWidget) {
-    super.didUpdateWidget(oldWidget);
-    if (oldWidget.hogarActivoId != widget.hogarActivoId) {
-      _hogarActivoId = widget.hogarActivoId;
-    }
-  }
-
   Future<void> _load() async {
     setState(() => _loading = true);
     final resumen = await widget.fieldApi.fetchHogaresResumen();
     if (!mounted) return;
     setState(() {
       _hogares = resumen.hogares;
-      _hogarActivoId = resumen.hogarActivoId ?? widget.hogarActivoId;
       _loading = false;
     });
   }
@@ -79,6 +65,20 @@ class _HogaresListScreenState extends State<HogaresListScreen> {
   }
 
   bool get _isSearching => _search.text.trim().isNotEmpty;
+
+  Future<void> _openDetalle(HogarSolidarioInfo hogar) async {
+    await Navigator.of(context).push<void>(
+      MaterialPageRoute<void>(
+        builder: (_) => HogarDetailScreen(
+          hogarId: hogar.id,
+          fieldApi: widget.fieldApi,
+          preview: hogar,
+        ),
+      ),
+    );
+    if (!mounted) return;
+    await _load();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -134,33 +134,23 @@ class _HogaresListScreenState extends State<HogaresListScreen> {
                           itemCount: hogares.length,
                           itemBuilder: (context, index) {
                             final hogar = hogares[index];
-                            final activo = hogar.id == _hogarActivoId || hogar.activo;
                             return Card(
                               margin: const EdgeInsets.only(bottom: 8),
-                              color: activo ? VenezuelaColors.blue.withValues(alpha: 0.08) : null,
                               child: ListTile(
-                                leading: Icon(
-                                  Icons.home_work,
-                                  color: activo ? VenezuelaColors.blue : VenezuelaColors.red,
-                                ),
+                                leading: const Icon(Icons.home_work, color: VenezuelaColors.red),
                                 title: Text(hogar.codigo, style: const TextStyle(fontWeight: FontWeight.w600)),
                                 subtitle: Text(
                                   [
                                     if (hogar.tieneNucleoFamiliar) 'Con núcleo' else 'Sin núcleo',
-                                    '${hogar.invitadosCount} Invitado${hogar.invitadosCount == 1 ? '' : 's'}',
+                                    '${hogar.invitadosCount} Invitado${hogar.invitadosCount == 1 ? '' : 'es'}',
                                     if (hogar.direccionExacta != null && hogar.direccionExacta!.isNotEmpty)
                                       hogar.direccionExacta!,
                                   ].join(' · '),
                                   maxLines: 3,
                                   overflow: TextOverflow.ellipsis,
                                 ),
-                                trailing: activo
-                                    ? const Chip(label: Text('Activo'))
-                                    : TextButton(
-                                        onPressed: () => widget.onCambiarHogar(hogar.id),
-                                        child: const Text('Usar'),
-                                      ),
-                                onTap: activo ? null : () => widget.onCambiarHogar(hogar.id),
+                                trailing: const Icon(Icons.chevron_right),
+                                onTap: () => _openDetalle(hogar),
                               ),
                             );
                           },

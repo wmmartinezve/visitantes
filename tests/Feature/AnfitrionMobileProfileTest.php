@@ -185,6 +185,27 @@ class AnfitrionMobileProfileTest extends TestCase
             ->assertJsonPath('data.hogar_solidario_id', $hogar1->id);
 
         $this->assertSame($hogar1->id, $anfitrion->fresh()->hogar_solidario_id);
+
+        $this->actingAs($anfitrion)
+            ->getJson("/api/mobile/hogares/{$hogar1->id}")
+            ->assertOk()
+            ->assertJsonPath('data.codigo', 'HS-MULTI-001')
+            ->assertJsonPath('data.direccion_exacta', 'Hogar 1')
+            ->assertJsonPath('data.invitados_count', 1)
+            ->assertJsonPath('data.jefe_familiar.nombre_completo', 'Jefe Uno');
+
+        $otro = User::factory()->create(['rol' => UserRole::Anfitrion]);
+
+        $this->actingAs($otro)
+            ->getJson("/api/mobile/hogares/{$hogar1->id}")
+            ->assertForbidden();
+
+        $this->actingAs($anfitrion)
+            ->getJson('/api/mobile/invitados')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('data.0.hogar_codigo', fn ($codigo) => in_array($codigo, ['HS-MULTI-001', 'HS-MULTI-002'], true))
+            ->assertJsonPath('data.1.hogar_codigo', fn ($codigo) => in_array($codigo, ['HS-MULTI-001', 'HS-MULTI-002'], true));
     }
 
     public function test_debe_enviar_datos_hogar_solo_en_primer_hogar_o_nuevo_hogar(): void

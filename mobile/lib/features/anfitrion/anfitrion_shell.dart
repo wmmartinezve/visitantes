@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
@@ -113,24 +114,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
     });
   }
 
-  Future<void> _cambiarHogarActivo(int hogarId) async {
-    try {
-      final user = await widget.auth.setActiveHogar(hogarId);
-      await widget.catalog.ensureCached(force: true);
-      _handleUserUpdated(user);
-      _bumpRefresh();
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Hogar activo actualizado.')),
-      );
-    } catch (_) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('No se pudo cambiar el hogar activo.')),
-      );
-    }
-  }
-
   void _goTo(int index) {
     if (index == _tabRegistrar && _requiereRegistroHogar) {
       setState(() {
@@ -171,6 +154,46 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
     _bumpRefresh();
   }
 
+  void _exitWizardToHome() {
+    setState(() {
+      _registrarNuevoHogar = false;
+      _index = _tabInicio;
+    });
+  }
+
+  Future<void> _confirmSalirApp() async {
+    final salir = await showDialog<bool>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: const Text('¿Salir de la aplicación?'),
+        content: const Text(
+          'Se cerrará Visitantes. Los registros pendientes de sincronización '
+          'permanecen guardados en el teléfono.',
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(ctx, false), child: const Text('Cancelar')),
+          FilledButton(
+            onPressed: () => Navigator.pop(ctx, true),
+            style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+            child: const Text('Salir de la app'),
+          ),
+        ],
+      ),
+    );
+    if (salir == true) {
+      await SystemNavigator.pop();
+    }
+  }
+
+  void _handleShellBack() {
+    if (_showProfile) {
+      _closeProfile();
+      return;
+    }
+    if (_index == _tabRegistrar) return;
+    _confirmSalirApp();
+  }
+
   Future<void> _onRegistered() async {
     await widget.catalog.ensureCached(force: true);
     try {
@@ -193,6 +216,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
       onRegistered: _onRegistered,
       onUserUpdated: _handleUserUpdated,
       onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
+      onExitWizard: _exitWizardToHome,
     );
   }
 
@@ -212,9 +236,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
           key: ValueKey('hogares-$_refreshTick'),
           fieldApi: _fieldApi,
           sync: widget.sync,
-          hogarActivoId: _user.refugioId,
           puedeRegistrarOtro: _user.puedeRegistrarOtroHogar || widget.catalog.puedeRegistrarOtroHogar,
-          onCambiarHogar: _cambiarHogarActivo,
           onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
         ),
       2 => _buildRegisterPage(),
@@ -230,46 +252,60 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   @override
   Widget build(BuildContext context) {
     if (_showProfile) {
-      return AppScaffold(
-        title: 'Mi perfil',
-        subtitle: _user.name,
-        catalog: widget.catalog,
-        sync: widget.sync,
-        onLogout: widget.onLogout,
-        onBack: _closeProfile,
-        body: ProfileScreen(
-          user: _user,
-          auth: widget.auth,
-          onUserUpdated: _handleUserUpdated,
+      return PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          _closeProfile();
+        },
+        child: AppScaffold(
+          title: 'Mi perfil',
+          subtitle: _user.name,
+          catalog: widget.catalog,
+          sync: widget.sync,
+          onLogout: widget.onLogout,
+          onBack: _closeProfile,
+          body: ProfileScreen(
+            user: _user,
+            auth: widget.auth,
+            onUserUpdated: _handleUserUpdated,
+          ),
         ),
       );
     }
 
-    return AppScaffold(
-      title: _user.name,
-      subtitle: _registrarNuevoHogar
-          ? 'Nuevo hogar solidario'
-          : _sinHogar
-              ? 'Registre su primer hogar solidario'
-              : 'Anfitrión',
-      catalog: widget.catalog,
-      sync: widget.sync,
-      onLogout: widget.onLogout,
-      onProfile: _openProfile,
-      onRefreshComplete: _bumpRefresh,
-      body: _buildBody(),
-      bottomNav: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _goTo,
-        destinations: [
-          const NavigationDestination(icon: Icon(Icons.home), label: 'Inicio'),
-          const NavigationDestination(icon: Icon(Icons.home_work), label: 'Hogares'),
-          NavigationDestination(
-            icon: const Icon(Icons.person_add),
-            label: _sinHogar || _registrarNuevoHogar ? 'Registrar núcleo' : 'Registrar',
-          ),
-          const NavigationDestination(icon: Icon(Icons.groups), label: 'Invitados'),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        _handleShellBack();
+      },
+      child: AppScaffold(
+        title: _user.name,
+        subtitle: _registrarNuevoHogar
+            ? 'Nuevo hogar solidario'
+            : _sinHogar
+                ? 'Registre su primer hogar solidario'
+                : 'Anfitrión',
+        catalog: widget.catalog,
+        sync: widget.sync,
+        onLogout: widget.onLogout,
+        onProfile: _openProfile,
+        onRefreshComplete: _bumpRefresh,
+        body: _buildBody(),
+        bottomNav: NavigationBar(
+          selectedIndex: _index,
+          onDestinationSelected: _goTo,
+          destinations: [
+            const NavigationDestination(icon: Icon(Icons.home), label: 'Inicio'),
+            const NavigationDestination(icon: Icon(Icons.home_work), label: 'Hogares'),
+            NavigationDestination(
+              icon: const Icon(Icons.person_add),
+              label: _sinHogar || _registrarNuevoHogar ? 'Registrar núcleo' : 'Registrar',
+            ),
+            const NavigationDestination(icon: Icon(Icons.groups), label: 'Invitados'),
+          ],
+        ),
       ),
     );
   }

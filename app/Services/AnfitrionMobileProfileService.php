@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Http\Resources\MobileInvitadoResource;
 use App\Models\HogarSolidario;
 use App\Models\Invitado;
 use App\Models\User;
@@ -107,6 +108,22 @@ class AnfitrionMobileProfileService
             ->count();
     }
 
+    /** @return \Illuminate\Database\Eloquent\Builder<Invitado> */
+    public function invitadosDelAnfitrionQuery(User $user): \Illuminate\Database\Eloquent\Builder
+    {
+        if (! $user->isAnfitrion()) {
+            return Invitado::query()->whereRaw('0 = 1');
+        }
+
+        return Invitado::query()
+            ->whereIn(
+                'hogar_solidario_id',
+                HogarSolidario::query()
+                    ->where('anfitrion_user_id', $user->id)
+                    ->select('id'),
+            );
+    }
+
     public function hogarPerteneceAlAnfitrion(User $user, int $hogarId): bool
     {
         return HogarSolidario::query()
@@ -153,9 +170,51 @@ class AnfitrionMobileProfileService
                 'direccion_exacta' => $hogar->direccion_exacta,
                 'tiene_nucleo_familiar' => $hogar->tieneNucleoFamiliar(),
                 'invitados_count' => (int) ($hogar->invitados_count ?? $hogar->invitados()->count()),
-                'activo' => $user->hogar_solidario_id === $hogar->id,
             ])
             ->values()
             ->all();
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public function hogarDetalleParaApi(HogarSolidario $hogar): array
+    {
+        $hogar->load([
+            'parroquia.municipio',
+            'comuna',
+            'jefeFamilia.miembrosFamilia',
+            'invitados' => fn ($query) => $query
+                ->orderByRaw('CASE WHEN jefe_familia_id IS NULL THEN 0 ELSE 1 END')
+                ->orderBy('id'),
+        ]);
+
+        $jefe = $hogar->jefeFamilia;
+
+        return [
+            'id' => $hogar->id,
+            'codigo' => $hogar->codigo,
+            'direccion_exacta' => $hogar->direccion_exacta,
+            'tipo_vivienda' => $hogar->tipo_vivienda?->value,
+            'tipo_vivienda_label' => $hogar->tipo_vivienda?->label(),
+            'tipo_anfitrion' => $hogar->tipo_anfitrion?->value,
+            'tipo_anfitrion_label' => $hogar->tipo_anfitrion?->label(),
+            'parentesco_anfitrion' => $hogar->parentesco_anfitrion,
+            'responsable_nombre' => $hogar->responsable_nombre,
+            'responsable_cedula' => $hogar->responsable_cedula,
+            'responsable_telefono' => $hogar->responsable_telefono,
+            'latitud' => $hogar->latitud !== null ? (float) $hogar->latitud : null,
+            'longitud' => $hogar->longitud !== null ? (float) $hogar->longitud : null,
+            'municipio' => $hogar->parroquia?->municipio?->nombre,
+            'parroquia' => $hogar->parroquia?->nombre,
+            'comuna' => $hogar->comuna?->nombre,
+            'tiene_nucleo_familiar' => $hogar->tieneNucleoFamiliar(),
+            'invitados_count' => $hogar->invitados->count(),
+            'registrado_el' => $hogar->created_at?->format('Y-m-d H:i'),
+            'jefe_familiar' => $jefe !== null
+                ? (new MobileInvitadoResource($jefe))->resolve()
+                : null,
+            'invitados' => MobileInvitadoResource::collection($hogar->invitados)->resolve(),
+        ];
     }
 }

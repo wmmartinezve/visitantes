@@ -27,13 +27,14 @@ class MobileInvitadoController extends Controller
         $user = $request->user();
         $busqueda = trim((string) $request->query('q', ''));
 
-        if ($user->hogar_solidario_id === null) {
+        if (! $user->isAnfitrion()) {
             return MobileInvitadoResource::collection(collect());
         }
 
-        $query = Invitado::query()
-            ->with(['jefeFamilia'])
-            ->where('hogar_solidario_id', $user->hogar_solidario_id);
+        $profile = app(AnfitrionMobileProfileService::class);
+
+        $query = $profile->invitadosDelAnfitrionQuery($user)
+            ->with(['jefeFamilia', 'hogarSolidario']);
 
         if ($busqueda !== '') {
             $term = '%'.mb_strtolower($busqueda).'%';

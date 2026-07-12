@@ -154,7 +154,6 @@ class CatalogService extends ChangeNotifier {
               'nombre': h.codigo,
               'direccion_exacta': h.direccionExacta,
               'tiene_nucleo_familiar': h.tieneNucleoFamiliar,
-              'activo': h.activo,
             })
         .toList();
     operador['tiene_nucleo_familiar'] = user.tieneNucleoFamiliar;

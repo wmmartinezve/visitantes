@@ -30,6 +30,25 @@ class MobileHogarController extends Controller
         ]);
     }
 
+    public function show(Request $request, HogarSolidario $hogarSolidario): JsonResponse
+    {
+        $user = $request->user();
+
+        abort_unless($user->isAnfitrion(), 403);
+
+        $profile = app(AnfitrionMobileProfileService::class);
+
+        abort_unless(
+            $profile->hogarPerteneceAlAnfitrion($user, $hogarSolidario->id),
+            403,
+            'El hogar no pertenece a este anfitrión.',
+        );
+
+        return response()->json([
+            'data' => $profile->hogarDetalleParaApi($hogarSolidario),
+        ]);
+    }
+
     public function activar(Request $request): MobileUserResource
     {
         $user = $request->user();

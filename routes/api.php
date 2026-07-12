@@ -25,6 +25,7 @@ Route::prefix('mobile')->name('api.mobile.')->group(function (): void {
         Route::post('/sync', OfflineSyncController::class)->name('sync');
 
         Route::get('/hogares', [MobileHogarController::class, 'index'])->name('hogares.index');
+        Route::get('/hogares/{hogarSolidario}', [MobileHogarController::class, 'show'])->name('hogares.show');
         Route::put('/hogar-activo', [MobileHogarController::class, 'activar'])->name('hogar.activo');
 
         Route::get('/invitados', [MobileInvitadoController::class, 'index'])->name('invitados.index');

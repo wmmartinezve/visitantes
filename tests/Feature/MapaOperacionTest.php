@@ -34,7 +34,10 @@ class MapaOperacionTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin/mapa-operacion')
             ->assertOk()
-            ->assertSee('Refugios')
+            ->assertSee('Hogares solidarios')
+            ->assertSee('Invitados')
+            ->assertDontSee('Refugios (')
+            ->assertDontSee('Centros de acopio (')
             ->assertSee('Filtros territoriales')
             ->assertSee('Municipio')
             ->assertSee('Parroquia')
@@ -97,5 +100,30 @@ class MapaOperacionTest extends TestCase
         $this->assertTrue(collect($puntos['refugios'])->every(
             fn (array $refugio): bool => $refugio['parroquia'] === 'Puerto La Cruz',
         ));
+    }
+
+    public function test_resumen_respeta_filtros_territoriales(): void
+    {
+        $admin = User::factory()->create(['rol' => UserRole::Admin]);
+        $this->actingAs($admin);
+
+        $sinFiltro = Livewire::test(MapaOperacion::class)->instance()->resumen;
+        $totalHogares = $sinFiltro['hogares_solidarios'];
+        $totalInvitados = $sinFiltro['invitados'];
+
+        $this->assertGreaterThan(0, $totalHogares);
+        $this->assertGreaterThan(0, $totalInvitados);
+
+        $municipio = Municipio::query()->where('nombre', 'Simón Bolívar')->firstOrFail();
+
+        $filtrado = Livewire::test(MapaOperacion::class)
+            ->set('data.municipio_id', $municipio->id)
+            ->instance()
+            ->resumen;
+
+        $this->assertLessThanOrEqual($totalHogares, $filtrado['hogares_solidarios']);
+        $this->assertLessThanOrEqual($totalInvitados, $filtrado['invitados']);
+        $this->assertGreaterThan(0, $filtrado['hogares_solidarios']);
+        $this->assertGreaterThan(0, $filtrado['invitados']);
     }
 }
