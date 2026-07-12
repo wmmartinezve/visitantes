@@ -25,6 +25,7 @@ class RegisterGuestScreen extends StatefulWidget {
     required this.fieldApi,
     this.nucleoYaRegistrado = false,
     this.requiereRegistroHogar = false,
+    this.registrarNuevoHogar = false,
     this.onRegistered,
     this.onUserUpdated,
   });
@@ -35,6 +36,7 @@ class RegisterGuestScreen extends StatefulWidget {
   final FieldApi fieldApi;
   final bool nucleoYaRegistrado;
   final bool requiereRegistroHogar;
+  final bool registrarNuevoHogar;
   final VoidCallback? onRegistered;
   final ValueChanged<MobileUser>? onUserUpdated;
 
@@ -52,7 +54,9 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   bool get _sinHogarAsignado =>
       widget.user.debeRegistrarHogar || widget.catalog.requiereRegistroHogar;
 
-  bool get _incluyeHogar => _sinHogarAsignado && !widget.nucleoYaRegistrado;
+  bool get _incluyeHogar =>
+      (_sinHogarAsignado || widget.registrarNuevoHogar) &&
+      !(widget.nucleoYaRegistrado && !widget.registrarNuevoHogar);
 
   // Hogar solidario
   final _hogarDireccion = TextEditingController();
@@ -275,6 +279,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     };
 
     if (_incluyeHogar) {
+      payload['registrar_nuevo_hogar'] = widget.registrarNuevoHogar || _sinHogarAsignado;
       payload['hogar'] = {
         'tipo_vivienda': _tipoVivienda,
         'tipo_anfitrion': _tipoAnfitrion,
@@ -1054,24 +1059,42 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       );
     }
 
-    if (widget.nucleoYaRegistrado && !_sinHogarAsignado) {
+    if (widget.nucleoYaRegistrado && !widget.registrarNuevoHogar) {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Card(
             color: VenezuelaColors.yellow.withValues(alpha: 0.15),
-            child: const Padding(
-              padding: EdgeInsets.all(12),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Icon(Icons.info_outline, color: VenezuelaColors.blue),
-                  SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      'Este hogar solidario ya tiene un núcleo familiar registrado (1 hogar = 1 núcleo). '
-                      'Use la pestaña Invitados para ver el jefe de familia y agregar familiares.',
-                    ),
+                  const Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(Icons.info_outline, color: VenezuelaColors.blue),
+                      SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          'Este hogar solidario ya tiene un núcleo familiar registrado (1 hogar = 1 núcleo). '
+                          'Use la pestaña Invitados para ver el jefe de familia y agregar familiares.',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  FilledButton.icon(
+                    onPressed: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Use Inicio → Registrar otro hogar y núcleo para un nuevo hogar.'),
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.add_home_work),
+                    label: const Text('Registrar otro hogar'),
+                    style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
                   ),
                 ],
               ),

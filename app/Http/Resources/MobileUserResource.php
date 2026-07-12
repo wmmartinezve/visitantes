@@ -46,6 +46,9 @@ class MobileUserResource extends JsonResource
                 'tiene_nucleo_familiar' => $user->hogarSolidario?->tieneNucleoFamiliar() ?? false,
             ]),
             'requiere_registro_hogar' => $profile->requiereRegistroHogar($user),
+            'puede_registrar_otro_hogar' => $profile->puedeRegistrarOtroHogar($user),
+            'hogares_count' => $profile->countHogares($user),
+            'hogares' => $user->isAnfitrion() ? $profile->hogaresParaApi($user) : [],
             'tiene_nucleo_familiar' => $profile->tieneNucleoFamiliar($user),
             'centro_acopio' => $this->whenLoaded('centroAcopio', fn () => new MobileCentroAcopioResource($user->centroAcopio)),
         ];

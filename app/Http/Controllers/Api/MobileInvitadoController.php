@@ -10,6 +10,7 @@ use App\Http\Requests\MobileInvitadoStoreRequest;
 use App\Http\Resources\MobileInvitadoResource;
 use App\Http\Resources\MobileUserResource;
 use App\Models\Invitado;
+use App\Services\AnfitrionMobileProfileService;
 use App\Services\InvitadoRegistrationService;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\WitnessPhotoDecoder;
@@ -71,6 +72,8 @@ class MobileInvitadoController extends Controller
 
         $validated = $request->validated();
         $user = $request->user();
+        $profile = app(AnfitrionMobileProfileService::class);
+        $registrarNuevoHogar = $request->boolean('registrar_nuevo_hogar');
 
         $foto = null;
         if (! empty($validated['foto_base64'])) {
@@ -80,7 +83,9 @@ class MobileInvitadoController extends Controller
             );
         }
 
-        $hogarData = $user->hogar_solidario_id === null ? ($validated['hogar'] ?? null) : null;
+        $hogarData = $profile->debeEnviarDatosHogar($user, $registrarNuevoHogar)
+            ? ($validated['hogar'] ?? null)
+            : null;
 
         $result = $onboarding->register(
             $user,
@@ -111,6 +116,10 @@ class MobileInvitadoController extends Controller
         if ($result['hogar_creado']) {
             $payload['user'] = new MobileUserResource(
                 $result['anfitrion']->load('hogarSolidario'),
+            );
+        } else {
+            $payload['user'] = new MobileUserResource(
+                $result['anfitrion']->fresh(['hogarSolidario']),
             );
         }
 

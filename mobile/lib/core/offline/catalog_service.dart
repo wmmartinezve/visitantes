@@ -73,7 +73,19 @@ class CatalogService extends ChangeNotifier {
 
     final operador = Map<String, dynamic>.from(catalog['operador'] as Map? ?? {});
     operador['hogar_solidario_id'] = user.debeRegistrarHogar ? null : user.refugioId;
-    operador['requiere_registro_hogar'] = user.debeRegistrarHogar;
+    operador['requiere_registro_hogar'] = user.requiereRegistroHogar;
+    operador['puede_registrar_otro_hogar'] = user.puedeRegistrarOtroHogar;
+    operador['hogares_count'] = user.hogaresCount;
+    operador['hogares'] = user.hogares
+        .map((h) => {
+              'id': h.id,
+              'codigo': h.codigo,
+              'nombre': h.codigo,
+              'direccion_exacta': h.direccionExacta,
+              'tiene_nucleo_familiar': h.tieneNucleoFamiliar,
+              'activo': h.activo,
+            })
+        .toList();
     operador['tiene_nucleo_familiar'] = user.tieneNucleoFamiliar;
 
     if (user.debeRegistrarHogar) {
@@ -115,6 +127,21 @@ class CatalogService extends ChangeNotifier {
       return operador['requiere_registro_hogar'] == true;
     }
     return false;
+  }
+
+  bool get puedeRegistrarOtroHogar {
+    final operador = cachedCatalog?['operador'];
+    if (operador is Map) {
+      return operador['puede_registrar_otro_hogar'] == true;
+    }
+    return false;
+  }
+
+  List<Map<String, dynamic>> get hogaresOperador {
+    final operador = cachedCatalog?['operador'];
+    if (operador is! Map) return [];
+    final raw = operador['hogares'] as List<dynamic>? ?? [];
+    return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
   /// Actualiza cantidad de un ítem en la caché local (p. ej. tras editar offline).

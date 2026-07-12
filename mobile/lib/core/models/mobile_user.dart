@@ -53,6 +53,32 @@ class CentroAcopioInfo {
   }
 }
 
+class HogarSolidarioInfo {
+  HogarSolidarioInfo({
+    required this.id,
+    required this.codigo,
+    this.direccionExacta,
+    this.tieneNucleoFamiliar = false,
+    this.activo = false,
+  });
+
+  final int id;
+  final String codigo;
+  final String? direccionExacta;
+  final bool tieneNucleoFamiliar;
+  final bool activo;
+
+  factory HogarSolidarioInfo.fromJson(Map<String, dynamic> json) {
+    return HogarSolidarioInfo(
+      id: json['id'] as int,
+      codigo: (json['codigo'] ?? json['nombre'] ?? 'Hogar') as String,
+      direccionExacta: json['direccion_exacta'] as String?,
+      tieneNucleoFamiliar: json['tiene_nucleo_familiar'] == true,
+      activo: json['activo'] == true,
+    );
+  }
+}
+
 class MobileUser {
   MobileUser({
     required this.id,
@@ -64,9 +90,10 @@ class MobileUser {
     this.refugioNombre,
     this.centroAcopio,
     this.requiereRegistroHogar = false,
+    this.puedeRegistrarOtroHogar = false,
+    this.hogaresCount = 0,
+    this.hogares = const [],
     this.tieneNucleoFamiliar = false,
-    this.hogarVinculadoEn,
-    this.hogarVinculoConocido = false,
   });
 
   final int id;
@@ -78,14 +105,12 @@ class MobileUser {
   final String? refugioNombre;
   final CentroAcopioInfo? centroAcopio;
   final bool requiereRegistroHogar;
+  final bool puedeRegistrarOtroHogar;
+  final int hogaresCount;
+  final List<HogarSolidarioInfo> hogares;
   final bool tieneNucleoFamiliar;
-  final String? hogarVinculadoEn;
-  final bool hogarVinculoConocido;
 
-  /// Hogar pre-asignado sin wizard cuando la API expone `hogar_vinculado_en` nulo.
-  bool get debeRegistrarHogar =>
-      requiereRegistroHogar ||
-      (isAnfitrion && refugioId != null && hogarVinculoConocido && hogarVinculadoEn == null);
+  bool get debeRegistrarHogar => requiereRegistroHogar;
 
   String? get centroNombre => centroAcopio?.nombre;
 
@@ -99,9 +124,10 @@ class MobileUser {
     String? refugioNombre,
     CentroAcopioInfo? centroAcopio,
     bool? requiereRegistroHogar,
+    bool? puedeRegistrarOtroHogar,
+    int? hogaresCount,
+    List<HogarSolidarioInfo>? hogares,
     bool? tieneNucleoFamiliar,
-    String? hogarVinculadoEn,
-    bool? hogarVinculoConocido,
   }) {
     return MobileUser(
       id: id,
@@ -113,9 +139,10 @@ class MobileUser {
       refugioNombre: refugioNombre ?? this.refugioNombre,
       centroAcopio: centroAcopio ?? this.centroAcopio,
       requiereRegistroHogar: requiereRegistroHogar ?? this.requiereRegistroHogar,
+      puedeRegistrarOtroHogar: puedeRegistrarOtroHogar ?? this.puedeRegistrarOtroHogar,
+      hogaresCount: hogaresCount ?? this.hogaresCount,
+      hogares: hogares ?? this.hogares,
       tieneNucleoFamiliar: tieneNucleoFamiliar ?? this.tieneNucleoFamiliar,
-      hogarVinculadoEn: hogarVinculadoEn ?? this.hogarVinculadoEn,
-      hogarVinculoConocido: hogarVinculoConocido ?? this.hogarVinculoConocido,
     );
   }
 
@@ -130,7 +157,7 @@ class MobileUser {
   factory MobileUser.fromJson(Map<String, dynamic> json) {
     final refugio = (json['refugio'] ?? json['hogar_solidario']) as Map<String, dynamic>?;
     final centro = json['centro_acopio'] as Map<String, dynamic>?;
-    final hogarVinculoConocido = json.containsKey('hogar_vinculado_en');
+    final hogaresRaw = json['hogares'] as List<dynamic>? ?? [];
 
     return MobileUser(
       id: json['id'] as int,
@@ -142,10 +169,13 @@ class MobileUser {
       refugioNombre: (refugio?['nombre'] ?? refugio?['codigo']) as String?,
       centroAcopio: centro != null ? CentroAcopioInfo.fromJson(centro) : null,
       requiereRegistroHogar: json['requiere_registro_hogar'] == true,
+      puedeRegistrarOtroHogar: json['puede_registrar_otro_hogar'] == true,
+      hogaresCount: _parseIntId(json['hogares_count']) ?? hogaresRaw.length,
+      hogares: hogaresRaw
+          .map((e) => HogarSolidarioInfo.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList(),
       tieneNucleoFamiliar: json['tiene_nucleo_familiar'] == true
           || refugio?['tiene_nucleo_familiar'] == true,
-      hogarVinculadoEn: json['hogar_vinculado_en'] as String?,
-      hogarVinculoConocido: hogarVinculoConocido,
     );
   }
 }

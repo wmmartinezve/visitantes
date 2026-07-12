@@ -116,4 +116,54 @@ class AnfitrionMobileProfileTest extends TestCase
         $this->assertNull($normalized->hogar_vinculado_en);
         $this->assertTrue(app(AnfitrionMobileProfileService::class)->requiereRegistroHogar($normalized));
     }
+
+    public function test_anfitrion_puede_tener_varios_hogares_y_cambiar_activo(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+
+        $parroquia = Parroquia::query()->firstOrFail();
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'hogar_solidario_id' => null,
+        ]);
+
+        $hogar1 = HogarSolidario::query()->create([
+            'codigo' => 'HS-MULTI-001',
+            'anfitrion_user_id' => $anfitrion->id,
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.0,
+            'longitud' => -64.0,
+            'direccion_exacta' => 'Hogar 1',
+        ]);
+
+        $hogar2 = HogarSolidario::query()->create([
+            'codigo' => 'HS-MULTI-002',
+            'anfitrion_user_id' => $anfitrion->id,
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.1,
+            'longitud' => -64.1,
+            'direccion_exacta' => 'Hogar 2',
+        ]);
+
+        $anfitrion->forceFill(['hogar_solidario_id' => $hogar2->id])->save();
+
+        $profile = app(AnfitrionMobileProfileService::class);
+
+        $this->assertSame(2, $profile->countHogares($anfitrion));
+        $this->assertFalse($profile->requiereRegistroHogar($anfitrion));
+        $this->assertTrue($profile->puedeRegistrarOtroHogar($anfitrion));
+
+        $this->actingAs($anfitrion)
+            ->getJson('/api/mobile/hogares')
+            ->assertOk()
+            ->assertJsonCount(2, 'data')
+            ->assertJsonPath('hogar_activo_id', $hogar2->id);
+
+        $this->actingAs($anfitrion)
+            ->putJson('/api/mobile/hogar-activo', ['hogar_solidario_id' => $hogar1->id])
+            ->assertOk()
+            ->assertJsonPath('data.hogar_solidario_id', $hogar1->id);
+
+        $this->assertSame($hogar1->id, $anfitrion->fresh()->hogar_solidario_id);
+    }
 }

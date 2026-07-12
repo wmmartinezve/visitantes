@@ -46,6 +46,11 @@ class User extends Authenticatable implements FilamentUser
         return $this->belongsTo(HogarSolidario::class);
     }
 
+    public function hogaresCreados(): HasMany
+    {
+        return $this->hasMany(HogarSolidario::class, 'anfitrion_user_id');
+    }
+
     /** @deprecated Use hogarSolidario() */
     public function refugio(): BelongsTo
     {

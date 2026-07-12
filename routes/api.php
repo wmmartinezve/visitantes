@@ -4,6 +4,7 @@ use App\Http\Controllers\Api\MobileAuthController;
 use App\Http\Controllers\Api\MobilePasswordResetController;
 use App\Http\Controllers\Api\MobileProfileController;
 use App\Http\Controllers\InvitadoFotoController;
+use App\Http\Controllers\Api\MobileHogarController;
 use App\Http\Controllers\Api\MobileInvitadoController;
 use App\Http\Controllers\Api\OfflineCatalogController;
 use App\Http\Controllers\Api\OfflineSyncController;
@@ -22,6 +23,9 @@ Route::prefix('mobile')->name('api.mobile.')->group(function (): void {
         Route::put('/profile/password', [MobileProfileController::class, 'updatePassword'])->name('profile.password');
         Route::get('/catalog', OfflineCatalogController::class)->name('catalog');
         Route::post('/sync', OfflineSyncController::class)->name('sync');
+
+        Route::get('/hogares', [MobileHogarController::class, 'index'])->name('hogares.index');
+        Route::put('/hogar-activo', [MobileHogarController::class, 'activar'])->name('hogar.activo');
 
         Route::get('/invitados', [MobileInvitadoController::class, 'index'])->name('invitados.index');
         Route::post('/invitados', [MobileInvitadoController::class, 'store'])->name('invitados.store');

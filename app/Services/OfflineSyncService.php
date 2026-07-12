@@ -12,6 +12,7 @@ use App\Models\Inventario;
 use App\Models\OfflineSyncRecord;
 use App\Models\Requerimiento;
 use App\Models\User;
+use App\Services\AnfitrionMobileProfileService;
 use App\Support\ActivityLogContext;
 use App\Support\HogarSolidarioValidationRules;
 use App\Support\InsumoCatalog;
@@ -166,7 +167,11 @@ class OfflineSyncService
             return (int) $existing->server_id;
         }
 
+        $profile = app(AnfitrionMobileProfileService::class);
+        $registrarNuevoHogar = (bool) ($payload['registrar_nuevo_hogar'] ?? false);
+
         $rules = [
+            'registrar_nuevo_hogar' => ['sometimes', 'boolean'],
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
             'cedula' => ['nullable', 'string', 'max:20'],
@@ -192,7 +197,7 @@ class OfflineSyncService
             'foto_mime' => ['nullable', 'string', 'in:image/jpeg,image/png,image/webp'],
         ];
 
-        if ($user->hogar_solidario_id === null) {
+        if ($profile->debeEnviarDatosHogar($user, $registrarNuevoHogar)) {
             $rules = array_merge($rules, HogarSolidarioValidationRules::forPayload('hogar'));
         }
 
@@ -206,7 +211,9 @@ class OfflineSyncService
             );
         }
 
-        $hogarData = $user->hogar_solidario_id === null ? ($validated['hogar'] ?? null) : null;
+        $hogarData = $profile->debeEnviarDatosHogar($user, $registrarNuevoHogar)
+            ? ($validated['hogar'] ?? null)
+            : null;
 
         $jefe = DB::transaction(function () use ($user, $validated, $foto, $clientId, $hogarData): Invitado {
             $result = $this->nucleoOnboarding->register(

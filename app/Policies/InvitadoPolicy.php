@@ -6,6 +6,7 @@ namespace App\Policies;
 
 use App\Models\Invitado;
 use App\Models\User;
+use App\Services\AnfitrionMobileProfileService;
 
 class InvitadoPolicy
 {
@@ -21,8 +22,7 @@ class InvitadoPolicy
         }
 
         return $user->isAnfitrion()
-            && $user->hogar_solidario_id !== null
-            && $user->hogar_solidario_id === $invitado->hogar_solidario_id;
+            && app(AnfitrionMobileProfileService::class)->hogarPerteneceAlAnfitrion($user, (int) $invitado->hogar_solidario_id);
     }
 
     public function create(User $user): bool
@@ -37,8 +37,7 @@ class InvitadoPolicy
         }
 
         return $user->isAnfitrion()
-            && $user->hogar_solidario_id !== null
-            && $user->hogar_solidario_id === $invitado->hogar_solidario_id;
+            && app(AnfitrionMobileProfileService::class)->hogarPerteneceAlAnfitrion($user, (int) $invitado->hogar_solidario_id);
     }
 
     public function update(User $user, Invitado $invitado): bool

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Requests;
 
 use App\Enums\CondicionInvitado;
+use App\Services\AnfitrionMobileProfileService;
 use App\Support\HogarSolidarioValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 
@@ -22,7 +23,12 @@ class MobileInvitadoStoreRequest extends FormRequest
      */
     public function rules(): array
     {
+        $user = $this->user();
+        $profile = app(AnfitrionMobileProfileService::class);
+        $registrarNuevoHogar = $this->boolean('registrar_nuevo_hogar');
+
         $rules = [
+            'registrar_nuevo_hogar' => ['sometimes', 'boolean'],
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
             'cedula' => ['nullable', 'string', 'max:20'],
@@ -48,7 +54,7 @@ class MobileInvitadoStoreRequest extends FormRequest
             'foto_mime' => ['nullable', 'string', 'in:image/jpeg,image/png,image/webp'],
         ];
 
-        if ($this->user()?->hogar_solidario_id === null) {
+        if ($profile->debeEnviarDatosHogar($user, $registrarNuevoHogar)) {
             $rules = array_merge($rules, HogarSolidarioValidationRules::forPayload('hogar'));
         } elseif ($this->has('hogar')) {
             $rules['hogar'] = ['prohibited'];

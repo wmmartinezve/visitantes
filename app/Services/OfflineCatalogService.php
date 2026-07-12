@@ -91,7 +91,12 @@ class OfflineCatalogService
             'rol' => $user->rol->value,
             'hogar_solidario_id' => $user->hogar_solidario_id,
             'centro_acopio_id' => $user->centro_acopio_id,
-            'requiere_registro_hogar' => $user->isAnfitrion() && $user->hogar_solidario_id === null,
+            'requiere_registro_hogar' => app(AnfitrionMobileProfileService::class)->requiereRegistroHogar($user),
+            'puede_registrar_otro_hogar' => app(AnfitrionMobileProfileService::class)->puedeRegistrarOtroHogar($user),
+            'hogares_count' => app(AnfitrionMobileProfileService::class)->countHogares($user),
+            'hogares' => $user->isAnfitrion()
+                ? app(AnfitrionMobileProfileService::class)->hogaresParaApi($user)
+                : [],
             'tiene_nucleo_familiar' => false,
         ];
 

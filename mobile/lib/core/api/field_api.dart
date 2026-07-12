@@ -112,7 +112,7 @@ class FieldApi {
     await _prependInvitadoToCache(invitado);
 
     MobileUser? updatedUser;
-    if (body?['hogar_creado'] == true && body?['user'] is Map) {
+    if (body?['user'] is Map) {
       updatedUser = MobileUser.fromJson(Map<String, dynamic>.from(body!['user'] as Map));
     }
 

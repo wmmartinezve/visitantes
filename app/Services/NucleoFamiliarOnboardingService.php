@@ -45,14 +45,9 @@ class NucleoFamiliarOnboardingService
 
         return DB::transaction(function () use ($anfitrion, $hogarData, $jefeData, $foto, $familiares): array {
             $hogarCreado = false;
+            $registrarNuevoHogar = $hogarData !== null;
 
-            if ($anfitrion->hogar_solidario_id === null) {
-                if ($hogarData === null) {
-                    throw ValidationException::withMessages([
-                        'hogar' => ['Debe registrar los datos del hogar solidario.'],
-                    ]);
-                }
-
+            if ($registrarNuevoHogar) {
                 $hogar = $this->createHogar($hogarData, $anfitrion);
                 $anfitrion->forceFill([
                     'hogar_solidario_id' => $hogar->id,
@@ -61,13 +56,28 @@ class NucleoFamiliarOnboardingService
                 $anfitrion->refresh();
                 $hogarCreado = true;
             } else {
-                if ($hogarData !== null) {
+                if ($anfitrion->hogar_solidario_id === null) {
                     throw ValidationException::withMessages([
-                        'hogar' => ['Ya tiene un hogar solidario asignado. No envíe datos de hogar.'],
+                        'hogar' => ['Debe registrar los datos del hogar solidario.'],
                     ]);
                 }
 
                 $hogar = HogarSolidario::query()->findOrFail($anfitrion->hogar_solidario_id);
+
+                if ((int) $hogar->anfitrion_user_id !== (int) $anfitrion->id) {
+                    throw ValidationException::withMessages([
+                        'hogar' => ['El hogar activo no pertenece a este anfitrión.'],
+                    ]);
+                }
+
+                if ($hogar->tieneNucleoFamiliar()) {
+                    throw ValidationException::withMessages([
+                        'hogar' => [
+                            'Este hogar ya tiene un núcleo familiar. '
+                            .'Registre un nuevo hogar solidario para otro núcleo.',
+                        ],
+                    ]);
+                }
             }
 
             $anfitrion = $anfitrion->fresh(['hogarSolidario']);
@@ -111,9 +121,7 @@ class NucleoFamiliarOnboardingService
                 }
 
                 if ($anfitrion->hogar_solidario_id !== null && $anfitrion->hogar_solidario_id !== $hogar->id) {
-                    throw ValidationException::withMessages([
-                        'anfitrion_id' => ['El anfitrión ya tiene otro hogar solidario asignado.'],
-                    ]);
+                    // El anfitrión puede tener varios hogares; activar el recién creado.
                 }
 
                 $anfitrion->forceFill([

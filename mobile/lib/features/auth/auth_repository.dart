@@ -115,4 +115,13 @@ class AuthRepository {
 
     return MobileUser.fromJson(userJson);
   }
+
+  Future<MobileUser> setActiveHogar(int hogarSolidarioId) async {
+    final response = await _api.dio.put<Map<String, dynamic>>(
+      '/hogar-activo',
+      data: {'hogar_solidario_id': hogarSolidarioId},
+    );
+    _user = _parseUserResponse(response.data);
+    return _user!;
+  }
 }

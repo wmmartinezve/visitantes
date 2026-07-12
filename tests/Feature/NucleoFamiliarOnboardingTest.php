@@ -186,12 +186,18 @@ class NucleoFamiliarOnboardingTest extends TestCase
         $this->assertSame($parroquia->id, $hogar->parroquia_id);
     }
 
-    public function test_anfitrion_con_hogar_no_puede_enviar_datos_de_hogar(): void
+    public function test_anfitrion_con_hogar_sin_nucleo_no_puede_enviar_datos_de_hogar(): void
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
         $parroquia = \App\Models\Parroquia::query()->firstOrFail();
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'hogar_solidario_id' => null,
+        ]);
+
         $hogar = HogarSolidario::query()->create([
+            'anfitrion_user_id' => $anfitrion->id,
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.21,
             'longitud' => -64.63,
@@ -199,10 +205,7 @@ class NucleoFamiliarOnboardingTest extends TestCase
             'responsable_nombre' => 'Host',
         ]);
 
-        $anfitrion = User::factory()->create([
-            'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $hogar->id,
-        ]);
+        $anfitrion->forceFill(['hogar_solidario_id' => $hogar->id])->save();
 
         $this->limpiarNucleoDeHogar($hogar->id);
 
