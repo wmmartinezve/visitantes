@@ -56,9 +56,14 @@
                         @endforeach
                     </x-m3.select-field>
                 @endif
-                <x-m3.select-field label="Municipio (Anzoátegui)" icon="location_city" wire:model.live="hogar_municipio_id" :error="$errors->first('hogar_municipio_id')">
+                <x-m3.select-field label="Estado" icon="public" wire:model="hogar_estado_id" :error="$errors->first('hogar_estado_id')" disabled>
+                    @foreach ($estadosHogar as $estado)
+                        <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
+                    @endforeach
+                </x-m3.select-field>
+                <x-m3.select-field label="Municipio" icon="location_city" wire:model.live="hogar_municipio_id" :error="$errors->first('hogar_municipio_id')">
                     <option value="">Seleccione…</option>
-                    @foreach ($municipios as $municipio)
+                    @foreach ($municipiosHogar as $municipio)
                         <option value="{{ $municipio->id }}">{{ $municipio->nombre }}</option>
                     @endforeach
                 </x-m3.select-field>

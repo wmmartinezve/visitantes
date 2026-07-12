@@ -11,7 +11,7 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         $this->call(VenezuelaEstadosSeeder::class);
-        $this->call(AnzoateguiGeografiaSeeder::class);
+        $this->call(VenezuelaGeografiaSeeder::class);
 
         if ($this->shouldSeedDemoData()) {
             $this->call(DemoDatabaseSeeder::class);

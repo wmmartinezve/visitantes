@@ -56,6 +56,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   String? _tipoVivienda;
   String _tipoAnfitrion = 'familiar';
   String? _parentescoAnfitrion;
+  int? _hogarEstadoId;
   int? _hogarMunicipioId;
   int? _hogarParroquiaId;
   int? _hogarComunaId;
@@ -97,6 +98,27 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       _familiares[index].dispose();
       _familiares.removeAt(index);
     });
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _initHogarEstado());
+  }
+
+  void _initHogarEstado() {
+    if (_hogarEstadoId != null) {
+      return;
+    }
+
+    for (final estado in _estados) {
+      if (estado['nombre'] == 'Anzoátegui') {
+        if (mounted) {
+          setState(() => _hogarEstadoId = estado['id'] as int?);
+        }
+        break;
+      }
+    }
   }
 
   @override
@@ -425,6 +447,11 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     return raw.map((e) => Map<String, dynamic>.from(e as Map)).toList();
   }
 
+  List<Map<String, dynamic>> get _municipiosHogar {
+    if (_hogarEstadoId == null) return const [];
+    return _municipios.where((m) => m['estado_id'] == _hogarEstadoId).toList();
+  }
+
   List<Map<String, dynamic>> get _municipiosProcedencia {
     if (_procedenciaEstadoId == null) return [];
     return _municipios.where((m) => m['estado_id'] == _procedenciaEstadoId).toList();
@@ -568,14 +595,24 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
               onChanged: (v) => setState(() => _parentescoAnfitrion = v),
             ),
           M3SelectField(
-            label: 'Municipio (Anzoátegui)',
+            label: 'Estado',
+            icon: Icons.public_outlined,
+            value: _hogarEstadoId == null
+                ? null
+                : _estados.firstWhere((e) => e['id'] == _hogarEstadoId)['nombre'] as String?,
+            items: _estados.where((e) => e['nombre'] == 'Anzoátegui').map((e) => e['nombre'] as String).toList(),
+            onChanged: null,
+          ),
+          M3SelectField(
+            label: 'Municipio',
             icon: Icons.location_city_outlined,
             value: _hogarMunicipioId == null
                 ? null
-                : _municipios.firstWhere((e) => e['id'] == _hogarMunicipioId)['nombre'] as String?,
-            items: _municipios.map((e) => e['nombre'] as String).toList(),
+                : _municipiosHogar.firstWhere((e) => e['id'] == _hogarMunicipioId)['nombre'] as String?,
+            items: _municipiosHogar.map((e) => e['nombre'] as String).toList(),
             onChanged: (v) => setState(() {
-              _hogarMunicipioId = v == null ? null : _municipios.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+              _hogarMunicipioId =
+                  v == null ? null : _municipiosHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
               _hogarParroquiaId = null;
               _hogarComunaId = null;
             }),

@@ -8,10 +8,9 @@ use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
 use App\Enums\UserRole;
-use App\Filament\Support\ComunaSelectFields;
+use App\Filament\Support\GeografiaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
 use App\Filament\Support\HogarAnfitrionFields;
-use App\Filament\Support\ProcedenciaSelectFields;
 use App\Models\User;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\InvitadoFotoStorage;
@@ -76,7 +75,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->required()
                                 ->default(TipoViviendaHogar::Casa->value),
                             ...HogarAnfitrionFields::make(),
-                            ...ComunaSelectFields::make(),
+                            ...GeografiaSelectFields::hogar(),
                             ...GeolocalizacionFields::make(),
                         ])
                         ->columns(2),
@@ -133,7 +132,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->required()
                                 ->maxDate(now())
                                 ->native(false),
-                            ...ProcedenciaSelectFields::makeGrouped('jefe_procedencia'),
+                            ...GeografiaSelectFields::procedencia('jefe_procedencia_'),
                             Select::make('jefe_situacion')
                                 ->label('Situación laboral del jefe')
                                 ->options(collect(SituacionJefeFamilia::cases())->mapWithKeys(
@@ -210,17 +209,15 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             'direccion_exacta' => $data['direccion_exacta'],
         ];
 
-        $proc = $data['jefe_procedencia'] ?? [];
-
         $jefeData = [
             'nombre' => $data['jefe_nombre'],
             'apellido' => $data['jefe_apellido'],
             'cedula' => $data['jefe_cedula'] ?? null,
             'telefono' => $data['jefe_telefono'] ?? null,
             'fecha_nacimiento' => $data['jefe_fecha_nacimiento'],
-            'procedencia_estado_id' => $proc['estado_id'] ?? null,
-            'procedencia_municipio_id' => $proc['municipio_id'] ?? null,
-            'procedencia_parroquia_id' => $proc['parroquia_id'] ?? null,
+            'procedencia_estado_id' => $data['jefe_procedencia_estado_id'] ?? null,
+            'procedencia_municipio_id' => $data['jefe_procedencia_municipio_id'] ?? null,
+            'procedencia_parroquia_id' => $data['jefe_procedencia_parroquia_id'] ?? null,
             'situacion_jefe' => $data['jefe_situacion'],
         ];
 
@@ -246,17 +243,13 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
     /** Limpia procedencia incompleta antes del paso del jefe (evita municipio/parroquia huérfanos). */
     private function resetProcedenciaJefe(): void
     {
-        $proc = $this->data['jefe_procedencia'] ?? [];
-
-        if (filled($proc['estado_id'] ?? null)) {
+        if (filled($this->data['jefe_procedencia_estado_id'] ?? null)) {
             return;
         }
 
-        $this->data['jefe_procedencia'] = [
-            'estado_id' => null,
-            'municipio_id' => null,
-            'parroquia_id' => null,
-        ];
+        $this->data['jefe_procedencia_estado_id'] = null;
+        $this->data['jefe_procedencia_municipio_id'] = null;
+        $this->data['jefe_procedencia_parroquia_id'] = null;
     }
 
     private function resolveUploadedFoto(mixed $uploaded): ?\Illuminate\Http\UploadedFile

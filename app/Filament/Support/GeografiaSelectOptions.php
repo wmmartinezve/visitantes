@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Filament\Support;
 
+use App\Models\Comuna;
 use App\Models\Estado;
 use App\Models\Municipio;
 use App\Models\Parroquia;
@@ -11,23 +12,29 @@ use Filament\Forms\Get;
 
 final class GeografiaSelectOptions
 {
-    /** @var array<int|string, string>|null */
-    private static ?array $estadosCache = null;
+    /** @var array<string, array<int|string, string>> */
+    private static array $estadosCache = [];
 
     /** @return array<int|string, string> */
-    public static function estados(): array
+    public static function estados(?string $scope = 'all'): array
     {
-        if (self::$estadosCache !== null) {
-            return self::$estadosCache;
+        $cacheKey = $scope ?? 'all';
+
+        if (isset(self::$estadosCache[$cacheKey])) {
+            return self::$estadosCache[$cacheKey];
         }
 
-        self::$estadosCache = Estado::query()
-            ->orderBy('nombre')
+        $query = Estado::query()->orderBy('nombre');
+
+        if ($scope === 'anzoategui') {
+            $query->where('nombre', 'Anzoátegui');
+        }
+
+        self::$estadosCache[$cacheKey] = $query
             ->pluck('nombre', 'id')
-            ->mapWithKeys(fn (string $nombre, int|string $id): array => [(string) $id => $nombre])
             ->all();
 
-        return self::$estadosCache;
+        return self::$estadosCache[$cacheKey];
     }
 
     /**
@@ -45,7 +52,6 @@ final class GeografiaSelectOptions
             ->where('estado_id', $estadoId)
             ->orderBy('nombre')
             ->pluck('nombre', 'id')
-            ->mapWithKeys(fn (string $nombre, int|string $id): array => [(string) $id => $nombre])
             ->all();
     }
 
@@ -64,7 +70,24 @@ final class GeografiaSelectOptions
             ->where('municipio_id', $municipioId)
             ->orderBy('nombre')
             ->pluck('nombre', 'id')
-            ->mapWithKeys(fn (string $nombre, int|string $id): array => [(string) $id => $nombre])
+            ->all();
+    }
+
+    /**
+     * @return array<int|string, string>
+     */
+    public static function comunas(Get $get, string $parroquiaField): array
+    {
+        $parroquiaId = $get($parroquiaField);
+
+        if (! filled($parroquiaId)) {
+            return [];
+        }
+
+        return Comuna::query()
+            ->where('parroquia_id', $parroquiaId)
+            ->orderBy('nombre')
+            ->pluck('nombre', 'id')
             ->all();
     }
 }

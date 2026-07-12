@@ -33,6 +33,8 @@ class RegistrarInvitado extends Component
 
     public ?string $hogar_parentesco_anfitrion = null;
 
+    public ?int $hogar_estado_id = null;
+
     public ?int $hogar_municipio_id = null;
 
     public ?int $hogar_parroquia_id = null;
@@ -87,6 +89,8 @@ class RegistrarInvitado extends Component
             session()->flash('info', 'Este hogar solidario ya tiene un núcleo familiar registrado.');
             $this->redirectRoute('anfitrion.invitados', navigate: true);
         }
+
+        $this->hogar_estado_id = Estado::query()->where('nombre', 'Anzoátegui')->value('id');
     }
 
     public function getRequiereRegistroHogarProperty(): bool
@@ -135,6 +139,13 @@ class RegistrarInvitado extends Component
     public function quitarFoto(): void
     {
         $this->foto = null;
+    }
+
+    public function updatedHogarEstadoId(): void
+    {
+        $this->hogar_municipio_id = null;
+        $this->hogar_parroquia_id = null;
+        $this->hogar_comuna_id = null;
     }
 
     public function updatedHogarMunicipioId(): void
@@ -305,7 +316,10 @@ class RegistrarInvitado extends Component
         return view('livewire.anfitrion.registrar-invitado', [
             'refugio' => $user->refugio,
             'estados' => Estado::query()->orderBy('nombre')->get(['id', 'nombre']),
-            'municipios' => Municipio::query()->orderBy('nombre')->get(['id', 'nombre', 'estado_id']),
+            'estadosHogar' => Estado::query()->where('nombre', 'Anzoátegui')->orderBy('nombre')->get(['id', 'nombre']),
+            'municipiosHogar' => $this->hogar_estado_id
+                ? Municipio::query()->where('estado_id', $this->hogar_estado_id)->orderBy('nombre')->get(['id', 'nombre'])
+                : collect(),
             'parroquias' => Parroquia::query()->orderBy('nombre')->get(['id', 'nombre', 'municipio_id']),
             'comunas' => Comuna::query()->orderBy('nombre')->get(['id', 'nombre', 'parroquia_id']),
             'tiposVivienda' => TipoViviendaHogar::cases(),
