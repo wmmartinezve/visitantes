@@ -104,9 +104,18 @@ municipios ──< parroquias ──< comunas ──< hogares_solidarios ──<
 
 **Regla 1:1:** cada `hogar_solidario` acoge **un único núcleo familiar** (exactamente un jefe de familia + sus familiares vinculados).
 
-**Regla multi-hogar:** un anfitrión puede crear **varios** `hogares_solidarios` (`anfitrion_user_id`). `users.hogar_solidario_id` = hogar **activo** (scope de Invitados y wizard). Si el activo ya tiene núcleo, debe registrar **otro hogar** antes de un nuevo núcleo.
+**Regla multi-hogar (1:N, hogares independientes):**
+- Un anfitrión puede crear **varios** `hogares_solidarios` vía `anfitrion_user_id`.
+- **No existe relación entre hogares** (sin FK hogar→hogar, sin herencia de datos).
+- Cada hogar nuevo es un registro nuevo: código, ubicación y núcleo propios.
+- `users.hogar_solidario_id` = hogar **activo en la app** (puntero operativo para Invitados/requerimientos). Al guardar un hogar nuevo, solo cambia ese puntero; el hogar anterior sigue intacto.
+- Si el hogar activo ya tiene núcleo, debe registrarse **otro hogar** (independiente) antes de un nuevo núcleo.
 
-users (rol: anfitrion) → hogar_solidario_id (activo) + hogares_solidarios.anfitrion_user_id (todos los suyos)
+```
+users (anfitrión) ──1:N──> hogares_solidarios (anfitrion_user_id)
+users.hogar_solidario_id ──> hogar activo (operación en campo)
+hogares_solidarios (sin enlaces entre sí)
+```
 ```
 
 ### 4.2 Tablas y reglas de negocio

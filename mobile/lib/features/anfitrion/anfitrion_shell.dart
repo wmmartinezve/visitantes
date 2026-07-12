@@ -247,9 +247,11 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
     return AppScaffold(
       title: _user.name,
-      subtitle: _sinHogar
-          ? 'Registre su primer hogar solidario'
-          : 'Hogar activo: $_hogarEtiqueta',
+      subtitle: _registrarNuevoHogar
+          ? 'Nuevo hogar solidario (independiente)'
+          : _sinHogar
+              ? 'Registre su primer hogar solidario'
+              : 'Hogar activo: $_hogarEtiqueta',
       catalog: widget.catalog,
       sync: widget.sync,
       onLogout: widget.onLogout,

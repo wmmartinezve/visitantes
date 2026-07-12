@@ -1203,11 +1203,12 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           Card(
             color: VenezuelaColors.blue.withValues(alpha: 0.1),
             margin: EdgeInsets.zero,
-            child: Padding(
-              padding: const EdgeInsets.all(10),
+            child: const Padding(
+              padding: EdgeInsets.all(10),
               child: Text(
-                'Registrando un nuevo hogar solidario. '
-                'El hogar activo (${widget.user.refugioNombre ?? 'actual'}) se mantiene hasta guardar.',
+                'Está creando un hogar solidario nuevo e independiente. '
+                'Tendrá su propio código, dirección y núcleo familiar. '
+                'No comparte datos con otros hogares del anfitrión.',
               ),
             ),
           ),

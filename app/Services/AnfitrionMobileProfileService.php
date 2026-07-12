@@ -9,8 +9,12 @@ use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
 /**
- * Perfil móvil del anfitrión: puede gestionar varios hogares (1 hogar = 1 núcleo).
- * users.hogar_solidario_id = hogar activo para operaciones en campo.
+ * Perfil móvil del anfitrión.
+ *
+ * Modelo 1:N — anfitrión → hogares solidarios (sin relación entre hogares):
+ * - Cada fila en `hogares_solidarios` es independiente (código, dirección, núcleo propios).
+ * - `anfitrion_user_id` es la única vinculación de propiedad anfitrión ↔ hogar.
+ * - `users.hogar_solidario_id` es solo el hogar **activo en la app** (puntero operativo), no une hogares entre sí.
  */
 class AnfitrionMobileProfileService
 {

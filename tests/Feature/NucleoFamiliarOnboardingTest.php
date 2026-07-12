@@ -225,4 +225,83 @@ class NucleoFamiliarOnboardingTest extends TestCase
             'condicion' => $procedencia['condicion'],
         ])->assertUnprocessable();
     }
+
+    public function test_segundo_hogar_es_independiente_del_primero(): void
+    {
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'hogar_solidario_id' => null,
+        ]);
+
+        $comuna = Comuna::query()->first();
+        if ($comuna === null) {
+            $parroquia = \App\Models\Parroquia::query()->firstOrFail();
+            $comuna = Comuna::query()->create([
+                'parroquia_id' => $parroquia->id,
+                'nombre' => 'Comuna demo test 2',
+            ]);
+        }
+        $procedencia = $this->procedenciaDemo();
+
+        Sanctum::actingAs($anfitrion);
+
+        $this->postJson('/api/mobile/invitados', [
+            'hogar' => [
+                'tipo_vivienda' => 'casa',
+                'tipo_anfitrion' => 'familiar',
+                'parentesco_anfitrion' => 'Padre/Madre',
+                'parroquia_id' => $comuna->parroquia_id,
+                'responsable_nombre' => 'Ana Anfitriona',
+                'direccion_exacta' => 'Hogar uno',
+                'latitud' => 10.1,
+                'longitud' => -64.1,
+            ],
+            'nombre' => 'Jefe',
+            'apellido' => 'Uno',
+            'fecha_nacimiento' => '1985-05-15',
+            'procedencia_estado_id' => $procedencia['procedencia_estado_id'],
+            'procedencia_municipio_id' => $procedencia['procedencia_municipio_id'],
+            'procedencia_parroquia_id' => $procedencia['procedencia_parroquia_id'],
+            'situacion_jefe' => $procedencia['situacion_jefe'],
+            'condicion' => $procedencia['condicion'],
+        ])->assertCreated();
+
+        $hogar1 = HogarSolidario::query()->findOrFail($anfitrion->fresh()->hogar_solidario_id);
+        $jefe1Id = Invitado::query()->where('hogar_solidario_id', $hogar1->id)->whereNull('jefe_familia_id')->value('id');
+
+        $parroquia2 = \App\Models\Parroquia::query()->where('id', '!=', $comuna->parroquia_id)->firstOrFail();
+
+        $this->postJson('/api/mobile/invitados', [
+            'registrar_nuevo_hogar' => true,
+            'hogar' => [
+                'tipo_vivienda' => 'casa',
+                'tipo_anfitrion' => 'amigo',
+                'parroquia_id' => $parroquia2->id,
+                'responsable_nombre' => 'Ana Anfitriona',
+                'direccion_exacta' => 'Hogar dos independiente',
+                'latitud' => 10.2,
+                'longitud' => -64.2,
+            ],
+            'nombre' => 'Jefe',
+            'apellido' => 'Dos',
+            'fecha_nacimiento' => '1990-01-01',
+            'procedencia_estado_id' => $procedencia['procedencia_estado_id'],
+            'procedencia_municipio_id' => $procedencia['procedencia_municipio_id'],
+            'procedencia_parroquia_id' => $procedencia['procedencia_parroquia_id'],
+            'situacion_jefe' => $procedencia['situacion_jefe'],
+            'condicion' => $procedencia['condicion'],
+        ])->assertCreated()
+            ->assertJsonPath('hogar_creado', true);
+
+        $hogar2 = HogarSolidario::query()->findOrFail($anfitrion->fresh()->hogar_solidario_id);
+
+        $this->assertNotSame($hogar1->id, $hogar2->id);
+        $this->assertNotSame($hogar1->codigo, $hogar2->codigo);
+        $this->assertSame('Hogar uno', HogarSolidario::query()->findOrFail($hogar1->id)->direccion_exacta);
+        $this->assertSame('Hogar dos independiente', $hogar2->direccion_exacta);
+        $this->assertSame($anfitrion->id, $hogar1->anfitrion_user_id);
+        $this->assertSame($anfitrion->id, $hogar2->anfitrion_user_id);
+        $this->assertSame(2, HogarSolidario::query()->where('anfitrion_user_id', $anfitrion->id)->count());
+        $this->assertSame($jefe1Id, Invitado::query()->where('hogar_solidario_id', $hogar1->id)->whereNull('jefe_familia_id')->value('id'));
+    }
 }

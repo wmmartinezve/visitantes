@@ -17,6 +17,7 @@ class HogarSolidario extends Model
 {
     use SoftDeletes;
 
+    /** Cada hogar es independiente; la única relación de propiedad es `anfitrion_user_id` → users. */
     protected $table = 'hogares_solidarios';
 
     protected $fillable = [
