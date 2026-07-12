@@ -79,6 +79,34 @@ class FieldApi {
     }
   }
 
+  Future<HogaresResumen> fetchHogaresResumen() async {
+    try {
+      final response = await _api.dio.get<Map<String, dynamic>>('/hogares');
+      final data = response.data ?? {};
+      final raw = data['data'] as List<dynamic>? ?? [];
+      final hogares = raw
+          .map((e) => HogarSolidarioInfo.fromJson(Map<String, dynamic>.from(e as Map)))
+          .toList();
+
+      int? parseInt(dynamic value) {
+        if (value == null) return null;
+        if (value is int) return value;
+        if (value is num) return value.toInt();
+        if (value is String && value.isNotEmpty) return int.tryParse(value);
+        return null;
+      }
+
+      return HogaresResumen(
+        hogares: hogares,
+        hogaresCount: parseInt(data['hogares_count']) ?? hogares.length,
+        invitadosCount: parseInt(data['invitados_count']) ?? 0,
+        hogarActivoId: parseInt(data['hogar_activo_id']),
+      );
+    } catch (_) {
+      return const HogaresResumen(hogares: [], hogaresCount: 0, invitadosCount: 0);
+    }
+  }
+
   Future<List<RequerimientoModel>> fetchEntregas() async {
     if (!await _catalog.isOnline) {
       return _cachedEntregas();
@@ -275,4 +303,18 @@ class RegisterInvitadoResult {
 
   final InvitadoModel invitado;
   final MobileUser? updatedUser;
+}
+
+class HogaresResumen {
+  const HogaresResumen({
+    required this.hogares,
+    required this.hogaresCount,
+    required this.invitadosCount,
+    this.hogarActivoId,
+  });
+
+  final List<HogarSolidarioInfo> hogares;
+  final int hogaresCount;
+  final int invitadosCount;
+  final int? hogarActivoId;
 }

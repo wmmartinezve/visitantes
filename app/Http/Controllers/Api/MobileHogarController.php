@@ -26,6 +26,7 @@ class MobileHogarController extends Controller
             'data' => $profile->hogaresParaApi($user),
             'hogar_activo_id' => $user->hogar_solidario_id,
             'hogares_count' => $profile->countHogares($user),
+            'invitados_count' => $profile->countInvitadosDelAnfitrion($user),
         ]);
     }
 

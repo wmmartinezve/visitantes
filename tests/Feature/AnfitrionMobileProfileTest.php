@@ -153,11 +153,31 @@ class AnfitrionMobileProfileTest extends TestCase
         $this->assertFalse($profile->requiereRegistroHogar($anfitrion));
         $this->assertTrue($profile->puedeRegistrarOtroHogar($anfitrion));
 
+        Invitado::query()->create([
+            'nombre' => 'Jefe',
+            'apellido' => 'Uno',
+            'fecha_nacimiento' => '1990-01-01',
+            'hogar_solidario_id' => $hogar1->id,
+            'estatus' => 'activo',
+        ]);
+
+        Invitado::query()->create([
+            'nombre' => 'Jefe',
+            'apellido' => 'Dos',
+            'fecha_nacimiento' => '1991-01-01',
+            'hogar_solidario_id' => $hogar2->id,
+            'estatus' => 'activo',
+        ]);
+
         $this->actingAs($anfitrion)
             ->getJson('/api/mobile/hogares')
             ->assertOk()
             ->assertJsonCount(2, 'data')
-            ->assertJsonPath('hogar_activo_id', $hogar2->id);
+            ->assertJsonPath('hogar_activo_id', $hogar2->id)
+            ->assertJsonPath('hogares_count', 2)
+            ->assertJsonPath('invitados_count', 2)
+            ->assertJsonPath('data.0.invitados_count', 1)
+            ->assertJsonPath('data.1.invitados_count', 1);
 
         $this->actingAs($anfitrion)
             ->putJson('/api/mobile/hogar-activo', ['hogar_solidario_id' => $hogar1->id])

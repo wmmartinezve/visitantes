@@ -59,6 +59,7 @@ class HogarSolidarioInfo {
     required this.codigo,
     this.direccionExacta,
     this.tieneNucleoFamiliar = false,
+    this.invitadosCount = 0,
     this.activo = false,
   });
 
@@ -66,6 +67,7 @@ class HogarSolidarioInfo {
   final String codigo;
   final String? direccionExacta;
   final bool tieneNucleoFamiliar;
+  final int invitadosCount;
   final bool activo;
 
   factory HogarSolidarioInfo.fromJson(Map<String, dynamic> json) {
@@ -74,8 +76,17 @@ class HogarSolidarioInfo {
       codigo: (json['codigo'] ?? json['nombre'] ?? 'Hogar') as String,
       direccionExacta: json['direccion_exacta'] as String?,
       tieneNucleoFamiliar: json['tiene_nucleo_familiar'] == true,
+      invitadosCount: _parseInt(json['invitados_count']) ?? 0,
       activo: json['activo'] == true,
     );
+  }
+
+  static int? _parseInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String && value.isNotEmpty) return int.tryParse(value);
+    return null;
   }
 }
 

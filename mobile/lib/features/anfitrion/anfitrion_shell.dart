@@ -217,18 +217,20 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
     }
 
     final pages = [
-      _HomeTab(
-        sync: widget.sync,
-        hogarEtiqueta: _hogarEtiqueta,
-        sinHogar: _sinHogar,
-        hogares: _hogares,
-        hogarActivoId: _user.refugioId,
-        puedeRegistrarOtro: _user.puedeRegistrarOtroHogar || widget.catalog.puedeRegistrarOtroHogar,
-        onNavigate: _goTo,
-        onSync: _syncFromHome,
-        onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
-        onCambiarHogar: _cambiarHogarActivo,
-      ),
+          _HomeTab(
+            key: ValueKey('home-$_refreshTick'),
+            fieldApi: _fieldApi,
+            sync: widget.sync,
+            sinHogar: _sinHogar,
+            hogaresFallback: _hogares,
+            hogarActivoId: _user.refugioId,
+            hogaresCountFallback: _user.hogaresCount,
+            puedeRegistrarOtro: _user.puedeRegistrarOtroHogar || widget.catalog.puedeRegistrarOtroHogar,
+            onNavigate: _goTo,
+            onSync: _syncFromHome,
+            onRegistrarOtroHogar: _iniciarRegistroOtroHogar,
+            onCambiarHogar: _cambiarHogarActivo,
+          ),
       RegisterGuestScreen(
         key: ValueKey('register-wizard-$_registerWizardKey'),
         user: _user,
@@ -274,13 +276,15 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   }
 }
 
-class _HomeTab extends StatelessWidget {
+class _HomeTab extends StatefulWidget {
   const _HomeTab({
-    required this.hogarEtiqueta,
+    super.key,
+    required this.fieldApi,
     required this.sync,
     required this.sinHogar,
-    required this.hogares,
+    required this.hogaresFallback,
     required this.hogarActivoId,
+    required this.hogaresCountFallback,
     required this.puedeRegistrarOtro,
     required this.onNavigate,
     required this.onSync,
@@ -288,11 +292,12 @@ class _HomeTab extends StatelessWidget {
     required this.onCambiarHogar,
   });
 
-  final String hogarEtiqueta;
+  final FieldApi fieldApi;
   final SyncService sync;
   final bool sinHogar;
-  final List<HogarSolidarioInfo> hogares;
+  final List<HogarSolidarioInfo> hogaresFallback;
   final int? hogarActivoId;
+  final int hogaresCountFallback;
   final bool puedeRegistrarOtro;
   final ValueChanged<int> onNavigate;
   final Future<void> Function() onSync;
@@ -300,133 +305,184 @@ class _HomeTab extends StatelessWidget {
   final ValueChanged<int> onCambiarHogar;
 
   @override
+  State<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends State<_HomeTab> {
+  HogaresResumen? _resumen;
+  bool _loading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadResumen();
+  }
+
+  Future<void> _loadResumen() async {
+    setState(() => _loading = true);
+    final resumen = await widget.fieldApi.fetchHogaresResumen();
+    if (!mounted) return;
+    setState(() {
+      _resumen = resumen;
+      _loading = false;
+    });
+  }
+
+  Future<void> _refresh() async {
+    await widget.onSync();
+    await _loadResumen();
+  }
+
+  List<HogarSolidarioInfo> get _hogares {
+    if (_resumen != null && _resumen!.hogares.isNotEmpty) {
+      return _resumen!.hogares;
+    }
+    return widget.hogaresFallback;
+  }
+
+  int get _hogaresCount => _resumen?.hogaresCount ?? widget.hogaresCountFallback;
+
+  int get _invitadosCount => _resumen?.invitadosCount ?? 0;
+
+  int? get _hogarActivoId => _resumen?.hogarActivoId ?? widget.hogarActivoId;
+
+  @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: sync,
+      listenable: widget.sync,
       builder: (context, _) {
-        final pending = sync.pendingCount;
+        final pending = widget.sync.pendingCount;
 
-        return ListView(
-          padding: const EdgeInsets.all(16),
-          children: [
-            if (sinHogar) ...[
-              Card(
-                color: VenezuelaColors.red.withValues(alpha: 0.08),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      Row(
-                        children: [
-                          Icon(Icons.home_work_outlined, color: VenezuelaColors.red, size: 28),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              'Registre su primer hogar solidario y núcleo familiar',
-                              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        return RefreshIndicator(
+          onRefresh: _refresh,
+          color: VenezuelaColors.blue,
+          child: ListView(
+            padding: const EdgeInsets.all(16),
+            physics: const AlwaysScrollableScrollPhysics(),
+            children: [
+              if (widget.sinHogar) ...[
+                Card(
+                  color: VenezuelaColors.red.withValues(alpha: 0.08),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(Icons.home_work_outlined, color: VenezuelaColors.red, size: 28),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                'Registre su primer hogar solidario y núcleo familiar',
+                                style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                              ),
                             ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Complete el wizard de 4 pasos: hogar → jefe de familia → familiares → foto.',
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton.icon(
-                        onPressed: () => onNavigate(1),
-                        icon: const Icon(Icons.edit_road),
-                        label: const Text('Iniciar registro'),
-                        style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-                      ),
-                    ],
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                        const Text(
+                          'Complete el wizard de 4 pasos: hogar → jefe de familia → familiares → foto.',
+                        ),
+                        const SizedBox(height: 12),
+                        FilledButton.icon(
+                          onPressed: () => widget.onNavigate(1),
+                          icon: const Icon(Icons.edit_road),
+                          label: const Text('Iniciar registro'),
+                          style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-              ),
-              const SizedBox(height: 12),
-            ],
-            if (!sinHogar && hogares.length > 1) ...[
-              SectionHeader(title: 'Mis hogares solidarios (${hogares.length})'),
-              ...hogares.map((hogar) {
-                final activo = hogar.id == hogarActivoId || hogar.activo;
-                return Card(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  color: activo ? VenezuelaColors.blue.withValues(alpha: 0.08) : null,
-                  child: ListTile(
-                    leading: Icon(
-                      Icons.home_work,
-                      color: activo ? VenezuelaColors.blue : VenezuelaColors.red,
-                    ),
-                    title: Text(hogar.codigo, style: const TextStyle(fontWeight: FontWeight.w600)),
-                    subtitle: Text(
-                      hogar.tieneNucleoFamiliar ? 'Con núcleo registrado' : 'Sin núcleo',
-                    ),
-                    trailing: activo
-                        ? const Chip(label: Text('Activo'))
-                        : TextButton(
-                            onPressed: () => onCambiarHogar(hogar.id),
-                            child: const Text('Usar'),
-                          ),
-                    onTap: activo ? null : () => onCambiarHogar(hogar.id),
-                  ),
-                );
-              }),
-              const SizedBox(height: 12),
-            ],
-            StatCard(
-              icon: Icons.home_work,
-              title: sinHogar ? 'Hogar solidario pendiente' : 'Hogar solidario activo',
-              value: hogarEtiqueta,
-              subtitle: sinHogar
-                  ? 'Registre hogar y núcleo familiar en la pestaña Registrar núcleo'
-                  : (puedeRegistrarOtro ? 'Puede registrar más hogares con su núcleo' : null),
-              accent: sinHogar ? VenezuelaColors.red : VenezuelaColors.blue,
-            ),
-            if (puedeRegistrarOtro) ...[
-              const SizedBox(height: 10),
-              FilledButton.icon(
-                onPressed: onRegistrarOtroHogar,
-                icon: const Icon(Icons.add_home_work),
-                label: const Text('Registrar otro hogar y núcleo'),
-                style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-              ),
-            ],
-            const SizedBox(height: 10),
-            StatCard(
-              icon: Icons.cloud_sync,
-              title: 'Registros pendientes de sync',
-              value: '$pending',
-              subtitle: pending == 0 ? 'Todo sincronizado' : 'En cola local',
-              accent: pending > 0 ? VenezuelaColors.red : VenezuelaColors.blue,
-            ),
-            const SizedBox(height: 20),
-            SectionHeader(
-              title: 'Cola de sincronización',
-              action: IconButton(
-                onPressed: onSync,
-                tooltip: 'Sincronizar ahora',
-                icon: const Icon(Icons.sync, color: VenezuelaColors.blue),
-              ),
-            ),
-            PendingQueuePanel(sync: sync, onSync: onSync),
-            const SizedBox(height: 20),
-            const SectionHeader(title: 'Acciones rápidas'),
-            Row(
-              children: [
-                Expanded(
-                  child: QuickActionTile(
-                    icon: Icons.person_add,
-                    label: sinHogar ? 'Registrar núcleo' : (puedeRegistrarOtro ? 'Nuevo hogar' : 'Registrar Invitado'),
-                    color: VenezuelaColors.red,
-                    onTap: () => puedeRegistrarOtro && !sinHogar ? onRegistrarOtroHogar() : onNavigate(1),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(child: QuickActionTile(icon: Icons.groups, label: 'Ver Invitados', color: VenezuelaColors.blue, onTap: () => onNavigate(2))),
+                const SizedBox(height: 12),
               ],
-            ),
-          ],
+              Row(
+                children: [
+                  Expanded(
+                    child: StatCard(
+                      icon: Icons.home_work,
+                      title: 'Hogares registrados',
+                      value: _loading ? '…' : '$_hogaresCount',
+                      accent: VenezuelaColors.blue,
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: StatCard(
+                      icon: Icons.groups,
+                      title: 'Invitados',
+                      value: _loading ? '…' : '$_invitadosCount',
+                      accent: VenezuelaColors.red,
+                      onTap: () => widget.onNavigate(2),
+                    ),
+                  ),
+                ],
+              ),
+              if (!widget.sinHogar && _hogares.isNotEmpty) ...[
+                const SizedBox(height: 20),
+                SectionHeader(title: 'Hogares registrados (${_hogares.length})'),
+                ..._hogares.map((hogar) {
+                  final activo = hogar.id == _hogarActivoId || hogar.activo;
+                  return Card(
+                    margin: const EdgeInsets.only(bottom: 8),
+                    color: activo ? VenezuelaColors.blue.withValues(alpha: 0.08) : null,
+                    child: ListTile(
+                      leading: Icon(
+                        Icons.home_work,
+                        color: activo ? VenezuelaColors.blue : VenezuelaColors.red,
+                      ),
+                      title: Text(hogar.codigo, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      subtitle: Text(
+                        [
+                          if (hogar.tieneNucleoFamiliar) 'Con núcleo' else 'Sin núcleo',
+                          '${hogar.invitadosCount} Invitado${hogar.invitadosCount == 1 ? '' : 's'}',
+                          if (hogar.direccionExacta != null && hogar.direccionExacta!.isNotEmpty)
+                            hogar.direccionExacta!,
+                        ].join(' · '),
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      trailing: activo
+                          ? const Chip(label: Text('Activo'))
+                          : TextButton(
+                              onPressed: () => widget.onCambiarHogar(hogar.id),
+                              child: const Text('Usar'),
+                            ),
+                      onTap: activo ? null : () => widget.onCambiarHogar(hogar.id),
+                    ),
+                  );
+                }),
+              ],
+              if (widget.puedeRegistrarOtro) ...[
+                const SizedBox(height: 10),
+                FilledButton.icon(
+                  onPressed: widget.onRegistrarOtroHogar,
+                  icon: const Icon(Icons.add_home_work),
+                  label: const Text('Registrar otro hogar y núcleo'),
+                  style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+                ),
+              ],
+              const SizedBox(height: 20),
+              StatCard(
+                icon: Icons.cloud_sync,
+                title: 'Registros pendientes de sync',
+                value: '$pending',
+                subtitle: pending == 0 ? 'Todo sincronizado' : 'En cola local',
+                accent: pending > 0 ? VenezuelaColors.red : VenezuelaColors.blue,
+              ),
+              const SizedBox(height: 12),
+              SectionHeader(
+                title: 'Cola de sincronización',
+                action: IconButton(
+                  onPressed: _loading ? null : _refresh,
+                  tooltip: 'Actualizar',
+                  icon: const Icon(Icons.sync, color: VenezuelaColors.blue),
+                ),
+              ),
+              PendingQueuePanel(sync: widget.sync, onSync: _refresh),
+            ],
+          ),
         );
       },
     );

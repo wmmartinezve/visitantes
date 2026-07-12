@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Services;
 
 use App\Models\HogarSolidario;
+use App\Models\Invitado;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Collection;
 
@@ -85,8 +86,25 @@ class AnfitrionMobileProfileService
 
         return HogarSolidario::query()
             ->where('anfitrion_user_id', $user->id)
+            ->withCount('invitados')
             ->orderByDesc('created_at')
             ->get();
+    }
+
+    public function countInvitadosDelAnfitrion(User $user): int
+    {
+        if (! $user->isAnfitrion()) {
+            return 0;
+        }
+
+        return Invitado::query()
+            ->whereIn(
+                'hogar_solidario_id',
+                HogarSolidario::query()
+                    ->where('anfitrion_user_id', $user->id)
+                    ->select('id'),
+            )
+            ->count();
     }
 
     public function hogarPerteneceAlAnfitrion(User $user, int $hogarId): bool
@@ -134,6 +152,7 @@ class AnfitrionMobileProfileService
                 'nombre' => $hogar->codigo,
                 'direccion_exacta' => $hogar->direccion_exacta,
                 'tiene_nucleo_familiar' => $hogar->tieneNucleoFamiliar(),
+                'invitados_count' => (int) ($hogar->invitados_count ?? $hogar->invitados()->count()),
                 'activo' => $user->hogar_solidario_id === $hogar->id,
             ])
             ->values()
