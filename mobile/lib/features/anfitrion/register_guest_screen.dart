@@ -46,7 +46,9 @@ class RegisterGuestScreen extends StatefulWidget {
   State<RegisterGuestScreen> createState() => _RegisterGuestScreenState();
 }
 
-class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
+class _RegisterGuestScreenState extends State<RegisterGuestScreen> with AutomaticKeepAliveClientMixin {
+  @override
+  bool get wantKeepAlive => true;
   final _formKey = GlobalKey<FormState>();
   int _step = 0;
   bool _saving = false;
@@ -135,41 +137,34 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   @override
   void initState() {
     super.initState();
-    widget.catalog.addListener(_onCatalogChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      _initHogarEstado();
+      _applyDefaultHogarEstado();
       _ensureCatalogReady();
     });
   }
 
-  void _onCatalogChanged() {
-    if (!mounted) return;
-    setState(_initHogarEstado);
-  }
-
   Future<void> _ensureCatalogReady() async {
-    if (widget.catalog.isReady) return;
+    if (widget.catalog.isReady) {
+      _applyDefaultHogarEstado();
+      return;
+    }
     setState(() => _loadingCatalog = true);
     try {
       await widget.catalog.refresh(force: true);
     } finally {
       if (mounted) {
         setState(() => _loadingCatalog = false);
-        _initHogarEstado();
+        _applyDefaultHogarEstado();
       }
     }
   }
 
-  void _initHogarEstado() {
-    if (_hogarEstadoId != null) {
-      return;
-    }
+  void _applyDefaultHogarEstado() {
+    if (_hogarEstadoId != null) return;
 
     for (final estado in _estados) {
       if (estado['nombre'] == 'Anzoátegui') {
-        if (mounted) {
-          setState(() => _hogarEstadoId = estado['id'] as int?);
-        }
+        setState(() => _hogarEstadoId = estado['id'] as int?);
         break;
       }
     }
@@ -177,7 +172,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   void dispose() {
-    widget.catalog.removeListener(_onCatalogChanged);
     for (final f in _familiares) {
       f.dispose();
     }
@@ -620,13 +614,9 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           M3SelectField(
             label: 'Tipo de vivienda',
             icon: Icons.apartment_outlined,
-            value: _tipoVivienda == null
-                ? null
-                : _tiposVivienda.firstWhere((e) => e['value'] == _tipoVivienda)['label'],
+            value: _tipoVivienda == null ? null : _labelForValue(_tiposVivienda, _tipoVivienda!),
             items: _tiposVivienda.map((e) => e['label']!).toList(),
-            onChanged: (v) => setState(() {
-              _tipoVivienda = v == null ? null : _tiposVivienda.firstWhere((e) => e['label'] == v)['value'];
-            }),
+            onChanged: (v) => setState(() => _tipoVivienda = _valueForLabel(_tiposVivienda, v)),
           ),
           M3SelectField(
             label: '¿Quién recibe al Invitado?',
@@ -664,6 +654,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
             },
           ),
           M3SelectField(
+            key: ValueKey('hogar-municipio-$_hogarEstadoId'),
             label: 'Municipio',
             icon: Icons.location_city_outlined,
             value: _nombreMunicipio(_municipiosHogar, _hogarMunicipioId),
@@ -684,6 +675,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
             }),
           ),
           M3SelectField(
+            key: ValueKey('hogar-parroquia-$_hogarMunicipioId'),
             label: 'Parroquia',
             icon: Icons.place_outlined,
             value: _nombreParroquia(_parroquiasHogar, _hogarParroquiaId),
@@ -703,6 +695,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
             }),
           ),
           M3SelectField(
+            key: ValueKey('hogar-comuna-$_hogarParroquiaId'),
             label: 'Comuna (opcional)',
             icon: Icons.map_outlined,
             value: _hogarComunaId == null ? null : _nombreComuna(_hogarComunaId),
@@ -1120,6 +1113,8 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
     if (_loadingCatalog || !widget.catalog.isReady) {
       return Center(
         child: Column(

@@ -208,7 +208,7 @@ class M3TextFieldRaw extends StatelessWidget {
 }
 
 /// Lista desplegable Material 3 con icono identificador.
-class M3SelectField extends StatelessWidget {
+class M3SelectField extends StatefulWidget {
   const M3SelectField({
     super.key,
     required this.label,
@@ -229,20 +229,50 @@ class M3SelectField extends StatelessWidget {
   final bool includeSpacing;
 
   @override
+  State<M3SelectField> createState() => _M3SelectFieldState();
+}
+
+class _M3SelectFieldState extends State<M3SelectField> {
+  final _fieldKey = GlobalKey<FormFieldState<String>>();
+
+  String? get _effectiveValue {
+    final selected = widget.value;
+    if (selected == null || selected.isEmpty) return null;
+    if (!widget.items.contains(selected)) return null;
+    return selected;
+  }
+
+  @override
+  void didUpdateWidget(M3SelectField oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.value == oldWidget.value && widget.items == oldWidget.items) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _fieldKey.currentState?.didChange(_effectiveValue);
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final items = widget.items;
+    final menuItems = items.map((item) => DropdownMenuItem<String>(value: item, child: Text(item))).toList();
+
     return Padding(
-      key: ValueKey('m3-select-$label-$value'),
-      padding: EdgeInsets.only(bottom: includeSpacing ? M3InputStyles.fieldSpacing : 0),
+      padding: EdgeInsets.only(bottom: widget.includeSpacing ? M3InputStyles.fieldSpacing : 0),
       child: DropdownButtonFormField<String>(
-        initialValue: value != null && value!.isNotEmpty && items.contains(value) ? value : null,
+        key: _fieldKey,
+        initialValue: _effectiveValue,
         isExpanded: true,
-        decoration: M3InputStyles.decoration(context: context, label: label, icon: icon),
+        decoration: M3InputStyles.decoration(context: context, label: widget.label, icon: widget.icon),
         hint: Text('Seleccione…', style: TextStyle(color: Theme.of(context).colorScheme.onSurfaceVariant)),
-        items: items
-            .map((item) => DropdownMenuItem<String>(value: item, child: Text(item)))
-            .toList(),
-        onChanged: onChanged,
-        validator: validator,
+        items: menuItems,
+        onChanged: items.isEmpty
+            ? null
+            : (value) {
+                _fieldKey.currentState?.didChange(value);
+                widget.onChanged(value);
+              },
+        validator: widget.validator,
       ),
     );
   }
