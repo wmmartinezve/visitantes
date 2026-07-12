@@ -34,6 +34,10 @@ class DashboardOperacionTest extends TestCase
         $this->actingAs($admin)
             ->get('/admin')
             ->assertOk();
+
+        $widget = new \App\Filament\Widgets\IndicadoresPorMunicipioWidget;
+        $table = $widget->table(\Filament\Tables\Table::make($widget));
+        $this->assertNotNull($table);
     }
 
     public function test_metricas_responden_a_filtros_de_fecha(): void
