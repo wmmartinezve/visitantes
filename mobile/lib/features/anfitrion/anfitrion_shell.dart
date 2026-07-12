@@ -41,16 +41,40 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   late MobileUser _user = widget.user;
   late final FieldApi _fieldApi = FieldApi(catalogService: widget.catalog);
 
-  bool get _sinHogar => _user.refugioId == null;
+  /// Sin hogar efectivo: API sin id o catálogo offline indica registro pendiente.
+  bool get _sinHogar => _user.refugioId == null || widget.catalog.requiereRegistroHogar;
 
-  bool get _requiereRegistroHogar => widget.catalog.requiereRegistroHogar || _sinHogar;
+  bool get _requiereRegistroHogar => _sinHogar;
 
-  bool get _nucleoYaRegistrado => widget.catalog.tieneNucleoFamiliarEnHogar;
+  bool get _nucleoYaRegistrado => !_sinHogar && widget.catalog.tieneNucleoFamiliarEnHogar;
+
+  String get _hogarEtiqueta {
+    if (_sinHogar) return 'Sin registrar';
+    final nombre = _user.refugioNombre ?? _nombreHogarEnCatalogo;
+    if (nombre != null && nombre.isNotEmpty) return nombre;
+    if (_user.refugioId != null) return 'Hogar #${_user.refugioId}';
+    return '—';
+  }
+
+  String? get _nombreHogarEnCatalogo {
+    final operador = widget.catalog.cachedCatalog?['operador'];
+    if (operador is! Map) return null;
+    final hogar = (operador['hogar_solidario'] ?? operador['refugio']) as Map?;
+    if (hogar is! Map) return null;
+    return (hogar['nombre'] ?? hogar['codigo']) as String?;
+  }
 
   @override
   void initState() {
     super.initState();
-    _index = _sinHogar ? 1 : 0;
+    _index = _requiereRegistroHogar ? 1 : 0;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await widget.catalog.patchOperadorForUser(_user);
+      if (!mounted) return;
+      if (_requiereRegistroHogar && _index == 0) {
+        setState(() => _index = 1);
+      }
+    });
   }
 
   @override
@@ -67,6 +91,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
   void _handleUserUpdated(MobileUser user) {
     setState(() => _user = user);
+    widget.catalog.patchOperadorForUser(user);
     widget.onUserUpdated(user);
   }
 
@@ -81,7 +106,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
   Future<void> _onRegistered() async {
     await widget.catalog.refresh(force: true);
-    if (_sinHogar) {
+    if (_requiereRegistroHogar) {
       try {
         final user = await widget.auth.fetchCurrentUser();
         _handleUserUpdated(user);
@@ -108,62 +133,71 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
       );
     }
 
-    final pages = [
-      _HomeTab(
-        sync: widget.sync,
-        user: _user,
-        sinHogar: _sinHogar,
-        onNavigate: _goTo,
-        onSync: _syncFromHome,
-      ),
-      RegisterGuestScreen(
-        key: ValueKey('register-$_refreshTick'),
-        catalog: widget.catalog,
-        sync: widget.sync,
-        fieldApi: _fieldApi,
-        nucleoYaRegistrado: _nucleoYaRegistrado,
-        requiereRegistroHogar: _requiereRegistroHogar,
-        onRegistered: _onRegistered,
-        onUserUpdated: _handleUserUpdated,
-      ),
-      GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
-    ];
-
-    return AppScaffold(
-      title: _user.name,
-      subtitle: _sinHogar ? 'Registre su hogar solidario' : 'Hogar solidario: ${_user.refugioNombre ?? '—'}',
-      catalog: widget.catalog,
-      sync: widget.sync,
-      onLogout: widget.onLogout,
-      onProfile: _openProfile,
-      onRefreshComplete: _bumpRefresh,
-      body: pages[_index],
-      bottomNav: NavigationBar(
-        selectedIndex: _index,
-        onDestinationSelected: _goTo,
-        destinations: [
-          const NavigationDestination(icon: Icon(Icons.home), label: 'Inicio'),
-          NavigationDestination(
-            icon: const Icon(Icons.person_add),
-            label: _sinHogar ? 'Registrar núcleo' : 'Registrar',
+    return ListenableBuilder(
+      listenable: widget.catalog,
+      builder: (context, _) {
+        final pages = [
+          _HomeTab(
+            sync: widget.sync,
+            hogarEtiqueta: _hogarEtiqueta,
+            sinHogar: _sinHogar,
+            onNavigate: _goTo,
+            onSync: _syncFromHome,
           ),
-          const NavigationDestination(icon: Icon(Icons.groups), label: 'Invitados'),
-        ],
-      ),
+          RegisterGuestScreen(
+            key: ValueKey('register-$_refreshTick-${_user.refugioId}'),
+            user: _user,
+            catalog: widget.catalog,
+            sync: widget.sync,
+            fieldApi: _fieldApi,
+            nucleoYaRegistrado: _nucleoYaRegistrado,
+            requiereRegistroHogar: _requiereRegistroHogar,
+            onRegistered: _onRegistered,
+            onUserUpdated: _handleUserUpdated,
+          ),
+          GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
+        ];
+
+        return AppScaffold(
+          title: _user.name,
+          subtitle: _sinHogar ? 'Registre su hogar solidario' : 'Hogar solidario: $_hogarEtiqueta',
+          catalog: widget.catalog,
+          sync: widget.sync,
+          onLogout: widget.onLogout,
+          onProfile: _openProfile,
+          onRefreshComplete: _bumpRefresh,
+          body: IndexedStack(
+            index: _index,
+            children: pages,
+          ),
+          bottomNav: NavigationBar(
+            selectedIndex: _index,
+            onDestinationSelected: _goTo,
+            destinations: [
+              const NavigationDestination(icon: Icon(Icons.home), label: 'Inicio'),
+              NavigationDestination(
+                icon: const Icon(Icons.person_add),
+                label: _sinHogar ? 'Registrar núcleo' : 'Registrar',
+              ),
+              const NavigationDestination(icon: Icon(Icons.groups), label: 'Invitados'),
+            ],
+          ),
+        );
+      },
     );
   }
 }
 
 class _HomeTab extends StatelessWidget {
   const _HomeTab({
-    required this.user,
+    required this.hogarEtiqueta,
     required this.sync,
     required this.sinHogar,
     required this.onNavigate,
     required this.onSync,
   });
 
-  final MobileUser user;
+  final String hogarEtiqueta;
   final SyncService sync;
   final bool sinHogar;
   final ValueChanged<int> onNavigate;
@@ -179,10 +213,47 @@ class _HomeTab extends StatelessWidget {
         return ListView(
           padding: const EdgeInsets.all(16),
           children: [
+            if (sinHogar) ...[
+              Card(
+                color: VenezuelaColors.red.withValues(alpha: 0.08),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.home_work_outlined, color: VenezuelaColors.red, size: 28),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              'Registre su hogar solidario y núcleo familiar',
+                              style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Complete el wizard de 4 pasos: hogar → jefe de familia → familiares → foto.',
+                      ),
+                      const SizedBox(height: 12),
+                      FilledButton.icon(
+                        onPressed: () => onNavigate(1),
+                        icon: const Icon(Icons.edit_road),
+                        label: const Text('Iniciar registro'),
+                        style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+            ],
             StatCard(
               icon: Icons.home_work,
               title: sinHogar ? 'Hogar solidario pendiente' : 'Hogar solidario asignado',
-              value: user.refugioNombre ?? (sinHogar ? 'Sin registrar' : '—'),
+              value: hogarEtiqueta,
               subtitle: sinHogar ? 'Registre hogar y núcleo familiar en la pestaña Registrar núcleo' : null,
               accent: sinHogar ? VenezuelaColors.red : VenezuelaColors.blue,
             ),

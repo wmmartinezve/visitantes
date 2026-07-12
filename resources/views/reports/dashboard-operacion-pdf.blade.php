@@ -181,6 +181,36 @@
         </table>
     @endif
 
+    @if ($resumen_por_municipio->isNotEmpty())
+        <h2>Indicadores por municipio</h2>
+        <table class="data">
+            <thead>
+                <tr>
+                    <th>Municipio</th>
+                    <th>Hogares</th>
+                    <th>Con núcleo</th>
+                    <th>Hogares nuevos</th>
+                    <th>Anfitriones</th>
+                    <th>Invitados activos</th>
+                    <th>Registrados período</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach ($resumen_por_municipio as $fila)
+                    <tr>
+                        <td>{{ $fila->municipio }}</td>
+                        <td>{{ $fila->hogares_solidarios }}</td>
+                        <td>{{ $fila->hogares_con_nucleo }}</td>
+                        <td>{{ $fila->hogares_nuevos_periodo }}</td>
+                        <td>{{ $fila->anfitriones_desplegados }}</td>
+                        <td>{{ $fila->invitados_activos }}</td>
+                        <td>{{ $fila->invitados_registrados }}</td>
+                    </tr>
+                @endforeach
+            </tbody>
+        </table>
+    @endif
+
     <h2>Hogares solidarios con más Invitados activos</h2>
     <table class="data">
         <thead>

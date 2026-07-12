@@ -34,7 +34,9 @@ class _AuthGateState extends State<AuthGate> {
     final user = await _auth.restoreSession();
     if (user != null) {
       _sync.startAutoSync();
+      await _catalog.clear();
       await _catalog.refresh(force: true);
+      await _catalog.patchOperadorForUser(user);
       await _sync.syncPending();
     }
     if (!mounted) return;
@@ -59,7 +61,9 @@ class _AuthGateState extends State<AuthGate> {
       }
 
       _sync.startAutoSync();
+      await _catalog.clear();
       await _catalog.refresh(force: true);
+      await _catalog.patchOperadorForUser(user);
       await _sync.syncPending();
       setState(() => _user = user);
     } on DioException catch (e) {
@@ -80,6 +84,7 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _logout() async {
     _sync.stopAutoSync();
+    await _catalog.clear();
     await _auth.logout();
     setState(() => _user = null);
   }

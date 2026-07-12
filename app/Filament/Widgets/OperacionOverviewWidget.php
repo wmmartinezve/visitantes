@@ -24,20 +24,22 @@ class OperacionOverviewWidget extends BaseWidget
         $filtros = OperacionFiltros::fromArray($this->filters);
         $kpis = app(OperacionMetricsService::class)->kpis($filtros);
         $periodo = $filtros->desde->format('d/m/Y').' — '.$filtros->hasta->format('d/m/Y');
+        $geoFiltrado = $filtros->tieneFiltroGeografico();
+        $ambito = $geoFiltrado ? 'En el ámbito filtrado' : 'Todo '.config('visitantes.estado');
 
         $stats = [
             Stat::make('Hogares solidarios', (string) $kpis['hogares_solidarios'])
-                ->description('Registrados en el ámbito')
+                ->description($ambito)
                 ->icon('heroicon-o-home-modern')
                 ->color('primary'),
 
             Stat::make('Con núcleo hospedado', (string) $kpis['hogares_con_nucleo'])
-                ->description('Hogares con Invitados')
+                ->description($ambito)
                 ->icon('heroicon-o-user-group')
                 ->color('success'),
 
             Stat::make('Sin núcleo', (string) $kpis['hogares_sin_nucleo'])
-                ->description('Disponibles para acogida')
+                ->description($ambito)
                 ->icon('heroicon-o-home')
                 ->color('gray'),
 
@@ -47,27 +49,30 @@ class OperacionOverviewWidget extends BaseWidget
                 ->color('info'),
 
             Stat::make('Anfitriones registrados', (string) $kpis['anfitriones_registrados'])
-                ->description('Usuarios app anfitrión')
+                ->description($geoFiltrado ? 'Desplegados en el ámbito' : 'Usuarios app anfitrión')
                 ->icon('heroicon-o-identification')
                 ->color('primary'),
 
             Stat::make('Anfitriones desplegados', (string) $kpis['anfitriones_desplegados'])
-                ->description('Con hogar solidario asignado')
+                ->description($ambito)
                 ->icon('heroicon-o-map-pin')
                 ->color('success'),
 
             Stat::make('Anfitriones sin asignar', (string) $kpis['anfitriones_sin_asignar'])
-                ->description('Pendientes de despliegue')
+                ->description($geoFiltrado ? 'Solo visible a nivel estatal' : 'Pendientes de despliegue')
                 ->icon('heroicon-o-clock')
                 ->color('warning'),
 
-            Stat::make('Tasa de despliegue', $kpis['tasa_despliegue_anfitriones'].'%')
-                ->description('Desplegados / registrados')
+            Stat::make(
+                $geoFiltrado ? 'Cobertura de hogares' : 'Tasa de despliegue',
+                $kpis['tasa_despliegue_anfitriones'].'%',
+            )
+                ->description($geoFiltrado ? 'Hogares con núcleo / total hogares' : 'Desplegados / registrados')
                 ->icon('heroicon-o-chart-bar')
                 ->color($kpis['tasa_despliegue_anfitriones'] >= 70 ? 'success' : 'warning'),
 
             Stat::make('Invitados activos', (string) $kpis['invitados_activos'])
-                ->description('Hospedados en hogares solidarios')
+                ->description($ambito)
                 ->icon('heroicon-o-users')
                 ->color('primary'),
 

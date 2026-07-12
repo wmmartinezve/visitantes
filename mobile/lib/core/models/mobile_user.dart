@@ -98,6 +98,14 @@ class MobileUser {
     );
   }
 
+  static int? _parseIntId(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    if (value is String && value.isNotEmpty) return int.tryParse(value);
+    return null;
+  }
+
   factory MobileUser.fromJson(Map<String, dynamic> json) {
     final refugio = (json['refugio'] ?? json['hogar_solidario']) as Map<String, dynamic>?;
     final centro = json['centro_acopio'] as Map<String, dynamic>?;
@@ -107,9 +115,9 @@ class MobileUser {
       name: json['name'] as String,
       email: json['email'] as String,
       rol: json['rol'] as String,
-      refugioId: (json['refugio_id'] ?? json['hogar_solidario_id']) as int?,
-      centroAcopioId: json['centro_acopio_id'] as int?,
-      refugioNombre: refugio?['nombre'] as String?,
+      refugioId: _parseIntId(json['refugio_id'] ?? json['hogar_solidario_id']),
+      centroAcopioId: _parseIntId(json['centro_acopio_id']),
+      refugioNombre: (refugio?['nombre'] ?? refugio?['codigo']) as String?,
       centroAcopio: centro != null ? CentroAcopioInfo.fromJson(centro) : null,
     );
   }

@@ -22,6 +22,7 @@ class DashboardOperacionTest extends TestCase
     {
         parent::setUp();
 
+        $this->seed(\Database\Seeders\VenezuelaEstadosSeeder::class);
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $this->seed(DemoOperacionSeeder::class);
     }
@@ -72,12 +73,44 @@ class DashboardOperacionTest extends TestCase
         $this->assertStringContainsString('reporte-operacion', (string) $response->headers->get('Content-Disposition'));
     }
 
+    public function test_metricas_responden_a_filtro_municipio(): void
+    {
+        $municipio = \App\Models\Municipio::query()
+            ->whereHas('parroquias', fn ($q) => $q->where('nombre', 'Puerto La Cruz'))
+            ->firstOrFail();
+
+        $filtrosEstado = OperacionFiltros::fromArray([
+            'desde' => now()->subYear()->toDateString(),
+            'hasta' => now()->toDateString(),
+        ]);
+
+        $filtrosMunicipio = OperacionFiltros::fromArray([
+            'desde' => now()->subYear()->toDateString(),
+            'hasta' => now()->toDateString(),
+            'municipio_id' => $municipio->id,
+        ]);
+
+        $service = app(OperacionMetricsService::class);
+        $kpisEstado = $service->kpis($filtrosEstado);
+        $kpisMunicipio = $service->kpis($filtrosMunicipio);
+
+        $this->assertGreaterThan(0, $kpisEstado['hogares_solidarios']);
+        $this->assertLessThanOrEqual($kpisEstado['hogares_solidarios'], $kpisMunicipio['hogares_solidarios']);
+        $this->assertGreaterThan(0, $kpisMunicipio['hogares_solidarios']);
+
+        $resumen = $service->resumenPorMunicipio($filtrosEstado);
+        $this->assertNotEmpty($resumen);
+        $this->assertSame($municipio->nombre, $resumen->firstWhere('municipio_id', $municipio->id)?->municipio);
+    }
+
     public function test_reporte_completo_incluye_secciones_clave(): void
     {
         $reporte = app(OperacionMetricsService::class)->reporteCompleto(
             OperacionFiltros::fromArray(null),
         );
 
+        $this->assertArrayHasKey('resumen_por_municipio', $reporte);
+        $this->assertNotEmpty($reporte['resumen_por_municipio']);
         $this->assertArrayHasKey('kpis', $reporte);
         $this->assertArrayHasKey('kpi_filas', $reporte);
         $this->assertArrayHasKey('logistica_habilitada', $reporte);

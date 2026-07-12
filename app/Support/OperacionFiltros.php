@@ -90,6 +90,13 @@ final readonly class OperacionFiltros
         return $etiquetas;
     }
 
+    public function tieneFiltroGeografico(): bool
+    {
+        return $this->municipioId !== null
+            || $this->parroquiaId !== null
+            || $this->refugioId !== null;
+    }
+
     private static function parseDate(mixed $value): ?CarbonImmutable
     {
         if ($value === null || $value === '') {

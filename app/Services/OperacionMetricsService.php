@@ -11,6 +11,7 @@ use App\Models\CentroAcopio;
 use App\Models\Inventario;
 use App\Models\Invitado;
 use App\Models\HogarSolidario;
+use App\Models\Municipio;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\OperacionFiltros;
@@ -33,11 +34,32 @@ class OperacionMetricsService
 
         $hogaresQuery = $this->refugios($filtros);
         $hogaresTotal = (clone $hogaresQuery)->count();
-        $anfitrionesRegistrados = User::query()->where('rol', UserRole::Anfitrion)->count();
+        $anfitrionesDesplegados = $this->anfitrionesDesplegados($filtros)->count();
+        $geoFiltrado = $filtros->tieneFiltroGeografico();
+
+        $anfitrionesRegistrados = $geoFiltrado
+            ? $anfitrionesDesplegados
+            : User::query()->where('rol', UserRole::Anfitrion)->count();
+
         $anfitrionesDesplegadosGlobal = User::query()
             ->where('rol', UserRole::Anfitrion)
             ->whereNotNull('hogar_solidario_id')
             ->count();
+
+        $anfitrionesSinAsignar = $geoFiltrado
+            ? 0
+            : User::query()
+                ->where('rol', UserRole::Anfitrion)
+                ->whereNull('hogar_solidario_id')
+                ->count();
+
+        $tasaDespliegue = $geoFiltrado
+            ? ($hogaresTotal > 0
+                ? round(((clone $hogaresQuery)->whereHas('jefeFamilia')->count() / $hogaresTotal) * 100, 1)
+                : 0.0)
+            : ($anfitrionesRegistrados > 0
+                ? round(($anfitrionesDesplegadosGlobal / $anfitrionesRegistrados) * 100, 1)
+                : 0.0);
 
         return [
             'hogares_solidarios' => $hogaresTotal,
@@ -48,14 +70,9 @@ class OperacionMetricsService
                 ->whereBetween('created_at', [$filtros->desde, $filtros->hasta])
                 ->count(),
             'anfitriones_registrados' => $anfitrionesRegistrados,
-            'anfitriones_desplegados' => $this->anfitrionesDesplegados($filtros)->count(),
-            'anfitriones_sin_asignar' => User::query()
-                ->where('rol', UserRole::Anfitrion)
-                ->whereNull('hogar_solidario_id')
-                ->count(),
-            'tasa_despliegue_anfitriones' => $anfitrionesRegistrados > 0
-                ? round(($anfitrionesDesplegadosGlobal / $anfitrionesRegistrados) * 100, 1)
-                : 0.0,
+            'anfitriones_desplegados' => $anfitrionesDesplegados,
+            'anfitriones_sin_asignar' => $anfitrionesSinAsignar,
+            'tasa_despliegue_anfitriones' => $tasaDespliegue,
             'invitados_activos' => $this->invitados($filtros)->where('estatus', InvitadoEstatus::Activo)->count(),
             'invitados_registrados' => $this->invitadosRegistradosEnPeriodo($filtros)->count(),
             'nuevas_familias' => $this->invitadosRegistradosEnPeriodo($filtros)->whereNull('jefe_familia_id')->count(),
@@ -117,6 +134,58 @@ class OperacionMetricsService
         }
 
         return $filas;
+    }
+
+    /**
+     * Resumen de indicadores desglosado por municipio (respeta período y filtros superiores).
+     *
+     * @return Collection<int, object{
+     *     municipio_id: int,
+     *     municipio: string,
+     *     hogares_solidarios: int,
+     *     hogares_con_nucleo: int,
+     *     invitados_activos: int,
+     *     anfitriones_desplegados: int,
+     *     hogares_nuevos_periodo: int,
+     *     invitados_registrados: int,
+     * }>
+     */
+    public function resumenPorMunicipio(OperacionFiltros $filtros): Collection
+    {
+        if ($filtros->refugioId !== null) {
+            return collect();
+        }
+
+        $municipios = Municipio::query()
+            ->whereHas('estado', fn (Builder $q) => $q->where('nombre', config('visitantes.estado')))
+            ->when($filtros->municipioId, fn (Builder $q) => $q->whereKey($filtros->municipioId))
+            ->when($filtros->parroquiaId, fn (Builder $q) => $q->whereHas(
+                'parroquias',
+                fn (Builder $pq) => $pq->whereKey($filtros->parroquiaId),
+            ))
+            ->orderBy('nombre')
+            ->get(['id', 'nombre']);
+
+        return $municipios->map(function (Municipio $municipio) use ($filtros): object {
+            $filtroMunicipio = new OperacionFiltros(
+                desde: $filtros->desde,
+                hasta: $filtros->hasta,
+                municipioId: $municipio->id,
+            );
+
+            $kpis = $this->kpis($filtroMunicipio);
+
+            return (object) [
+                'municipio_id' => $municipio->id,
+                'municipio' => $municipio->nombre,
+                'hogares_solidarios' => (int) $kpis['hogares_solidarios'],
+                'hogares_con_nucleo' => (int) $kpis['hogares_con_nucleo'],
+                'invitados_activos' => (int) $kpis['invitados_activos'],
+                'anfitriones_desplegados' => (int) $kpis['anfitriones_desplegados'],
+                'hogares_nuevos_periodo' => (int) $kpis['hogares_nuevos_periodo'],
+                'invitados_registrados' => (int) $kpis['invitados_registrados'],
+            ];
+        });
     }
 
     /**
@@ -225,6 +294,9 @@ class OperacionMetricsService
             'kpis' => $kpis,
             'kpi_filas' => $this->filasKpisParaPdf($kpis, $logistica),
             'logistica_habilitada' => $logistica,
+            'resumen_por_municipio' => $filtros->refugioId === null
+                ? $this->resumenPorMunicipio($filtros)
+                : collect(),
             'requerimientos_por_estatus' => $this->requerimientosPorEstatus($filtros),
             'top_refugios' => $this->topRefugiosPorInvitados($filtros),
             'top_centros' => $this->topCentrosPorEntregas($filtros),

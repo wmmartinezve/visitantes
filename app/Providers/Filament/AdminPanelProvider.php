@@ -61,6 +61,7 @@ class AdminPanelProvider extends PanelProvider
                 OperacionOverviewWidget::class,
                 VisitantesFeatures::logistica() ? \App\Filament\Widgets\RequerimientosEstatusChartWidget::class : null,
                 VisitantesFeatures::logistica() ? \App\Filament\Widgets\RequerimientosFiltradosWidget::class : null,
+                \App\Filament\Widgets\IndicadoresPorMunicipioWidget::class,
                 TopRefugiosWidget::class,
                 Widgets\AccountWidget::class,
             ])))

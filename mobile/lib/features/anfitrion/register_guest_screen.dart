@@ -19,6 +19,7 @@ import 'package:visitantes_mobile/shared/widgets/witness_photo_capture.dart';
 class RegisterGuestScreen extends StatefulWidget {
   const RegisterGuestScreen({
     super.key,
+    required this.user,
     required this.catalog,
     required this.sync,
     required this.fieldApi,
@@ -28,6 +29,7 @@ class RegisterGuestScreen extends StatefulWidget {
     this.onUserUpdated,
   });
 
+  final MobileUser user;
   final CatalogService catalog;
   final SyncService sync;
   final FieldApi fieldApi;
@@ -40,11 +42,21 @@ class RegisterGuestScreen extends StatefulWidget {
   State<RegisterGuestScreen> createState() => _RegisterGuestScreenState();
 }
 
-class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
+class _RegisterGuestScreenState extends State<RegisterGuestScreen> with AutomaticKeepAliveClientMixin {
   final _formKey = GlobalKey<FormState>();
   int _step = 0;
   bool _saving = false;
   bool _loadingGps = false;
+  bool _loadingCatalog = false;
+
+  @override
+  bool get wantKeepAlive => true;
+
+  bool get _sinHogarAsignado =>
+      widget.user.refugioId == null || widget.catalog.requiereRegistroHogar;
+
+  bool get _incluyeHogar =>
+      (_sinHogarAsignado || widget.requiereRegistroHogar) && !widget.nucleoYaRegistrado;
 
   // Hogar solidario
   final _hogarDireccion = TextEditingController();
@@ -79,7 +91,24 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   bool _loadingPhoto = false;
   final List<_FamiliarForm> _familiares = [];
 
-  bool get _incluyeHogar => widget.requiereRegistroHogar && !widget.nucleoYaRegistrado;
+  String? _labelForValue(List<Map<String, String>> options, String value) {
+    for (final option in options) {
+      if (option['value'] == value) {
+        return option['label'];
+      }
+    }
+    return null;
+  }
+
+  String? _valueForLabel(List<Map<String, String>> options, String? label) {
+    if (label == null) return null;
+    for (final option in options) {
+      if (option['label'] == label) {
+        return option['value'];
+      }
+    }
+    return null;
+  }
 
   int get _totalSteps => _incluyeHogar ? 4 : 3;
 
@@ -104,7 +133,23 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _initHogarEstado());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _initHogarEstado();
+      _ensureCatalogReady();
+    });
+  }
+
+  Future<void> _ensureCatalogReady() async {
+    if (widget.catalog.isReady) return;
+    setState(() => _loadingCatalog = true);
+    try {
+      await widget.catalog.refresh(force: true);
+    } finally {
+      if (mounted) {
+        setState(() => _loadingCatalog = false);
+        _initHogarEstado();
+      }
+    }
   }
 
   void _initHogarEstado() {
@@ -586,10 +631,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           M3SelectField(
             label: '¿Quién recibe al Invitado?',
             icon: Icons.group_outlined,
-            value: _tiposAnfitrion.firstWhere((e) => e['value'] == _tipoAnfitrion)['label'],
+            value: _labelForValue(_tiposAnfitrion, _tipoAnfitrion),
             items: _tiposAnfitrion.map((e) => e['label']!).toList(),
             onChanged: (v) => setState(() {
-              _tipoAnfitrion = v == null ? 'familiar' : _tiposAnfitrion.firstWhere((e) => e['label'] == v)['value']!;
+              _tipoAnfitrion = _valueForLabel(_tiposAnfitrion, v) ?? 'familiar';
               if (_tipoAnfitrion == 'amigo') {
                 _parentescoAnfitrion = null;
               }
@@ -986,6 +1031,30 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
+
+    if (_loadingCatalog || !widget.catalog.isReady) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const CircularProgressIndicator(color: VenezuelaColors.blue),
+            const SizedBox(height: 16),
+            Text(
+              'Cargando catálogo geográfico…',
+              style: Theme.of(context).textTheme.bodyMedium,
+            ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: _loadingCatalog ? null : _ensureCatalogReady,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Reintentar'),
+            ),
+          ],
+        ),
+      );
+    }
+
     if (widget.nucleoYaRegistrado) {
       return ListView(
         padding: const EdgeInsets.all(16),
