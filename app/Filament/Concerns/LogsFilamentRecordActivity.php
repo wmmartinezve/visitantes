@@ -14,13 +14,6 @@ trait LogsFilamentRecordActivity
     /** @var array<string, mixed> */
     protected array $activityLogBeforeSave = [];
 
-    protected function bootLogsFilamentRecordActivity(): void
-    {
-        if (! method_exists($this, 'beforeSave')) {
-            return;
-        }
-    }
-
     protected function captureActivityBeforeSave(Model $record): void
     {
         $this->activityLogBeforeSave = app(ActivityLogService::class)->snapshot($record);

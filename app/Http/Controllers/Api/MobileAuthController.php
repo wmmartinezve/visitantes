@@ -51,7 +51,7 @@ class MobileAuthController extends Controller
 
         $token = $user->createToken($credentials['device_name'] ?? 'flutter-mobile')->plainTextToken;
 
-        $user->load(['refugio', 'centroAcopio']);
+        $user->load(['hogarSolidario', 'centroAcopio']);
 
         return response()->json([
             'token' => $token,
@@ -69,7 +69,7 @@ class MobileAuthController extends Controller
     public function me(Request $request): MobileUserResource
     {
         $user = $request->user();
-        $user->load(['refugio', 'centroAcopio']);
+        $user->load(['hogarSolidario', 'centroAcopio']);
 
         return new MobileUserResource($user);
     }

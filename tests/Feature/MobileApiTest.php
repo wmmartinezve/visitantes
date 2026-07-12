@@ -28,7 +28,7 @@ class MobileApiTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonStructure(['token', 'user' => ['id', 'email', 'rol', 'refugio']])
+            ->assertJsonStructure(['token', 'user' => ['id', 'email', 'rol', 'hogar_solidario', 'refugio']])
             ->assertJsonPath('user.rol', 'anfitrion');
     }
 
