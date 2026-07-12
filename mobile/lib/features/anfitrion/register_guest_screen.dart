@@ -53,7 +53,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
   bool get wantKeepAlive => true;
 
   bool get _sinHogarAsignado =>
-      widget.user.refugioId == null || widget.catalog.requiereRegistroHogar;
+      widget.user.requiereRegistroHogar || widget.catalog.requiereRegistroHogar;
 
   bool get _incluyeHogar =>
       (_sinHogarAsignado || widget.requiereRegistroHogar) && !widget.nucleoYaRegistrado;

@@ -63,6 +63,8 @@ class MobileUser {
     this.centroAcopioId,
     this.refugioNombre,
     this.centroAcopio,
+    this.requiereRegistroHogar = false,
+    this.tieneNucleoFamiliar = false,
   });
 
   final int id;
@@ -73,6 +75,8 @@ class MobileUser {
   final int? centroAcopioId;
   final String? refugioNombre;
   final CentroAcopioInfo? centroAcopio;
+  final bool requiereRegistroHogar;
+  final bool tieneNucleoFamiliar;
 
   String? get centroNombre => centroAcopio?.nombre;
 
@@ -85,6 +89,8 @@ class MobileUser {
     int? refugioId,
     String? refugioNombre,
     CentroAcopioInfo? centroAcopio,
+    bool? requiereRegistroHogar,
+    bool? tieneNucleoFamiliar,
   }) {
     return MobileUser(
       id: id,
@@ -95,6 +101,8 @@ class MobileUser {
       centroAcopioId: centroAcopioId,
       refugioNombre: refugioNombre ?? this.refugioNombre,
       centroAcopio: centroAcopio ?? this.centroAcopio,
+      requiereRegistroHogar: requiereRegistroHogar ?? this.requiereRegistroHogar,
+      tieneNucleoFamiliar: tieneNucleoFamiliar ?? this.tieneNucleoFamiliar,
     );
   }
 
@@ -119,6 +127,9 @@ class MobileUser {
       centroAcopioId: _parseIntId(json['centro_acopio_id']),
       refugioNombre: (refugio?['nombre'] ?? refugio?['codigo']) as String?,
       centroAcopio: centro != null ? CentroAcopioInfo.fromJson(centro) : null,
+      requiereRegistroHogar: json['requiere_registro_hogar'] == true,
+      tieneNucleoFamiliar: json['tiene_nucleo_familiar'] == true
+          || refugio?['tiene_nucleo_familiar'] == true,
     );
   }
 }

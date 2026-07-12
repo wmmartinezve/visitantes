@@ -41,12 +41,13 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   late MobileUser _user = widget.user;
   late final FieldApi _fieldApi = FieldApi(catalogService: widget.catalog);
 
-  /// Sin hogar efectivo: API sin id o catálogo offline indica registro pendiente.
-  bool get _sinHogar => _user.refugioId == null || widget.catalog.requiereRegistroHogar;
+  /// Sin hogar efectivo según la API (fuente de verdad) o catálogo offline.
+  bool get _sinHogar => _user.requiereRegistroHogar || widget.catalog.requiereRegistroHogar;
 
   bool get _requiereRegistroHogar => _sinHogar;
 
-  bool get _nucleoYaRegistrado => !_sinHogar && widget.catalog.tieneNucleoFamiliarEnHogar;
+  bool get _nucleoYaRegistrado =>
+      !_sinHogar && (_user.tieneNucleoFamiliar || widget.catalog.tieneNucleoFamiliarEnHogar);
 
   String get _hogarEtiqueta {
     if (_sinHogar) return 'Sin registrar';
@@ -68,13 +69,6 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   void initState() {
     super.initState();
     _index = _requiereRegistroHogar ? 1 : 0;
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await widget.catalog.patchOperadorForUser(_user);
-      if (!mounted) return;
-      if (_requiereRegistroHogar && _index == 0) {
-        setState(() => _index = 1);
-      }
-    });
   }
 
   @override
@@ -91,7 +85,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
   void _handleUserUpdated(MobileUser user) {
     setState(() => _user = user);
-    widget.catalog.patchOperadorForUser(user);
+    widget.catalog.syncOperadorFromUser(user);
     widget.onUserUpdated(user);
   }
 
@@ -166,10 +160,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
           onLogout: widget.onLogout,
           onProfile: _openProfile,
           onRefreshComplete: _bumpRefresh,
-          body: IndexedStack(
-            index: _index,
-            children: pages,
-          ),
+          body: pages[_index],
           bottomNav: NavigationBar(
             selectedIndex: _index,
             onDestinationSelected: _goTo,

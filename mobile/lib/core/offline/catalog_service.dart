@@ -66,32 +66,36 @@ class CatalogService extends ChangeNotifier {
     notifyListeners();
   }
 
-  /// Sincroniza flags del operador en caché tras crear hogar o actualizar sesión.
-  Future<void> patchOperadorForUser(MobileUser user) async {
+  /// Alinea el bloque `operador` del catálogo con el usuario devuelto por la API.
+  Future<void> syncOperadorFromUser(MobileUser user) async {
     final catalog = cachedCatalog;
     if (catalog == null) return;
 
-    final sinHogar = user.refugioId == null;
     final operador = Map<String, dynamic>.from(catalog['operador'] as Map? ?? {});
     operador['hogar_solidario_id'] = user.refugioId;
-    operador['requiere_registro_hogar'] = sinHogar;
-    if (sinHogar) {
-      operador['tiene_nucleo_familiar'] = false;
+    operador['requiere_registro_hogar'] = user.requiereRegistroHogar;
+    operador['tiene_nucleo_familiar'] = user.tieneNucleoFamiliar;
+
+    if (user.requiereRegistroHogar) {
       operador.remove('hogar_solidario');
       operador.remove('refugio');
-    } else if (user.refugioNombre != null) {
-      operador['hogar_solidario'] = {
+    } else if (user.refugioId != null) {
+      final hogar = {
         'id': user.refugioId,
         'codigo': user.refugioNombre,
         'nombre': user.refugioNombre,
       };
-      operador['refugio'] = operador['hogar_solidario'];
+      operador['hogar_solidario'] = hogar;
+      operador['refugio'] = hogar;
     }
 
     final updated = Map<String, dynamic>.from(catalog)..['operador'] = operador;
     await LocalDb.catalog.put('current', updated);
     notifyListeners();
   }
+
+  @Deprecated('Use syncOperadorFromUser')
+  Future<void> patchOperadorForUser(MobileUser user) => syncOperadorFromUser(user);
 
   int get municipiosCount => (cachedCatalog?['municipios'] as List?)?.length ?? 0;
   int get parroquiasCount => (cachedCatalog?['parroquias'] as List?)?.length ?? 0;

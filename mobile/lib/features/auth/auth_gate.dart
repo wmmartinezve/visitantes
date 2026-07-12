@@ -31,12 +31,15 @@ class _AuthGateState extends State<AuthGate> {
   }
 
   Future<void> _bootstrap() async {
-    final user = await _auth.restoreSession();
+    var user = await _auth.restoreSession();
     if (user != null) {
       _sync.startAutoSync();
       await _catalog.clear();
       await _catalog.refresh(force: true);
-      await _catalog.patchOperadorForUser(user);
+      try {
+        user = await _auth.fetchCurrentUser();
+        await _catalog.syncOperadorFromUser(user);
+      } catch (_) {}
       await _sync.syncPending();
     }
     if (!mounted) return;
@@ -48,7 +51,7 @@ class _AuthGateState extends State<AuthGate> {
 
   Future<void> _handleLogin(String email, String password) async {
     try {
-      final user = await _auth.login(email, password);
+      var user = await _auth.login(email, password);
       if (!user.isAnfitrion) {
         await _auth.logout();
         if (!mounted) return;
@@ -63,7 +66,8 @@ class _AuthGateState extends State<AuthGate> {
       _sync.startAutoSync();
       await _catalog.clear();
       await _catalog.refresh(force: true);
-      await _catalog.patchOperadorForUser(user);
+      user = await _auth.fetchCurrentUser();
+      await _catalog.syncOperadorFromUser(user);
       await _sync.syncPending();
       setState(() => _user = user);
     } on DioException catch (e) {

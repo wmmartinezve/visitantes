@@ -28,8 +28,10 @@ class MobileApiTest extends TestCase
         ]);
 
         $response->assertOk()
-            ->assertJsonStructure(['token', 'user' => ['id', 'email', 'rol', 'hogar_solidario', 'refugio']])
-            ->assertJsonPath('user.rol', 'anfitrion');
+            ->assertJsonStructure(['token', 'user' => ['id', 'email', 'rol', 'hogar_solidario', 'refugio', 'requiere_registro_hogar']])
+            ->assertJsonPath('user.rol', 'anfitrion')
+            ->assertJsonPath('user.requiere_registro_hogar', true)
+            ->assertJsonPath('user.hogar_solidario_id', null);
     }
 
     public function test_admin_no_puede_usar_app_mobile(): void
