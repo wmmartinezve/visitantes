@@ -68,8 +68,8 @@
                         <option value="{{ $parroquia->id }}">{{ $parroquia->nombre }}</option>
                     @endforeach
                 </x-m3.select-field>
-                <x-m3.select-field label="Comuna" icon="map" wire:model="hogar_comuna_id" :error="$errors->first('hogar_comuna_id')">
-                    <option value="">Seleccione…</option>
+                <x-m3.select-field label="Comuna (opcional)" icon="map" wire:model="hogar_comuna_id" :error="$errors->first('hogar_comuna_id')">
+                    <option value="">Sin comuna</option>
                     @foreach ($comunasHogar as $comuna)
                         <option value="{{ $comuna->id }}">{{ $comuna->nombre }}</option>
                     @endforeach

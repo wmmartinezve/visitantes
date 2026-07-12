@@ -9,6 +9,7 @@ use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
 use App\Models\Comuna;
 use App\Models\HogarSolidario;
+use App\Models\Parroquia;
 use App\Models\Invitado;
 use App\Models\User;
 use Illuminate\Http\UploadedFile;
@@ -132,12 +133,19 @@ class NucleoFamiliarOnboardingService
      */
     private function createHogar(array $data): HogarSolidario
     {
-        $comuna = Comuna::query()->findOrFail((int) $data['comuna_id']);
+        $parroquiaId = (int) $data['parroquia_id'];
+        $comunaId = filled($data['comuna_id'] ?? null) ? (int) $data['comuna_id'] : null;
 
-        if ((int) $data['parroquia_id'] !== (int) $comuna->parroquia_id) {
-            throw ValidationException::withMessages([
-                'hogar.parroquia_id' => ['La comuna no pertenece a la parroquia seleccionada.'],
-            ]);
+        if ($comunaId !== null) {
+            $comuna = Comuna::query()->findOrFail($comunaId);
+
+            if ($parroquiaId !== (int) $comuna->parroquia_id) {
+                throw ValidationException::withMessages([
+                    'hogar.parroquia_id' => ['La comuna no pertenece a la parroquia seleccionada.'],
+                ]);
+            }
+        } else {
+            Parroquia::query()->findOrFail($parroquiaId);
         }
 
         $tipoAnfitrion = TipoAnfitrionHogar::from($data['tipo_anfitrion']);
@@ -149,8 +157,8 @@ class NucleoFamiliarOnboardingService
         }
 
         $hogar = HogarSolidario::query()->create([
-            'parroquia_id' => $comuna->parroquia_id,
-            'comuna_id' => $comuna->id,
+            'parroquia_id' => $parroquiaId,
+            'comuna_id' => $comunaId,
             'tipo_vivienda' => TipoViviendaHogar::from($data['tipo_vivienda']),
             'tipo_anfitrion' => $tipoAnfitrion,
             'parentesco_anfitrion' => $tipoAnfitrion === TipoAnfitrionHogar::Familiar

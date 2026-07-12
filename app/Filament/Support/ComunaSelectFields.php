@@ -70,7 +70,7 @@ final class ComunaSelectFields
                         ->all();
                 })
                 ->searchable()
-                ->required(),
+                ->placeholder('Opcional'),
         ];
     }
 }

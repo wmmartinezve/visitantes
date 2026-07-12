@@ -146,6 +146,42 @@ class NucleoFamiliarOnboardingTest extends TestCase
         $this->assertNull($hogar->parentesco_anfitrion);
     }
 
+    public function test_hogar_sin_comuna_es_valido(): void
+    {
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'hogar_solidario_id' => null,
+        ]);
+
+        $parroquia = \App\Models\Parroquia::query()->firstOrFail();
+        $procedencia = $this->procedenciaDemo();
+
+        Sanctum::actingAs($anfitrion);
+
+        $this->postJson('/api/mobile/invitados', [
+            'hogar' => [
+                'tipo_vivienda' => 'casa',
+                'tipo_anfitrion' => 'amigo',
+                'parroquia_id' => $parroquia->id,
+                'responsable_nombre' => 'Pedro Amigo',
+                'direccion_exacta' => 'Calle 1',
+                'latitud' => 10.12,
+                'longitud' => -64.87,
+            ],
+            'nombre' => 'Carlos',
+            'apellido' => 'Pérez',
+            'fecha_nacimiento' => '1985-05-15',
+            'procedencia_estado_id' => $procedencia['procedencia_estado_id'],
+            'procedencia_municipio_id' => $procedencia['procedencia_municipio_id'],
+            'procedencia_parroquia_id' => $procedencia['procedencia_parroquia_id'],
+            'situacion_jefe' => $procedencia['situacion_jefe'],
+        ])->assertCreated();
+
+        $hogar = HogarSolidario::query()->findOrFail($anfitrion->fresh()->hogar_solidario_id);
+        $this->assertNull($hogar->comuna_id);
+        $this->assertSame($parroquia->id, $hogar->parroquia_id);
+    }
+
     public function test_anfitrion_con_hogar_no_puede_enviar_datos_de_hogar(): void
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);

@@ -255,7 +255,7 @@ class RegistrarInvitado extends Component
                 'tipo_vivienda' => $validated['hogar_tipo_vivienda'],
                 'tipo_anfitrion' => $validated['hogar_tipo_anfitrion'],
                 'parentesco_anfitrion' => $validated['hogar_parentesco_anfitrion'] ?? null,
-                'comuna_id' => $validated['hogar_comuna_id'],
+                'comuna_id' => $validated['hogar_comuna_id'] ?? null,
                 'parroquia_id' => $validated['hogar_parroquia_id'],
                 'responsable_nombre' => $validated['responsable_nombre'],
                 'responsable_cedula' => $validated['responsable_cedula'] ?? null,

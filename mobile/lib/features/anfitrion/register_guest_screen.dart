@@ -244,9 +244,9 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
         );
         return false;
       }
-      if (_hogarMunicipioId == null || _hogarParroquiaId == null || _hogarComunaId == null) {
+      if (_hogarMunicipioId == null || _hogarParroquiaId == null) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Complete municipio, parroquia y comuna del hogar.')),
+          const SnackBar(content: Text('Complete municipio y parroquia del hogar.')),
         );
         return false;
       }
@@ -594,14 +594,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
             }),
           ),
           M3SelectField(
-            label: 'Comuna',
+            label: 'Comuna (opcional)',
             icon: Icons.map_outlined,
             value: _hogarComunaId == null
                 ? null
                 : _comunasHogar.firstWhere((e) => e['id'] == _hogarComunaId)['nombre'] as String?,
-            items: _comunasHogar.map((e) => e['nombre'] as String).toList(),
+            items: ['Sin comuna', ..._comunasHogar.map((e) => e['nombre'] as String)],
             onChanged: (v) => setState(() {
-              _hogarComunaId = v == null ? null : _comunasHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+              if (v == null || v == 'Sin comuna') {
+                _hogarComunaId = null;
+                return;
+              }
+              _hogarComunaId = _comunasHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
             }),
           ),
           M3TextField(

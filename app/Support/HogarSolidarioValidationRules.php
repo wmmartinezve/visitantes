@@ -29,7 +29,7 @@ final class HogarSolidarioValidationRules
     {
         return [
             $key('tipo_vivienda') => ['required', 'string', 'in:casa,edificio'],
-            $key('comuna_id') => ['required', 'integer', 'exists:comunas,id'],
+            $key('comuna_id') => ['nullable', 'integer', 'exists:comunas,id'],
             $key('parroquia_id') => ['required', 'integer', 'exists:parroquias,id'],
             $key('responsable_nombre') => ['required', 'string', 'max:255'],
             $key('responsable_cedula') => ['nullable', 'string', 'max:20'],
@@ -72,7 +72,7 @@ final class HogarSolidarioValidationRules
             'hogar_tipo_vivienda' => ['required', 'string', 'in:casa,edificio'],
             'hogar_municipio_id' => ['required', 'integer', 'exists:municipios,id'],
             'hogar_parroquia_id' => ['required', 'integer', 'exists:parroquias,id'],
-            'hogar_comuna_id' => ['required', 'integer', 'exists:comunas,id'],
+            'hogar_comuna_id' => ['nullable', 'integer', 'exists:comunas,id'],
             'hogar_direccion' => ['required', 'string', 'max:500'],
             'hogar_latitud' => ['required', 'numeric', 'between:-90,90'],
             'hogar_longitud' => ['required', 'numeric', 'between:-180,180'],
