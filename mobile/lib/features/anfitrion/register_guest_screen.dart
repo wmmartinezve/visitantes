@@ -42,21 +42,17 @@ class RegisterGuestScreen extends StatefulWidget {
   State<RegisterGuestScreen> createState() => _RegisterGuestScreenState();
 }
 
-class _RegisterGuestScreenState extends State<RegisterGuestScreen> with AutomaticKeepAliveClientMixin {
+class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   final _formKey = GlobalKey<FormState>();
   int _step = 0;
   bool _saving = false;
   bool _loadingGps = false;
   bool _loadingCatalog = false;
 
-  @override
-  bool get wantKeepAlive => true;
-
   bool get _sinHogarAsignado =>
       widget.user.requiereRegistroHogar || widget.catalog.requiereRegistroHogar;
 
-  bool get _incluyeHogar =>
-      (_sinHogarAsignado || widget.requiereRegistroHogar) && !widget.nucleoYaRegistrado;
+  bool get _incluyeHogar => _sinHogarAsignado && !widget.nucleoYaRegistrado;
 
   // Hogar solidario
   final _hogarDireccion = TextEditingController();
@@ -1031,8 +1027,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
 
   @override
   Widget build(BuildContext context) {
-    super.build(context);
-
     if (_loadingCatalog || !widget.catalog.isReady) {
       return Center(
         child: Column(
@@ -1055,7 +1049,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
       );
     }
 
-    if (widget.nucleoYaRegistrado) {
+    if (widget.nucleoYaRegistrado && !_sinHogarAsignado) {
       return ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -1084,71 +1078,73 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> with Automati
 
     final isLastStep = _step >= _totalSteps - 1;
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        if (_incluyeHogar)
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Card(
-              color: VenezuelaColors.yellow.withValues(alpha: 0.12),
-              child: const Padding(
-                padding: EdgeInsets.all(10),
-                child: Text(
-                  'Primero registre su hogar solidario y luego el núcleo familiar hospedado. '
-                  'Un hogar = una familia.',
+    return SizedBox.expand(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (_incluyeHogar)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+              child: Card(
+                color: VenezuelaColors.yellow.withValues(alpha: 0.12),
+                child: const Padding(
+                  padding: EdgeInsets.all(10),
+                  child: Text(
+                    'Primero registre su hogar solidario y luego el núcleo familiar hospedado. '
+                    'Un hogar = una familia.',
+                  ),
                 ),
               ),
             ),
-          ),
-        _buildStepIndicator(),
-        Expanded(
-          child: Form(
-            key: _formKey,
-            child: ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                _buildStepContent(),
-                const SizedBox(height: 80),
-              ],
+          _buildStepIndicator(),
+          Expanded(
+            child: Form(
+              key: _formKey,
+              child: ListView(
+                padding: const EdgeInsets.all(16),
+                children: [
+                  _buildStepContent(),
+                  const SizedBox(height: 80),
+                ],
+              ),
             ),
           ),
-        ),
-        SafeArea(
-          top: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-            child: Row(
-              children: [
-                if (_step > 0)
-                  OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
-                else
-                  const SizedBox.shrink(),
-                const Spacer(),
-                if (!isLastStep)
-                  FilledButton(
-                    onPressed: _saving ? null : _nextStep,
-                    style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-                    child: const Text('Siguiente'),
-                  )
-                else
-                  FilledButton.icon(
-                    onPressed: _saving ? null : _submit,
-                    icon: _saving
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                          )
-                        : const Icon(Icons.check),
-                    label: const Text('Registrar'),
-                    style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-                  ),
-              ],
+          SafeArea(
+            top: false,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+              child: Row(
+                children: [
+                  if (_step > 0)
+                    OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
+                  else
+                    const SizedBox.shrink(),
+                  const Spacer(),
+                  if (!isLastStep)
+                    FilledButton(
+                      onPressed: _saving ? null : _nextStep,
+                      style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
+                      child: const Text('Siguiente'),
+                    )
+                  else
+                    FilledButton.icon(
+                      onPressed: _saving ? null : _submit,
+                      icon: _saving
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                            )
+                          : const Icon(Icons.check),
+                      label: const Text('Registrar'),
+                      style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+                    ),
+                ],
+              ),
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }

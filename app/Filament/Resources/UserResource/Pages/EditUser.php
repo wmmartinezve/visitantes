@@ -58,9 +58,14 @@ class EditUser extends EditRecord
 
         $record->forceFill([
             'rol' => $data['rol'],
-            'hogar_solidario_id' => $data['hogar_solidario_id'] ?? null,
             'centro_acopio_id' => $data['centro_acopio_id'] ?? null,
         ]);
+
+        if (($data['rol'] ?? null) !== \App\Enums\UserRole::Anfitrion->value) {
+            $record->forceFill([
+                'hogar_solidario_id' => $data['hogar_solidario_id'] ?? null,
+            ]);
+        }
         $record->save();
 
         return $record;

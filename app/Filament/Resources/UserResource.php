@@ -7,7 +7,6 @@ namespace App\Filament\Resources;
 use App\Enums\UserRole;
 use App\Filament\Resources\UserResource\Pages;
 use App\Models\CentroAcopio;
-use App\Models\HogarSolidario;
 use App\Models\User;
 use App\Support\VisitantesFeatures;
 use Filament\Forms;
@@ -64,12 +63,10 @@ class UserResource extends Resource
                 ->default(UserRole::Admin->value)
                 ->required()
                 ->live(),
-            Forms\Components\Select::make('hogar_solidario_id')
-                ->label('Hogar solidario asignado')
-                ->options(fn (): array => HogarSolidario::query()->orderBy('codigo')->pluck('codigo', 'id')->all())
-                ->searchable()
-                ->visible(fn (Get $get): bool => $get('rol') === UserRole::Anfitrion->value)
-                ->helperText('Opcional: el anfitrión puede crear su hogar al registrar el primer núcleo familiar desde la app.'),
+            Forms\Components\Placeholder::make('hogar_solidario_info')
+                ->label('Hogar solidario')
+                ->content('El anfitrión crea su hogar solidario y núcleo familiar desde la app móvil (wizard de registro). No se asigna desde el panel.')
+                ->visible(fn (Get $get): bool => $get('rol') === UserRole::Anfitrion->value),
             Forms\Components\Select::make('centro_acopio_id')
                 ->label('Centro de acopio asignado')
                 ->options(fn (): array => CentroAcopio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())

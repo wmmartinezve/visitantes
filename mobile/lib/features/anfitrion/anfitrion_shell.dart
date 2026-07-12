@@ -41,7 +41,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   late MobileUser _user = widget.user;
   late final FieldApi _fieldApi = FieldApi(catalogService: widget.catalog);
 
-  /// Sin hogar efectivo según la API (fuente de verdad) o catálogo offline.
+  /// Sin hogar: el anfitrión debe crearlo en el wizard (nunca pre-asignado).
   bool get _sinHogar => _user.requiereRegistroHogar || widget.catalog.requiereRegistroHogar;
 
   bool get _requiereRegistroHogar => _sinHogar;
@@ -69,13 +69,32 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   void initState() {
     super.initState();
     _index = _requiereRegistroHogar ? 1 : 0;
+    widget.catalog.addListener(_onCatalogOrUserContextChanged);
+  }
+
+  @override
+  void dispose() {
+    widget.catalog.removeListener(_onCatalogOrUserContextChanged);
+    super.dispose();
+  }
+
+  void _onCatalogOrUserContextChanged() {
+    if (!mounted) return;
+    if (_requiereRegistroHogar && _index != 1) {
+      setState(() => _index = 1);
+    }
   }
 
   @override
   void didUpdateWidget(covariant AnfitrionShell oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.user.id != widget.user.id) {
+    if (oldWidget.user.id != widget.user.id ||
+        oldWidget.user.requiereRegistroHogar != widget.user.requiereRegistroHogar ||
+        oldWidget.user.refugioId != widget.user.refugioId) {
       _user = widget.user;
+      if (_requiereRegistroHogar && _index != 1) {
+        _index = 1;
+      }
     }
   }
 
@@ -89,7 +108,16 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
     widget.onUserUpdated(user);
   }
 
-  void _goTo(int index) => setState(() => _index = index);
+  void _goTo(int index) {
+    if (index == 1 && _requiereRegistroHogar) {
+      setState(() {
+        _index = 1;
+        _refreshTick++;
+      });
+      return;
+    }
+    setState(() => _index = index);
+  }
 
   void _bumpRefresh() => setState(() => _refreshTick++);
 
@@ -139,7 +167,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
             onSync: _syncFromHome,
           ),
           RegisterGuestScreen(
-            key: ValueKey('register-$_refreshTick-${_user.refugioId}'),
+            key: const ValueKey('register-wizard'),
             user: _user,
             catalog: widget.catalog,
             sync: widget.sync,

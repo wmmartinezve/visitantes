@@ -58,6 +58,7 @@ class CreateUser extends CreateRecord
                 'centro_acopio_id' => null,
             ]),
             \App\Enums\UserRole::Anfitrion->value => array_merge($data, [
+                'hogar_solidario_id' => null,
                 'centro_acopio_id' => null,
             ]),
             \App\Enums\UserRole::CentroAcopio->value => array_merge($data, [
