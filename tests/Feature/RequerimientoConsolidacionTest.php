@@ -35,14 +35,18 @@ class RequerimientoConsolidacionTest extends TestCase
         $subcategoria = $catalog[$categoria][0];
         $item = InsumoCatalog::etiqueta($categoria, $subcategoria);
 
+        $jefe = Invitado::query()->create([
+            'nombre' => 'A', 'apellido' => 'Uno', 'fecha_nacimiento' => '1990-01-01',
+            'hogar_solidario_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
+            'jefe_familia_id' => null,
+        ]);
         $invitados = collect([
-            Invitado::query()->create([
-                'nombre' => 'A', 'apellido' => 'Uno', 'fecha_nacimiento' => '1990-01-01',
-                'hogar_solidario_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
-            ]),
+            $jefe,
             Invitado::query()->create([
                 'nombre' => 'B', 'apellido' => 'Dos', 'fecha_nacimiento' => '1991-01-01',
                 'hogar_solidario_id' => $refugio->id, 'estatus' => InvitadoEstatus::Activo,
+                'jefe_familia_id' => $jefe->id,
+                'parentesco' => 'Hijo(a)',
             ]),
         ]);
 

@@ -100,16 +100,11 @@ Esta regla aplica en: modelos, migraciones, labels de Filament, vistas Livewire,
 ### 4.1 Diagrama de relaciones
 
 ```
-municipios ──< parroquias ──< refugios ──< invitados ──< invitados (jefe_familia_id)
-                    │
-                    └──< centros_acopio ──< inventarios
+municipios ──< parroquias ──< comunas ──< hogares_solidarios ──< invitados (núcleo: jefe + familiares)
 
-users (rol: admin)           → panel Filament (sin vínculo territorial)
-users (rol: anfitrion)         → refugio_id → registra invitados, gestiona requerimientos
-users (rol: centro_acopio)   → centro_acopio_id → gestiona inventario desde app
+**Regla 1:1:** cada `hogar_solidario` acoge **un único núcleo familiar** (exactamente un jefe de familia + sus familiares vinculados).
 
-invitados ──< requerimientos ──> centros_acopio (nullable, al asignar desde panel)
-requerimientos.anfitrion_id  → users (quien registró/solicitó)
+users (rol: anfitrion) → hogar_solidario_id → registra el núcleo familiar hospedado
 ```
 
 ### 4.2 Tablas y reglas de negocio

@@ -20,12 +20,14 @@ class RegisterGuestScreen extends StatefulWidget {
     required this.catalog,
     required this.sync,
     required this.fieldApi,
+    this.nucleoYaRegistrado = false,
     this.onRegistered,
   });
 
   final CatalogService catalog;
   final SyncService sync;
   final FieldApi fieldApi;
+  final bool nucleoYaRegistrado;
   final VoidCallback? onRegistered;
 
   @override
@@ -139,6 +141,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Future<void> _submit() async {
+    if (widget.nucleoYaRegistrado) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Este hogar solidario ya tiene un núcleo familiar. '
+            'Agregue familiares desde el detalle del Invitado en la lista.',
+          ),
+        ),
+      );
+      return;
+    }
+
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _saving = true);
@@ -280,6 +294,27 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
+          if (widget.nucleoYaRegistrado)
+            Card(
+              color: VenezuelaColors.yellow.withValues(alpha: 0.15),
+              child: const Padding(
+                padding: EdgeInsets.all(12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline, color: VenezuelaColors.blue),
+                    SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Este hogar solidario ya tiene un núcleo familiar registrado (1 hogar = 1 núcleo). '
+                        'Use la pestaña Invitados para ver el jefe de familia y agregar familiares.',
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          if (widget.nucleoYaRegistrado) const SizedBox(height: 12),
           FormSectionCard(
             title: 'Foto testigo de ingreso',
             icon: Icons.photo_camera_outlined,
@@ -481,7 +516,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           }),
           const SizedBox(height: 8),
           FilledButton.icon(
-            onPressed: _saving ? null : _submit,
+            onPressed: (_saving || widget.nucleoYaRegistrado) ? null : _submit,
             icon: _saving
                 ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
                 : const Icon(Icons.save_outlined),

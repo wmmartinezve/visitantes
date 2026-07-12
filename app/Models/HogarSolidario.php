@@ -8,6 +8,7 @@ use App\Enums\TipoViviendaHogar;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 use Illuminate\Database\Eloquent\SoftDeletes;
 
 class HogarSolidario extends Model
@@ -53,6 +54,27 @@ class HogarSolidario extends Model
     public function invitados(): HasMany
     {
         return $this->hasMany(Invitado::class);
+    }
+
+    /** Jefe del único núcleo familiar hospedado en este hogar (1:1). */
+    public function jefeFamilia(): HasOne
+    {
+        return $this->hasOne(Invitado::class)->whereNull('jefe_familia_id');
+    }
+
+    /** Todos los Invitados del núcleo (jefe + familiares). */
+    public function nucleoFamiliar(): HasMany
+    {
+        return $this->invitados();
+    }
+
+    public function tieneNucleoFamiliar(): bool
+    {
+        if ($this->relationLoaded('jefeFamilia')) {
+            return $this->jefeFamilia !== null;
+        }
+
+        return $this->jefeFamilia()->exists();
     }
 
     public function anfitriones(): HasMany

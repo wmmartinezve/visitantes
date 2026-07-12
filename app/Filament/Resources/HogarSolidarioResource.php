@@ -37,6 +37,7 @@ class HogarSolidarioResource extends Resource
     {
         return $form->schema([
             Forms\Components\Section::make('Datos del hogar solidario')
+                ->description('Cada hogar solidario acoge un único núcleo familiar (1 jefe de familia y sus familiares).')
                 ->schema([
                     Forms\Components\TextInput::make('nombre')
                         ->label('Nombre')
@@ -113,8 +114,14 @@ class HogarSolidarioResource extends Resource
                     ->label('Dirección')
                     ->limit(40)
                     ->toggleable(),
+                Tables\Columns\TextColumn::make('jefeFamilia.nombre')
+                    ->label('Núcleo familiar (jefe)')
+                    ->formatStateUsing(fn (HogarSolidario $record): string => $record->jefeFamilia
+                        ? trim($record->jefeFamilia->nombre.' '.$record->jefeFamilia->apellido)
+                        : 'Sin registrar')
+                    ->sortable(),
                 Tables\Columns\TextColumn::make('invitados_count')
-                    ->label('Invitados')
+                    ->label('Personas en núcleo')
                     ->counts('invitados')
                     ->sortable(),
             ])
@@ -136,6 +143,7 @@ class HogarSolidarioResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
+            ->with('jefeFamilia')
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);

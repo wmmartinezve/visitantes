@@ -131,6 +131,7 @@ class InvitadoResource extends Resource
                     : $record->esJefeDeFamilia()),
 
             Forms\Components\Section::make('Ubicación y familia')
+                ->description('Un hogar solidario aloja un solo núcleo familiar. Si ya existe jefe de familia, registre familiares vinculados a él.')
                 ->schema([
                     Forms\Components\Select::make('hogar_solidario_id')
                         ->label('Hogar solidario')

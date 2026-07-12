@@ -92,7 +92,11 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
         catalog: widget.catalog,
         sync: widget.sync,
         fieldApi: _fieldApi,
-        onRegistered: _bumpRefresh,
+        nucleoYaRegistrado: widget.catalog.tieneNucleoFamiliarEnHogar,
+        onRegistered: () {
+          widget.catalog.refresh(force: true);
+          _bumpRefresh();
+        },
       ),
       GuestsListScreen(key: ValueKey('guests-$_refreshTick'), fieldApi: _fieldApi, sync: widget.sync),
       RequirementsListScreen(key: ValueKey('reqs-$_refreshTick'), fieldApi: _fieldApi),

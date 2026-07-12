@@ -29,11 +29,13 @@ class MobileUserResource extends JsonResource
                 'id' => $this->hogarSolidario?->id,
                 'nombre' => $this->hogarSolidario?->nombre,
                 'direccion_exacta' => $this->hogarSolidario?->direccion_exacta,
+                'tiene_nucleo_familiar' => $this->hogarSolidario?->tieneNucleoFamiliar() ?? false,
             ]),
             'refugio' => $this->whenLoaded('hogarSolidario', fn () => [
                 'id' => $this->hogarSolidario?->id,
                 'nombre' => $this->hogarSolidario?->nombre,
                 'direccion_exacta' => $this->hogarSolidario?->direccion_exacta,
+                'tiene_nucleo_familiar' => $this->hogarSolidario?->tieneNucleoFamiliar() ?? false,
             ]),
             'centro_acopio' => $this->whenLoaded('centroAcopio', fn () => new MobileCentroAcopioResource($this->centroAcopio)),
         ];

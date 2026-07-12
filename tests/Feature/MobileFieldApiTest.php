@@ -56,6 +56,11 @@ class MobileFieldApiTest extends TestCase
             'apellido' => 'Rivas',
             'fecha_nacimiento' => '1978-01-01',
             'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
+            'jefe_familia_id' => Invitado::query()
+                ->where('hogar_solidario_id', $anfitrion->hogar_solidario_id)
+                ->whereNull('jefe_familia_id')
+                ->value('id'),
+            'parentesco' => 'Hijo(a)',
             'estatus' => 'activo',
         ]);
 
@@ -72,13 +77,10 @@ class MobileFieldApiTest extends TestCase
         $anfitrion = $this->anfitrion();
         Sanctum::actingAs($anfitrion);
 
-        $invitado = Invitado::query()->create([
-            'nombre' => 'Sin',
-            'apellido' => 'Foto',
-            'fecha_nacimiento' => '1990-01-01',
-            'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
-            'estatus' => 'activo',
-        ]);
+        $jefe = Invitado::query()
+            ->where('hogar_solidario_id', $anfitrion->hogar_solidario_id)
+            ->whereNull('jefe_familia_id')
+            ->firstOrFail();
 
         $fotoBase64 = base64_encode(
             base64_decode(
@@ -87,15 +89,15 @@ class MobileFieldApiTest extends TestCase
             ) ?: '',
         );
 
-        $this->postJson("/api/mobile/invitados/{$invitado->id}/foto", [
+        $this->postJson("/api/mobile/invitados/{$jefe->id}/foto", [
             'foto_base64' => 'data:image/jpeg;base64,'.$fotoBase64,
             'foto_mime' => 'image/jpeg',
         ])
             ->assertOk()
             ->assertJsonPath('data.foto_url', fn ($url) => is_string($url) && $url !== '');
 
-        $invitado->refresh();
-        $this->assertNotNull($invitado->foto_ingreso);
+        $jefe->refresh();
+        $this->assertNotNull($jefe->foto_ingreso);
     }
 
     public function test_anfitrion_puede_registrar_invitado_online(): void
@@ -103,6 +105,7 @@ class MobileFieldApiTest extends TestCase
         Storage::fake(InvitadoFotoStorage::privateDisk());
 
         $anfitrion = $this->anfitrion();
+        $this->limpiarNucleoDeHogar((int) $anfitrion->hogar_solidario_id);
         Sanctum::actingAs($anfitrion);
 
         $fotoBase64 = base64_encode(
@@ -150,6 +153,7 @@ class MobileFieldApiTest extends TestCase
     public function test_lista_invitados_incluye_jefe_y_familiares(): void
     {
         $anfitrion = $this->anfitrion();
+        $this->limpiarNucleoDeHogar((int) $anfitrion->hogar_solidario_id);
         Sanctum::actingAs($anfitrion);
 
         $jefe = Invitado::query()->create([

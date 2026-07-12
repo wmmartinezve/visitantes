@@ -11,6 +11,7 @@ use App\Models\Invitado;
 use App\Models\User;
 use App\Services\ActivityLogService;
 use App\Support\InvitadoFotoStorage;
+use App\Support\NucleoFamiliarPorHogar;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Storage;
@@ -30,6 +31,10 @@ class InvitadoRegistrationService
     public function register(User $anfitrion, array $jefeData, ?UploadedFile $foto, array $familiares = []): Invitado
     {
         return DB::transaction(function () use ($anfitrion, $jefeData, $foto, $familiares): Invitado {
+            $hogarId = (int) $anfitrion->hogar_solidario_id;
+
+            NucleoFamiliarPorHogar::assertPuedeRegistrarJefe($hogarId);
+
             $jefe = Invitado::query()->create([
                 'nombre' => $jefeData['nombre'],
                 'apellido' => $jefeData['apellido'],
@@ -87,7 +92,7 @@ class InvitadoRegistrationService
                 );
             }
 
-            return $jefe->fresh(['miembrosFamilia', 'refugio']);
+            return $jefe->fresh(['miembrosFamilia', 'hogarSolidario']);
         });
     }
 
@@ -120,7 +125,7 @@ class InvitadoRegistrationService
                 }
             }
 
-            return $jefe->fresh(['miembrosFamilia', 'refugio']);
+            return $jefe->fresh(['miembrosFamilia', 'hogarSolidario']);
         });
     }
 

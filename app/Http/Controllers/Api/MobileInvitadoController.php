@@ -82,12 +82,16 @@ class MobileInvitadoController extends Controller
                 'cedula' => $validated['cedula'] ?? null,
                 'telefono' => $validated['telefono'] ?? null,
                 'fecha_nacimiento' => $validated['fecha_nacimiento'],
+                'procedencia_estado_id' => $validated['procedencia_estado_id'],
+                'procedencia_municipio_id' => $validated['procedencia_municipio_id'],
+                'procedencia_parroquia_id' => $validated['procedencia_parroquia_id'],
+                'situacion_jefe' => $validated['situacion_jefe'],
             ],
             $foto,
             $validated['familiares'] ?? [],
         );
 
-        return (new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'refugio'])))
+        return (new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'hogarSolidario'])))
             ->response()
             ->setStatusCode(201);
     }
@@ -106,6 +110,6 @@ class MobileInvitadoController extends Controller
 
         $jefe = $registration->attachFoto($invitado, $foto);
 
-        return new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'refugio']));
+        return new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'hogarSolidario']));
     }
 }

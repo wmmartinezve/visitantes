@@ -54,6 +54,14 @@ class CatalogService {
   int get parroquiasCount => (cachedCatalog?['parroquias'] as List?)?.length ?? 0;
   int get centrosCount => (cachedCatalog?['centros_acopio'] as List?)?.length ?? 0;
 
+  bool get tieneNucleoFamiliarEnHogar {
+    final operador = cachedCatalog?['operador'];
+    if (operador is Map) {
+      return operador['tiene_nucleo_familiar'] == true;
+    }
+    return false;
+  }
+
   /// Actualiza cantidad de un ítem en la caché local (p. ej. tras editar offline).
   Future<void> patchInventarioLocalCantidad(int inventarioId, int cantidad) async {
     final catalog = cachedCatalog;

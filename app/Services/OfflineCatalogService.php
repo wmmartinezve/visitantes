@@ -89,6 +89,10 @@ class OfflineCatalogService
             $hogar = $hogaresSolidarios->firstWhere('id', $user->hogar_solidario_id);
             $operador['hogar_solidario'] = $hogar;
             $operador['refugio'] = $hogar;
+            $operador['tiene_nucleo_familiar'] = \App\Models\Invitado::query()
+                ->where('hogar_solidario_id', $user->hogar_solidario_id)
+                ->whereNull('jefe_familia_id')
+                ->exists();
         }
 
         if ($user->centro_acopio_id !== null) {
