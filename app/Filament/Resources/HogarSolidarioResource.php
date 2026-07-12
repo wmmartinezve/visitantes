@@ -7,7 +7,7 @@ namespace App\Filament\Resources;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
 use App\Filament\Resources\HogarSolidarioResource\Pages;
-use App\Filament\Support\ComunaSelectFields;
+use App\Filament\Support\GeografiaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
 use App\Filament\Support\HogarAnfitrionFields;
 use App\Models\HogarSolidario;
@@ -57,7 +57,7 @@ class HogarSolidarioResource extends Resource
                         ))
                         ->required()
                         ->default(TipoViviendaHogar::Casa->value),
-                    ...ComunaSelectFields::make($form->getRecord()),
+                    ...GeografiaSelectFields::hogar($form->getRecord()),
                     ...GeolocalizacionFields::make(),
                 ])
                 ->columns(2),
@@ -104,14 +104,15 @@ class HogarSolidarioResource extends Resource
                     ->label('Vivienda')
                     ->badge()
                     ->formatStateUsing(fn (?TipoViviendaHogar $state): string => $state?->label() ?? '—'),
-                Tables\Columns\TextColumn::make('comuna.parroquia.municipio.nombre')
+                Tables\Columns\TextColumn::make('parroquia.municipio.nombre')
                     ->label('Municipio')
                     ->sortable(),
-                Tables\Columns\TextColumn::make('comuna.parroquia.nombre')
+                Tables\Columns\TextColumn::make('parroquia.nombre')
                     ->label('Parroquia')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('comuna.nombre')
                     ->label('Comuna')
+                    ->placeholder('—')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('responsable_nombre')
                     ->label('Responsable')
@@ -149,7 +150,7 @@ class HogarSolidarioResource extends Resource
     public static function getEloquentQuery(): Builder
     {
         return parent::getEloquentQuery()
-            ->with('jefeFamilia')
+            ->with(['parroquia.municipio', 'comuna', 'jefeFamilia'])
             ->withoutGlobalScopes([
                 SoftDeletingScope::class,
             ]);
