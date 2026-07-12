@@ -11,32 +11,42 @@ use App\Models\HogarSolidario;
 use App\Models\User;
 use App\Services\InvitadoRegistrationService;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
+use Database\Seeders\VenezuelaEstadosSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Livewire\Livewire;
+use Tests\Concerns\HasProcedenciaDemo;
 use Tests\TestCase;
 
 class AnfitrionAppTest extends TestCase
 {
+    use HasProcedenciaDemo;
     use RefreshDatabase;
 
-    private function createAnfitrion(): User
+    private function createAnfitrion(?int $hogarId = null): User
     {
+        $this->seed(VenezuelaEstadosSeeder::class);
         $this->seed(AnzoateguiGeografiaSeeder::class);
 
-        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
+        if ($hogarId === null) {
+            $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
-        $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Test',
+            $refugio = HogarSolidario::query()->create([
             'parroquia_id' => $parroquia->id,
-            'latitud' => 10.214,
-            'longitud' => -64.633,
-            'direccion_exacta' => 'Dirección test',
-        ]);
+                'latitud' => 10.214,
+                'longitud' => -64.633,
+                'direccion_exacta' => 'Dirección test',
+                'responsable_nombre' => 'Responsable Test',
+            ]);
 
-        return User::factory()->create([
+            $hogarId = $refugio->id;
+        }
+
+        $user = User::factory()->create([
             'rol' => UserRole::Anfitrion,
-            'hogar_solidario_id' => $refugio->id,
         ]);
+        $user->forceFill(['hogar_solidario_id' => $hogarId])->save();
+
+        return $user->fresh();
     }
 
     public function test_anfitrion_puede_ver_dashboard(): void
@@ -48,15 +58,41 @@ class AnfitrionAppTest extends TestCase
             ->assertOk();
     }
 
+    public function test_anfitrion_sin_hogar_puede_acceder_registrar(): void
+    {
+        $user = User::factory()->create(['rol' => UserRole::Anfitrion]);
+        $user->forceFill(['hogar_solidario_id' => null])->save();
+
+        $this->actingAs($user)
+            ->get('/anfitrion/registrar')
+            ->assertOk();
+    }
+
+    public function test_anfitrion_sin_hogar_es_redirigido_desde_dashboard(): void
+    {
+        $user = User::factory()->create(['rol' => UserRole::Anfitrion]);
+        $user->forceFill(['hogar_solidario_id' => null])->save();
+
+        $this->actingAs($user)
+            ->get('/anfitrion')
+            ->assertRedirect(route('anfitrion.registrar'));
+    }
+
     public function test_anfitrion_puede_registrar_invitado_con_familiar(): void
     {
         $anfitrion = $this->createAnfitrion();
+        $procedencia = $this->procedenciaDemo();
 
         Livewire::actingAs($anfitrion)
             ->test(\App\Livewire\Anfitrion\RegistrarInvitado::class)
+            ->set('paso', 2)
             ->set('nombre', 'María')
             ->set('apellido', 'Pérez')
             ->set('fecha_nacimiento', '1990-05-10')
+            ->set('procedencia_estado_id', $procedencia['procedencia_estado_id'])
+            ->set('procedencia_municipio_id', $procedencia['procedencia_municipio_id'])
+            ->set('procedencia_parroquia_id', $procedencia['procedencia_parroquia_id'])
+            ->set('situacion_jefe', $procedencia['situacion_jefe'])
             ->set('familiares', [[
                 'nombre' => 'José',
                 'apellido' => 'Pérez',
@@ -90,7 +126,6 @@ class AnfitrionAppTest extends TestCase
 
         $otraParroquia = Parroquia::query()->where('nombre', '!=', 'Puerto La Cruz')->firstOrFail();
         $otroRefugio = HogarSolidario::query()->create([
-            'nombre' => 'Otro refugio',
             'parroquia_id' => $otraParroquia->id,
             'latitud' => 10.0,
             'longitud' => -69.0,

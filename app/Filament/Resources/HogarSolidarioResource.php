@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Filament\Resources;
 
+use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
 use App\Filament\Resources\HogarSolidarioResource\Pages;
 use App\Filament\Support\ComunaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
+use App\Filament\Support\HogarAnfitrionFields;
 use App\Models\HogarSolidario;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -33,16 +35,21 @@ class HogarSolidarioResource extends Resource
 
     protected static ?int $navigationSort = 10;
 
+    public static function canCreate(): bool
+    {
+        return false;
+    }
+
     public static function form(Form $form): Form
     {
         return $form->schema([
             Forms\Components\Section::make('Datos del hogar solidario')
-                ->description('Cada hogar solidario acoge un único núcleo familiar (1 jefe de familia y sus familiares).')
+                ->description('El código se asigna automáticamente (municipio · parroquia · correlativo).')
                 ->schema([
-                    Forms\Components\TextInput::make('nombre')
-                        ->label('Nombre')
-                        ->required()
-                        ->maxLength(255),
+                    Forms\Components\TextInput::make('codigo')
+                        ->label('Código')
+                        ->disabled()
+                        ->dehydrated(false),
                     Forms\Components\Select::make('tipo_vivienda')
                         ->label('Tipo de vivienda')
                         ->options(collect(TipoViviendaHogar::cases())->mapWithKeys(
@@ -54,10 +61,15 @@ class HogarSolidarioResource extends Resource
                     ...GeolocalizacionFields::make(),
                 ])
                 ->columns(2),
-            Forms\Components\Section::make('Responsable e habitantes')
+            Forms\Components\Section::make('Tipo de acogida')
+                ->schema([
+                    ...HogarAnfitrionFields::make(),
+                ])
+                ->columns(2),
+            Forms\Components\Section::make('Responsable del hogar')
                 ->schema([
                     Forms\Components\TextInput::make('responsable_nombre')
-                        ->label('Responsable del hogar')
+                        ->label('Nombre del responsable')
                         ->required()
                         ->maxLength(255),
                     Forms\Components\TextInput::make('responsable_cedula')
@@ -67,20 +79,6 @@ class HogarSolidarioResource extends Resource
                         ->label('Teléfono del responsable')
                         ->tel()
                         ->maxLength(30),
-                    Forms\Components\Repeater::make('habitantes')
-                        ->label('Habitantes del hogar solidario')
-                        ->schema([
-                            Forms\Components\TextInput::make('nombre')
-                                ->label('Nombre')
-                                ->required()
-                                ->maxLength(255),
-                            Forms\Components\TextInput::make('parentesco')
-                                ->label('Parentesco / relación')
-                                ->maxLength(50),
-                        ])
-                        ->columns(2)
-                        ->columnSpanFull()
-                        ->addActionLabel('Agregar habitante'),
                 ])
                 ->columns(2),
         ]);
@@ -90,10 +88,18 @@ class HogarSolidarioResource extends Resource
     {
         return $table
             ->columns([
-                Tables\Columns\TextColumn::make('nombre')
-                    ->label('Hogar solidario')
+                Tables\Columns\TextColumn::make('codigo')
+                    ->label('Código')
                     ->searchable()
                     ->sortable(),
+                Tables\Columns\TextColumn::make('tipo_anfitrion')
+                    ->label('Acogida')
+                    ->badge()
+                    ->formatStateUsing(fn (?TipoAnfitrionHogar $state): string => $state?->label() ?? '—'),
+                Tables\Columns\TextColumn::make('parentesco_anfitrion')
+                    ->label('Parentesco')
+                    ->placeholder('—')
+                    ->toggleable(),
                 Tables\Columns\TextColumn::make('tipo_vivienda')
                     ->label('Vivienda')
                     ->badge()
@@ -153,7 +159,6 @@ class HogarSolidarioResource extends Resource
     {
         return [
             'index' => Pages\ListHogaresSolidarios::route('/'),
-            'create' => Pages\CreateHogarSolidario::route('/create'),
             'edit' => Pages\EditHogarSolidario::route('/{record}/edit'),
         ];
     }

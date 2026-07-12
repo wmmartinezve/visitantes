@@ -27,7 +27,6 @@ class NucleoFamiliarPorHogarTest extends TestCase
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
         $hogar = HogarSolidario::query()->create([
-            'nombre' => 'Hogar único núcleo',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.21,
             'longitud' => -64.63,
@@ -66,7 +65,6 @@ class NucleoFamiliarPorHogarTest extends TestCase
 
         $parroquia = Parroquia::query()->firstOrFail();
         $hogar = HogarSolidario::query()->create([
-            'nombre' => 'Hogar relación 1a1',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.21,
             'longitud' => -64.63,

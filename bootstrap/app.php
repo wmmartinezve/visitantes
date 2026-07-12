@@ -20,6 +20,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'anfitrion' => \App\Http\Middleware\EnsureAnfitrion::class,
+            'anfitrion_hogar' => \App\Http\Middleware\EnsureAnfitrionHogar::class,
             'centro_acopio' => \App\Http\Middleware\EnsureCentroAcopio::class,
             'field_operator' => \App\Http\Middleware\EnsureFieldOperator::class,
         ]);

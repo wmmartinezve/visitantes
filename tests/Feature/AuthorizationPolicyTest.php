@@ -32,7 +32,6 @@ class AuthorizationPolicyTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugioPropio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Propio',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.026,
             'longitud' => -69.256,
@@ -40,7 +39,6 @@ class AuthorizationPolicyTest extends TestCase
         ]);
 
         $refugioAjeno = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Ajeno',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.030,
             'longitud' => -69.260,
@@ -111,7 +109,6 @@ class AuthorizationPolicyTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.026,
             'longitud' => -69.256,
@@ -168,7 +165,6 @@ class AuthorizationPolicyTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.026,
             'longitud' => -69.256,

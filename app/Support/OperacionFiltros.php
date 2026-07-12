@@ -76,7 +76,7 @@ final readonly class OperacionFiltros
         }
 
         if ($this->refugioId) {
-            $etiquetas[] = 'HogarSolidario: '.(HogarSolidario::query()->find($this->refugioId)?->nombre ?? '—');
+            $etiquetas[] = 'HogarSolidario: '.(HogarSolidario::query()->find($this->refugioId)?->codigo ?? '—');
         }
 
         if ($this->centroAcopioId) {

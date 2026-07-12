@@ -12,6 +12,8 @@ use App\Models\HogarSolidario;
 use App\Models\Municipio;
 use App\Models\User;
 use App\Enums\SituacionJefeFamilia;
+use App\Enums\TipoAnfitrionHogar;
+use App\Enums\TipoViviendaHogar;
 use App\Support\InsumoCatalog;
 
 class OfflineCatalogService
@@ -46,16 +48,19 @@ class OfflineCatalogService
 
         $hogaresSolidarios = HogarSolidario::query()
             ->with(['parroquia:id,nombre,municipio_id', 'comuna:id,nombre,parroquia_id'])
-            ->orderBy('nombre')
+            ->orderBy('codigo')
             ->get()
             ->map(fn (HogarSolidario $h) => [
                 'id' => $h->id,
-                'nombre' => $h->nombre,
+                'codigo' => $h->codigo,
+                'nombre' => $h->codigo,
                 'parroquia_id' => $h->parroquia_id,
                 'comuna_id' => $h->comuna_id,
                 'parroquia' => $h->parroquia?->nombre,
                 'comuna' => $h->comuna?->nombre,
                 'tipo_vivienda' => $h->tipo_vivienda?->value,
+                'tipo_anfitrion' => $h->tipo_anfitrion?->value,
+                'parentesco_anfitrion' => $h->parentesco_anfitrion,
                 'latitud' => (float) $h->latitud,
                 'longitud' => (float) $h->longitud,
                 'direccion_exacta' => $h->direccion_exacta,
@@ -83,6 +88,7 @@ class OfflineCatalogService
             'rol' => $user->rol->value,
             'hogar_solidario_id' => $user->hogar_solidario_id,
             'centro_acopio_id' => $user->centro_acopio_id,
+            'requiere_registro_hogar' => $user->isAnfitrion() && $user->hogar_solidario_id === null,
         ];
 
         if ($user->hogar_solidario_id !== null) {
@@ -148,6 +154,14 @@ class OfflineCatalogService
             'parentescos' => config('visitantes.parentescos'),
             'situaciones_jefe' => collect(SituacionJefeFamilia::cases())
                 ->map(fn (SituacionJefeFamilia $s) => ['value' => $s->value, 'label' => $s->label()])
+                ->values()
+                ->all(),
+            'tipos_vivienda' => collect(TipoViviendaHogar::cases())
+                ->map(fn (TipoViviendaHogar $t) => ['value' => $t->value, 'label' => $t->label()])
+                ->values()
+                ->all(),
+            'tipos_anfitrion' => collect(TipoAnfitrionHogar::cases())
+                ->map(fn (TipoAnfitrionHogar $t) => ['value' => $t->value, 'label' => $t->label()])
                 ->values()
                 ->all(),
             'operador' => $operador,

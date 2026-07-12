@@ -30,9 +30,20 @@ class InvitadoRegistrationService
      */
     public function register(User $anfitrion, array $jefeData, ?UploadedFile $foto, array $familiares = []): Invitado
     {
-        return DB::transaction(function () use ($anfitrion, $jefeData, $foto, $familiares): Invitado {
-            $hogarId = (int) $anfitrion->hogar_solidario_id;
+        if ($anfitrion->hogar_solidario_id === null) {
+            throw new InvalidArgumentException('El anfitrión no tiene hogar solidario asignado.');
+        }
 
+        return $this->registerForHogar((int) $anfitrion->hogar_solidario_id, $jefeData, $foto, $familiares);
+    }
+
+    /**
+     * @param  array<string, mixed>  $jefeData
+     * @param  list<array<string, mixed>>  $familiares
+     */
+    public function registerForHogar(int $hogarId, array $jefeData, ?UploadedFile $foto, array $familiares = []): Invitado
+    {
+        return DB::transaction(function () use ($hogarId, $jefeData, $foto, $familiares): Invitado {
             NucleoFamiliarPorHogar::assertPuedeRegistrarJefe($hogarId);
 
             $jefe = Invitado::query()->create([
@@ -41,7 +52,7 @@ class InvitadoRegistrationService
                 'cedula' => $jefeData['cedula'] ?? null,
                 'fecha_nacimiento' => $jefeData['fecha_nacimiento'],
                 'telefono' => $jefeData['telefono'] ?? null,
-                'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
+                'hogar_solidario_id' => $hogarId,
                 'procedencia_estado_id' => $jefeData['procedencia_estado_id'] ?? null,
                 'procedencia_municipio_id' => $jefeData['procedencia_municipio_id'] ?? null,
                 'procedencia_parroquia_id' => $jefeData['procedencia_parroquia_id'] ?? null,
@@ -81,7 +92,7 @@ class InvitadoRegistrationService
                     'cedula' => $familiar['cedula'] ?? null,
                     'fecha_nacimiento' => $familiar['fecha_nacimiento'],
                     'telefono' => $familiar['telefono'] ?? null,
-                    'hogar_solidario_id' => $anfitrion->hogar_solidario_id,
+                    'hogar_solidario_id' => $hogarId,
                     'estatus' => InvitadoEstatus::Activo,
                     'jefe_familia_id' => $jefe->id,
                 ]);

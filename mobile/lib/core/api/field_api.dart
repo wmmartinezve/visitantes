@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
+import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
 
@@ -94,7 +95,7 @@ class FieldApi {
     }
   }
 
-  Future<InvitadoModel> registerInvitadoOnline(Map<String, dynamic> payload) async {
+  Future<RegisterInvitadoResult> registerInvitadoOnline(Map<String, dynamic> payload) async {
     final response = await _api.dio.post<Map<String, dynamic>>(
       '/invitados',
       data: payload,
@@ -103,13 +104,20 @@ class FieldApi {
         receiveTimeout: const Duration(seconds: 60),
       ),
     );
-    final data = response.data?['data'];
+    final body = response.data;
+    final data = body?['data'];
     if (data is! Map) {
       throw StateError('Respuesta inválida del servidor');
     }
     final invitado = InvitadoModel.fromJson(Map<String, dynamic>.from(data));
     await _prependInvitadoToCache(invitado);
-    return invitado;
+
+    MobileUser? updatedUser;
+    if (body?['hogar_creado'] == true && body?['user'] is Map) {
+      updatedUser = MobileUser.fromJson(Map<String, dynamic>.from(body!['user'] as Map));
+    }
+
+    return RegisterInvitadoResult(invitado: invitado, updatedUser: updatedUser);
   }
 
   Future<void> _prependInvitadoToCache(InvitadoModel invitado) async {
@@ -261,4 +269,11 @@ extension _FirstOrNull<E> on Iterable<E> {
     if (iterator.moveNext()) return iterator.current;
     return null;
   }
+}
+
+class RegisterInvitadoResult {
+  const RegisterInvitadoResult({required this.invitado, this.updatedUser});
+
+  final InvitadoModel invitado;
+  final MobileUser? updatedUser;
 }

@@ -157,7 +157,6 @@ class RequerimientoConsolidacionTest extends TestCase
     {
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Consolidado',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,

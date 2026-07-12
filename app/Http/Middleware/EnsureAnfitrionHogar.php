@@ -9,7 +9,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class EnsureAnfitrion
+class EnsureAnfitrionHogar
 {
     public function handle(Request $request, Closure $next): Response
     {
@@ -21,6 +21,12 @@ class EnsureAnfitrion
 
         if ($user->rol !== UserRole::Anfitrion) {
             abort(403, 'Acceso restringido a anfitriones.');
+        }
+
+        if ($user->hogar_solidario_id === null) {
+            return redirect()
+                ->route('anfitrion.registrar')
+                ->with('info', 'Complete el registro de su hogar solidario y núcleo familiar para continuar.');
         }
 
         return $next($request);

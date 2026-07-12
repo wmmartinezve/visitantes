@@ -37,7 +37,6 @@ class Fase6LogisticaTest extends TestCase
         ]);
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Destino',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.21380000,
             'longitud' => -64.63280000,
@@ -86,7 +85,6 @@ class Fase6LogisticaTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Test',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,

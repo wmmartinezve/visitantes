@@ -235,7 +235,6 @@ class MobileFieldApiTest extends TestCase
         ]);
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario API',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -276,7 +275,6 @@ class MobileFieldApiTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario API',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,

@@ -81,7 +81,6 @@ class AcopioAppTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Test',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -144,7 +143,6 @@ class AcopioAppTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Cerca',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,

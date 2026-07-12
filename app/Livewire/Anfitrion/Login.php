@@ -23,8 +23,11 @@ class Login extends Component
     {
         $user = Auth::user();
 
-        if ($user?->rol === UserRole::Anfitrion && $user->hogar_solidario_id !== null) {
-            $this->redirectRoute('anfitrion.dashboard', navigate: true);
+        if ($user?->rol === UserRole::Anfitrion) {
+            $this->redirectRoute(
+                $user->hogar_solidario_id === null ? 'anfitrion.registrar' : 'anfitrion.dashboard',
+                navigate: true,
+            );
         }
     }
 
@@ -48,7 +51,7 @@ class Login extends Component
 
         $user = Auth::user();
 
-        if ($user === null || $user->rol !== UserRole::Anfitrion || $user->hogar_solidario_id === null) {
+        if ($user === null || $user->rol !== UserRole::Anfitrion) {
             Auth::logout();
             $this->addError('email', 'Esta cuenta no tiene acceso como anfitrión.');
 
@@ -57,7 +60,10 @@ class Login extends Component
 
         session()->regenerate();
 
-        $this->redirectRoute('anfitrion.dashboard', navigate: true);
+        $this->redirectRoute(
+            $user->hogar_solidario_id === null ? 'anfitrion.registrar' : 'anfitrion.dashboard',
+            navigate: true,
+        );
     }
 
     public function render()

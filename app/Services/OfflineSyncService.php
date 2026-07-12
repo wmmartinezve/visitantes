@@ -12,6 +12,7 @@ use App\Models\OfflineSyncRecord;
 use App\Models\Requerimiento;
 use App\Models\User;
 use App\Support\ActivityLogContext;
+use App\Support\HogarSolidarioValidationRules;
 use App\Support\InsumoCatalog;
 use App\Support\WitnessPhotoDecoder;
 use Illuminate\Database\QueryException;
@@ -27,6 +28,7 @@ class OfflineSyncService
 {
     public function __construct(
         private readonly InvitadoRegistrationService $invitadoRegistration,
+        private readonly NucleoFamiliarOnboardingService $nucleoOnboarding,
         private readonly RequerimientoAsignacionService $requerimientoAsignacion,
         private readonly ActivityLogService $activityLog,
     ) {}
@@ -137,7 +139,7 @@ class OfflineSyncService
      */
     private function syncInvitadoRegistro(User $user, array $payload, string $clientId, array &$idMap): int
     {
-        if (! $user->isAnfitrion() || $user->hogar_solidario_id === null) {
+        if (! $user->isAnfitrion()) {
             throw new RuntimeException('Solo anfitriones pueden registrar Invitados offline.');
         }
 
@@ -153,12 +155,16 @@ class OfflineSyncService
             return (int) $existing->server_id;
         }
 
-        $validated = Validator::make($payload, [
+        $rules = [
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
             'cedula' => ['nullable', 'string', 'max:20'],
             'telefono' => ['nullable', 'string', 'max:30'],
             'fecha_nacimiento' => ['required', 'date', 'before_or_equal:today'],
+            'procedencia_estado_id' => ['required', 'integer', 'exists:estados,id'],
+            'procedencia_municipio_id' => ['required', 'integer', 'exists:municipios,id'],
+            'procedencia_parroquia_id' => ['required', 'integer', 'exists:parroquias,id'],
+            'situacion_jefe' => ['required', 'string', 'in:trabajando,desempleado,pensionado,estudiante,otro'],
             'familiares' => ['array'],
             'familiares.*.nombre' => ['required_with:familiares.*.apellido', 'string', 'max:255'],
             'familiares.*.apellido' => ['required_with:familiares.*.nombre', 'string', 'max:255'],
@@ -168,7 +174,13 @@ class OfflineSyncService
             'familiares.*.fecha_nacimiento' => ['required_with:familiares.*.nombre', 'date', 'before_or_equal:today'],
             'foto_base64' => ['nullable', 'string', 'max:12000000'],
             'foto_mime' => ['nullable', 'string', 'in:image/jpeg,image/png,image/webp'],
-        ])->validate();
+        ];
+
+        if ($user->hogar_solidario_id === null) {
+            $rules = array_merge($rules, HogarSolidarioValidationRules::forPayload('hogar'));
+        }
+
+        $validated = Validator::make($payload, $rules)->validate();
 
         $foto = null;
         if (! empty($validated['foto_base64'])) {
@@ -178,19 +190,28 @@ class OfflineSyncService
             );
         }
 
-        $jefe = DB::transaction(function () use ($user, $validated, $foto, $clientId): Invitado {
-            $jefe = $this->invitadoRegistration->register(
-                $user,
+        $hogarData = $user->hogar_solidario_id === null ? ($validated['hogar'] ?? null) : null;
+
+        $jefe = DB::transaction(function () use ($user, $validated, $foto, $clientId, $hogarData): Invitado {
+            $result = $this->nucleoOnboarding->register(
+                $user->fresh(),
+                $hogarData,
                 [
                     'nombre' => $validated['nombre'],
                     'apellido' => $validated['apellido'],
                     'cedula' => $validated['cedula'] ?? null,
                     'telefono' => $validated['telefono'] ?? null,
                     'fecha_nacimiento' => $validated['fecha_nacimiento'],
+                    'procedencia_estado_id' => $validated['procedencia_estado_id'],
+                    'procedencia_municipio_id' => $validated['procedencia_municipio_id'],
+                    'procedencia_parroquia_id' => $validated['procedencia_parroquia_id'],
+                    'situacion_jefe' => $validated['situacion_jefe'],
                 ],
                 $foto,
                 $validated['familiares'] ?? [],
             );
+
+            $jefe = $result['jefe'];
 
             OfflineSyncRecord::query()->create([
                 'client_id' => $clientId,

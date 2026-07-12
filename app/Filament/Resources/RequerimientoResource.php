@@ -45,7 +45,7 @@ class RequerimientoResource extends Resource
                     titleAttribute: 'nombre',
                     modifyQueryUsing: fn ($query) => $query->with('refugio')->orderBy('apellido'),
                 )
-                ->getOptionLabelFromRecordUsing(fn (Invitado $record): string => $record->nombreCompleto().' — '.$record->refugio?->nombre)
+                ->getOptionLabelFromRecordUsing(fn (Invitado $record): string => $record->nombreCompleto().' — '.$record->refugio?->codigo)
                 ->searchable(['nombre', 'apellido', 'cedula'])
                 ->preload()
                 ->required(),

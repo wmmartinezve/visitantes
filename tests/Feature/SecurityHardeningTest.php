@@ -43,7 +43,6 @@ class SecurityHardeningTest extends TestCase
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Rate Limit',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -78,7 +77,6 @@ class SecurityHardeningTest extends TestCase
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Foto',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -120,7 +118,6 @@ class SecurityHardeningTest extends TestCase
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
 
         $refugioA = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario A',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -128,7 +125,6 @@ class SecurityHardeningTest extends TestCase
         ]);
 
         $refugioB = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario B',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.220,
             'longitud' => -64.640,
@@ -166,7 +162,6 @@ class SecurityHardeningTest extends TestCase
 
         $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Propio',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,
@@ -212,7 +207,6 @@ class SecurityHardeningTest extends TestCase
         ]);
 
         $refugio = HogarSolidario::query()->create([
-            'nombre' => 'HogarSolidario Idempotente',
             'parroquia_id' => $parroquia->id,
             'latitud' => 10.214,
             'longitud' => -64.633,

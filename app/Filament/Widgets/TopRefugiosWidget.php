@@ -38,8 +38,8 @@ class TopRefugiosWidget extends BaseWidget
                     ->limit(10);
             })
             ->columns([
-                Tables\Columns\TextColumn::make('nombre')
-                    ->label('HogarSolidario'),
+                Tables\Columns\TextColumn::make('codigo')
+                    ->label('Hogar solidario'),
                 Tables\Columns\TextColumn::make('parroquia.nombre')
                     ->label('Parroquia'),
                 Tables\Columns\TextColumn::make('activos_count')

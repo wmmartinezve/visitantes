@@ -27,8 +27,7 @@ class InvitadoPolicy
 
     public function create(User $user): bool
     {
-        return $user->isAdmin()
-            || ($user->isAnfitrion() && $user->hogar_solidario_id !== null);
+        return $user->isAdmin() || $user->isAnfitrion();
     }
 
     public function createForInvitado(User $user, Invitado $invitado): bool

@@ -113,8 +113,8 @@ class Dashboard extends BaseDashboard
 
                             return HogarSolidario::query()
                                 ->where('parroquia_id', $parroquiaId)
-                                ->orderBy('nombre')
-                                ->pluck('nombre', 'id')
+                                ->orderBy('codigo')
+                                ->pluck('codigo', 'id')
                                 ->all();
                         })
                         ->searchable(),

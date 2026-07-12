@@ -62,11 +62,11 @@ class UserResource extends Resource
                 ->required()
                 ->live(),
             Forms\Components\Select::make('hogar_solidario_id')
-                ->label('HogarSolidario asignado')
-                ->options(fn (): array => HogarSolidario::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
+                ->label('Hogar solidario asignado')
+                ->options(fn (): array => HogarSolidario::query()->orderBy('codigo')->pluck('codigo', 'id')->all())
                 ->searchable()
                 ->visible(fn (Get $get): bool => $get('rol') === UserRole::Anfitrion->value)
-                ->required(fn (Get $get): bool => $get('rol') === UserRole::Anfitrion->value),
+                ->helperText('Opcional: el anfitrión puede crear su hogar al registrar el primer núcleo familiar desde la app.'),
             Forms\Components\Select::make('centro_acopio_id')
                 ->label('Centro de acopio asignado')
                 ->options(fn (): array => CentroAcopio::query()->orderBy('nombre')->pluck('nombre', 'id')->all())
@@ -90,8 +90,8 @@ class UserResource extends Resource
                     ->label('Rol')
                     ->badge()
                     ->formatStateUsing(fn (?UserRole $state): string => $state?->label() ?? '—'),
-                Tables\Columns\TextColumn::make('refugio.nombre')
-                    ->label('HogarSolidario')
+                Tables\Columns\TextColumn::make('refugio.codigo')
+                    ->label('Hogar solidario')
                     ->placeholder('—'),
                 Tables\Columns\TextColumn::make('centroAcopio.nombre')
                     ->label('Centro de acopio')

@@ -6,6 +6,7 @@ namespace Database\Seeders;
 
 use App\Enums\InvitadoEstatus;
 use App\Enums\RequerimientoEstatus;
+use App\Enums\TipoAnfitrionHogar;
 use App\Enums\UserRole;
 use App\Enums\TipoViviendaHogar;
 use App\Models\CentroAcopio;
@@ -29,7 +30,6 @@ class DemoOperacionSeeder extends Seeder
         }
 
         $refugioPlc = $this->hogarSolidario(
-            'Hogar Solidario Puerto La Cruz Centro',
             $plc,
             10.21380000,
             -64.63280000,
@@ -112,7 +112,6 @@ class DemoOperacionSeeder extends Seeder
         }
 
         $refugio = $this->hogarSolidario(
-            'Hogar Solidario Barcelona Norte',
             $parroquia,
             10.13640000,
             -64.68640000,
@@ -202,7 +201,6 @@ class DemoOperacionSeeder extends Seeder
         }
 
         $refugio = $this->hogarSolidario(
-            'Hogar Solidario El Tigre Sur',
             $parroquia,
             8.88920000,
             -64.24560000,
@@ -260,7 +258,6 @@ class DemoOperacionSeeder extends Seeder
         }
 
         $refugio = $this->hogarSolidario(
-            'Hogar Solidario Lechería Costa',
             $parroquia,
             10.18530000,
             -64.67920000,
@@ -305,27 +302,28 @@ class DemoOperacionSeeder extends Seeder
         return Parroquia::query()->where('nombre', $nombre)->first();
     }
 
-    private function hogarSolidario(string $nombre, Parroquia $parroquia, float $lat, float $lng, string $direccion): HogarSolidario
+    private function hogarSolidario(Parroquia $parroquia, float $lat, float $lng, string $direccion): HogarSolidario
     {
         $comuna = Comuna::query()->firstOrCreate(
             ['parroquia_id' => $parroquia->id, 'nombre' => 'Comuna demo '.$parroquia->nombre],
         );
 
         return HogarSolidario::query()->firstOrCreate(
-            ['nombre' => $nombre],
             [
                 'parroquia_id' => $parroquia->id,
+                'direccion_exacta' => $direccion,
+            ],
+            [
                 'comuna_id' => $comuna->id,
                 'tipo_vivienda' => TipoViviendaHogar::Casa,
+                'tipo_anfitrion' => TipoAnfitrionHogar::Familiar,
+                'parentesco_anfitrion' => 'Padre/Madre',
                 'responsable_nombre' => 'Responsable demo',
                 'responsable_cedula' => 'V-10000000',
                 'responsable_telefono' => '0414-0000000',
-                'habitantes' => [
-                    ['nombre' => 'María Demo', 'parentesco' => 'Cónyuge'],
-                ],
+                'habitantes' => [],
                 'latitud' => $lat,
                 'longitud' => $lng,
-                'direccion_exacta' => $direccion,
             ],
         );
     }

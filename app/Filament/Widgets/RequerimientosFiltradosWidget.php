@@ -51,8 +51,8 @@ class RequerimientosFiltradosWidget extends BaseWidget
                 Tables\Columns\TextColumn::make('invitado.nombre')
                     ->label('Invitado')
                     ->formatStateUsing(fn ($state, Requerimiento $record): string => $record->invitado?->nombreCompleto() ?? '—'),
-                Tables\Columns\TextColumn::make('invitado.refugio.nombre')
-                    ->label('HogarSolidario'),
+                Tables\Columns\TextColumn::make('invitado.refugio.codigo')
+                    ->label('Hogar solidario'),
                 Tables\Columns\TextColumn::make('item_solicitado')
                     ->label('Ítem'),
                 Tables\Columns\TextColumn::make('cantidad')

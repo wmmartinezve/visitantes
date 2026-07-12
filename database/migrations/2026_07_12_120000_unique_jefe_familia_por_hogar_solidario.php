@@ -1,5 +1,6 @@
 <?php
 
+use App\Support\NucleoFamiliarPorHogar;
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Schema;
@@ -11,6 +12,8 @@ return new class extends Migration
         if (! Schema::hasColumn('invitados', 'hogar_solidario_id')) {
             return;
         }
+
+        NucleoFamiliarPorHogar::deduplicarJefesPorHogar();
 
         DB::statement(
             'CREATE UNIQUE INDEX IF NOT EXISTS invitados_un_jefe_por_hogar_solidario '

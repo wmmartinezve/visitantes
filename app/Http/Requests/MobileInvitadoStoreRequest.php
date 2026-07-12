@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Http\Requests;
 
+use App\Support\HogarSolidarioValidationRules;
 use Illuminate\Foundation\Http\FormRequest;
 
 class MobileInvitadoStoreRequest extends FormRequest
@@ -12,7 +13,7 @@ class MobileInvitadoStoreRequest extends FormRequest
     {
         $user = $this->user();
 
-        return $user !== null && $user->isAnfitrion() && $user->hogar_solidario_id !== null;
+        return $user !== null && $user->isAnfitrion();
     }
 
     /**
@@ -20,7 +21,7 @@ class MobileInvitadoStoreRequest extends FormRequest
      */
     public function rules(): array
     {
-        return [
+        $rules = [
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
             'cedula' => ['nullable', 'string', 'max:20'],
@@ -40,5 +41,13 @@ class MobileInvitadoStoreRequest extends FormRequest
             'foto_base64' => ['nullable', 'string', 'max:12000000'],
             'foto_mime' => ['nullable', 'string', 'in:image/jpeg,image/png,image/webp'],
         ];
+
+        if ($this->user()?->hogar_solidario_id === null) {
+            $rules = array_merge($rules, HogarSolidarioValidationRules::forPayload('hogar'));
+        } elseif ($this->has('hogar')) {
+            $rules['hogar'] = ['prohibited'];
+        }
+
+        return $rules;
     }
 }

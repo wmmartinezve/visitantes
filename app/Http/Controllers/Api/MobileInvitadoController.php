@@ -8,8 +8,10 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MobileInvitadoFotoRequest;
 use App\Http\Requests\MobileInvitadoStoreRequest;
 use App\Http\Resources\MobileInvitadoResource;
+use App\Http\Resources\MobileUserResource;
 use App\Models\Invitado;
 use App\Services\InvitadoRegistrationService;
+use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\WitnessPhotoDecoder;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
@@ -59,7 +61,7 @@ class MobileInvitadoController extends Controller
 
     public function store(
         MobileInvitadoStoreRequest $request,
-        InvitadoRegistrationService $registration,
+        NucleoFamiliarOnboardingService $onboarding,
     ): JsonResponse {
         $this->authorize('create', Invitado::class);
 
@@ -74,8 +76,11 @@ class MobileInvitadoController extends Controller
             );
         }
 
-        $jefe = $registration->register(
+        $hogarData = $user->hogar_solidario_id === null ? ($validated['hogar'] ?? null) : null;
+
+        $result = $onboarding->register(
             $user,
+            $hogarData,
             [
                 'nombre' => $validated['nombre'],
                 'apellido' => $validated['apellido'],
@@ -91,9 +96,20 @@ class MobileInvitadoController extends Controller
             $validated['familiares'] ?? [],
         );
 
-        return (new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'hogarSolidario'])))
-            ->response()
-            ->setStatusCode(201);
+        $jefe = $result['jefe']->load(['miembrosFamilia', 'hogarSolidario']);
+
+        $payload = [
+            'data' => new MobileInvitadoResource($jefe),
+            'hogar_creado' => $result['hogar_creado'],
+        ];
+
+        if ($result['hogar_creado']) {
+            $payload['user'] = new MobileUserResource(
+                $result['anfitrion']->load('hogarSolidario'),
+            );
+        }
+
+        return response()->json($payload, 201);
     }
 
     public function updateFoto(

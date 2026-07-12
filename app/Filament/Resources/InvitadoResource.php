@@ -135,7 +135,7 @@ class InvitadoResource extends Resource
                 ->schema([
                     Forms\Components\Select::make('hogar_solidario_id')
                         ->label('Hogar solidario')
-                        ->relationship('hogarSolidario', 'nombre')
+                        ->relationship('hogarSolidario', 'codigo')
                         ->searchable()
                         ->preload()
                         ->required()
@@ -198,8 +198,8 @@ class InvitadoResource extends Resource
                 Tables\Columns\TextColumn::make('cedula')
                     ->label('Cédula')
                     ->searchable(),
-                Tables\Columns\TextColumn::make('refugio.nombre')
-                    ->label('HogarSolidario')
+                Tables\Columns\TextColumn::make('refugio.codigo')
+                    ->label('Hogar solidario')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('estatus')
                     ->label('Estatus')
@@ -218,7 +218,7 @@ class InvitadoResource extends Resource
             ->filters([
                 Tables\Filters\SelectFilter::make('hogar_solidario_id')
                     ->label('HogarSolidario')
-                    ->relationship('refugio', 'nombre'),
+                    ->relationship('refugio', 'codigo'),
                 Tables\Filters\SelectFilter::make('estatus')
                     ->label('Estatus')
                     ->options(collect(InvitadoEstatus::cases())->mapWithKeys(

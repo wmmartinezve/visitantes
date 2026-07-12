@@ -62,6 +62,14 @@ class CatalogService {
     return false;
   }
 
+  bool get requiereRegistroHogar {
+    final operador = cachedCatalog?['operador'];
+    if (operador is Map) {
+      return operador['requiere_registro_hogar'] == true;
+    }
+    return false;
+  }
+
   /// Actualiza cantidad de un ítem en la caché local (p. ej. tras editar offline).
   Future<void> patchInventarioLocalCantidad(int inventarioId, int cantidad) async {
     final catalog = cachedCatalog;

@@ -82,6 +82,8 @@ class MobileUser {
   MobileUser copyWith({
     String? name,
     String? email,
+    int? refugioId,
+    String? refugioNombre,
     CentroAcopioInfo? centroAcopio,
   }) {
     return MobileUser(
@@ -89,15 +91,15 @@ class MobileUser {
       name: name ?? this.name,
       email: email ?? this.email,
       rol: rol,
-      refugioId: refugioId,
+      refugioId: refugioId ?? this.refugioId,
       centroAcopioId: centroAcopioId,
-      refugioNombre: refugioNombre,
+      refugioNombre: refugioNombre ?? this.refugioNombre,
       centroAcopio: centroAcopio ?? this.centroAcopio,
     );
   }
 
   factory MobileUser.fromJson(Map<String, dynamic> json) {
-    final refugio = json['refugio'] as Map<String, dynamic>?;
+    final refugio = (json['refugio'] ?? json['hogar_solidario']) as Map<String, dynamic>?;
     final centro = json['centro_acopio'] as Map<String, dynamic>?;
 
     return MobileUser(
@@ -105,7 +107,7 @@ class MobileUser {
       name: json['name'] as String,
       email: json['email'] as String,
       rol: json['rol'] as String,
-      refugioId: json['refugio_id'] as int?,
+      refugioId: (json['refugio_id'] ?? json['hogar_solidario_id']) as int?,
       centroAcopioId: json['centro_acopio_id'] as int?,
       refugioNombre: refugio?['nombre'] as String?,
       centroAcopio: centro != null ? CentroAcopioInfo.fromJson(centro) : null,

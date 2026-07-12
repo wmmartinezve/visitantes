@@ -56,13 +56,16 @@ Route::prefix('anfitrion')->name('anfitrion.')->group(function (): void {
     Route::get('/restablecer-contrasena/{token}', AnfitrionResetPassword::class)->name('password.reset');
 
     Route::middleware(['auth', 'anfitrion'])->group(function (): void {
+        Route::get('/registrar', RegistrarInvitado::class)->name('registrar');
+        Route::post('/logout', AnfitrionLogoutController::class)->name('logout');
+    });
+
+    Route::middleware(['auth', 'anfitrion', 'anfitrion_hogar'])->group(function (): void {
         Route::get('/', Dashboard::class)->name('dashboard');
         Route::get('/perfil', AnfitrionPerfil::class)->name('perfil');
-        Route::get('/registrar', RegistrarInvitado::class)->name('registrar');
         Route::get('/invitados', ListadoInvitados::class)->name('invitados');
         Route::get('/invitados/{invitado}', InvitadoDetalle::class)->name('invitado');
         Route::get('/requerimientos', AnfitrionRequerimientos::class)->name('requerimientos');
-        Route::post('/logout', AnfitrionLogoutController::class)->name('logout');
     });
 });
 
