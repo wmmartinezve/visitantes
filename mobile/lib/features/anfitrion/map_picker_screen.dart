@@ -56,6 +56,13 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     };
   }
 
+  Future<void> _moverCamara() async {
+    final controller = _controller;
+    final punto = _seleccion;
+    if (controller == null || punto == null) return;
+    await controller.animateCamera(CameraUpdate.newLatLngZoom(punto, 16));
+  }
+
   void _confirmar() {
     final punto = _seleccion;
     if (punto == null) {
@@ -67,10 +74,17 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
     Navigator.of(context).pop(punto);
   }
 
+  void _volver() => Navigator.of(context).pop();
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          tooltip: 'Volver al paso anterior',
+          onPressed: _volver,
+        ),
         title: Text(widget.title),
         backgroundColor: VenezuelaColors.blue,
         foregroundColor: Colors.white,
@@ -80,16 +94,27 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
         children: [
           Padding(
             padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            child: Text(
-              _seleccion == null
-                  ? 'Toque el mapa para colocar el pin. Puede arrastrarlo para ajustar.'
-                  : 'Lat: ${_seleccion!.latitude.toStringAsFixed(6)} · Lng: ${_seleccion!.longitude.toStringAsFixed(6)}',
-              style: Theme.of(context).textTheme.bodySmall,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Text(
+                  _seleccion == null
+                      ? 'Toque el mapa para colocar el pin. Puede arrastrarlo para ajustar.'
+                      : 'Lat: ${_seleccion!.latitude.toStringAsFixed(6)} · Lng: ${_seleccion!.longitude.toStringAsFixed(6)}',
+                  style: Theme.of(context).textTheme.bodySmall,
+                ),
+                const SizedBox(height: 6),
+                Text(
+                  'Si el mapa se ve gris, active datos móviles o Wi‑Fi. El GPS funciona sin mapa.',
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.black54),
+                ),
+              ],
             ),
           ),
           Expanded(
             child: MapsConfig.isConfigured
                 ? GoogleMap(
+                    mapType: MapType.normal,
                     initialCameraPosition: CameraPosition(
                       target: _cameraTarget,
                       zoom: _seleccion != null ? 16 : 8,
@@ -97,13 +122,20 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
                     gestureRecognizers: <Factory<OneSequenceGestureRecognizer>>{
                       Factory<EagerGestureRecognizer>(EagerGestureRecognizer.new),
                     },
-                    onMapCreated: (controller) => _controller = controller,
+                    onMapCreated: (controller) {
+                      _controller = controller;
+                      _moverCamara();
+                    },
                     markers: _markers,
-                    onTap: (pos) => setState(() => _seleccion = pos),
+                    onTap: (pos) {
+                      setState(() => _seleccion = pos);
+                      _moverCamara();
+                    },
                     myLocationEnabled: true,
                     myLocationButtonEnabled: true,
                     zoomControlsEnabled: true,
                     mapToolbarEnabled: false,
+                    compassEnabled: true,
                   )
                 : Center(
                     child: Padding(
@@ -118,14 +150,25 @@ class _MapPickerScreenState extends State<MapPickerScreen> {
           ),
           SafeArea(
             minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            child: FilledButton.icon(
-              onPressed: _confirmar,
-              icon: const Icon(Icons.check),
-              label: const Text('Confirmar ubicación'),
-              style: FilledButton.styleFrom(
-                backgroundColor: VenezuelaColors.red,
-                minimumSize: const Size.fromHeight(48),
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                OutlinedButton.icon(
+                  onPressed: _volver,
+                  icon: const Icon(Icons.arrow_back),
+                  label: const Text('Volver al wizard'),
+                ),
+                const SizedBox(height: 8),
+                FilledButton.icon(
+                  onPressed: _confirmar,
+                  icon: const Icon(Icons.check),
+                  label: const Text('Confirmar ubicación'),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: VenezuelaColors.red,
+                    minimumSize: const Size.fromHeight(48),
+                  ),
+                ),
+              ],
             ),
           ),
         ],

@@ -626,7 +626,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     FocusManager.instance.primaryFocus?.unfocus();
     final result = await Navigator.of(context).push<LatLng>(
       MaterialPageRoute<LatLng>(
-        fullscreenDialog: true,
         builder: (context) => MapPickerScreen(
           initialLat: _hogarLatitud,
           initialLng: _hogarLongitud,
@@ -1198,38 +1197,48 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildWizardBody(bool isLastStep) {
-    final bottomInset = MediaQuery.viewPaddingOf(context).bottom;
-
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ListView(
-          padding: EdgeInsets.fromLTRB(16, 12, 16, 88 + bottomInset),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: [
-            _buildStepIndicator(),
-            const SizedBox(height: 12),
-            _buildStepContent(),
-          ],
-        ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: Material(
-            elevation: 8,
-            color: Theme.of(context).colorScheme.surface,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
-                child: _buildWizardFooter(isLastStep),
+    return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+        keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+        physics: const AlwaysScrollableScrollPhysics(),
+        children: [
+          _buildStepIndicator(),
+          const SizedBox(height: 12),
+          _buildStepContent(),
+          if (isLastStep) ...[
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: _saving ? null : _submit,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.save_outlined),
+              label: Text(_saving ? 'Guardando…' : 'Guardar registro'),
+              style: FilledButton.styleFrom(
+                backgroundColor: VenezuelaColors.red,
+                minimumSize: const Size.fromHeight(52),
               ),
             ),
+            const SizedBox(height: 8),
+          ],
+        ],
+      ),
+      bottomNavigationBar: Material(
+        elevation: 12,
+        color: Theme.of(context).colorScheme.surface,
+        child: SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 10, 16, 10),
+            child: _buildWizardFooter(isLastStep),
           ),
         ),
-      ],
+      ),
     );
   }
 
@@ -1268,7 +1277,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                       child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                     )
                   : const Icon(Icons.check),
-              label: const Text('Registrar'),
+              label: Text(_saving ? 'Guardando…' : 'Guardar registro'),
               style: FilledButton.styleFrom(
                 backgroundColor: VenezuelaColors.red,
                 minimumSize: const Size(0, 48),
@@ -1292,10 +1301,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   @override
   Widget build(BuildContext context) {
-    return Material(
-      color: Theme.of(context).colorScheme.surface,
-      child: SizedBox.expand(child: _buildContent(context)),
-    );
+    return _buildContent(context);
   }
 
   Widget _buildContent(BuildContext context) {
