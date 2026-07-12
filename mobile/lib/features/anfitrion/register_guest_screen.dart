@@ -1086,18 +1086,19 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildWizardBody({required List<Widget> children, required bool isLastStep}) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
+    return Stack(
+      fit: StackFit.expand,
       children: [
-        Expanded(
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            physics: const AlwaysScrollableScrollPhysics(),
-            children: children,
-          ),
+        ListView(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
+          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+          physics: const AlwaysScrollableScrollPhysics(),
+          children: children,
         ),
-        _buildWizardFooter(isLastStep),
+        Align(
+          alignment: Alignment.bottomCenter,
+          child: _buildWizardFooter(isLastStep),
+        ),
       ],
     );
   }
@@ -1127,9 +1128,30 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     }
 
     if (widget.nucleoYaRegistrado && !widget.registrarNuevoHogar) {
+      final hogarActivo = widget.user.refugioNombre ?? 'su hogar activo';
       return ListView(
         padding: const EdgeInsets.all(16),
+        physics: const AlwaysScrollableScrollPhysics(),
         children: [
+          Card(
+            color: VenezuelaColors.blue.withValues(alpha: 0.08),
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Row(
+                children: [
+                  const Icon(Icons.home_work, color: VenezuelaColors.blue),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      'Hogar activo: $hogarActivo',
+                      style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
           Card(
             color: VenezuelaColors.yellow.withValues(alpha: 0.15),
             child: Padding(
@@ -1161,7 +1183,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                           );
                         },
                     icon: const Icon(Icons.add_home_work),
-                    label: const Text('Registrar otro hogar'),
+                    label: const Text('Registrar otro hogar y núcleo'),
                     style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
                   ),
                 ],
@@ -1177,7 +1199,20 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
     return _buildWizardBody(
       isLastStep: isLastStep,
       children: [
-        if (_incluyeHogar)
+        if (widget.registrarNuevoHogar)
+          Card(
+            color: VenezuelaColors.blue.withValues(alpha: 0.1),
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(10),
+              child: Text(
+                'Registrando un nuevo hogar solidario. '
+                'El hogar activo (${widget.user.refugioNombre ?? 'actual'}) se mantiene hasta guardar.',
+              ),
+            ),
+          ),
+        if (widget.registrarNuevoHogar) const SizedBox(height: 12),
+        if (_incluyeHogar && !widget.registrarNuevoHogar)
           Card(
             color: VenezuelaColors.yellow.withValues(alpha: 0.12),
             margin: EdgeInsets.zero,
@@ -1189,7 +1224,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
               ),
             ),
           ),
-        if (_incluyeHogar) const SizedBox(height: 12),
+        if (_incluyeHogar && !widget.registrarNuevoHogar) const SizedBox(height: 12),
         _buildStepIndicator(),
         const SizedBox(height: 12),
         Form(

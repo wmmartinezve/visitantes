@@ -115,15 +115,7 @@ class AnfitrionMobileProfileService
             return true;
         }
 
-        if ($this->requiereRegistroHogar($user)) {
-            return true;
-        }
-
-        if ($user->hogar_solidario_id === null) {
-            return true;
-        }
-
-        return $this->hogarActivoTieneNucleo($user);
+        return $this->requiereRegistroHogar($user);
     }
 
     /**

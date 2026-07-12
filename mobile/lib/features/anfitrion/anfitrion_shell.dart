@@ -113,10 +113,12 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
 
   void _closeProfile() => setState(() => _showProfile = false);
 
-  void _handleUserUpdated(MobileUser user) {
+  void _handleUserUpdated(MobileUser user, {bool keepRegistrarOtroHogar = false}) {
     setState(() {
       _user = user;
-      _registrarNuevoHogar = false;
+      if (!keepRegistrarOtroHogar) {
+        _registrarNuevoHogar = false;
+      }
     });
     widget.catalog.syncOperadorFromUser(user);
     widget.onUserUpdated(user);
@@ -157,7 +159,27 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
       });
       return;
     }
-    setState(() => _index = index);
+
+    setState(() {
+      if (index == 1 && index != _index) {
+        // Pestaña manual: no reutilizar wizard de «otro hogar» incompleto.
+        _registrarNuevoHogar = false;
+        _registerWizardKey++;
+      }
+      _index = index;
+    });
+
+    if (index == 1) {
+      _refreshUserForRegisterTab();
+    }
+  }
+
+  Future<void> _refreshUserForRegisterTab() async {
+    try {
+      final user = await widget.auth.fetchCurrentUser();
+      if (!mounted) return;
+      _handleUserUpdated(user, keepRegistrarOtroHogar: _registrarNuevoHogar);
+    } catch (_) {}
   }
 
   void _bumpRefresh() => setState(() => _refreshTick++);

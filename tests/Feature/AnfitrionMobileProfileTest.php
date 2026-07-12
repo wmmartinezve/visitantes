@@ -166,4 +166,44 @@ class AnfitrionMobileProfileTest extends TestCase
 
         $this->assertSame($hogar1->id, $anfitrion->fresh()->hogar_solidario_id);
     }
+
+    public function test_debe_enviar_datos_hogar_solo_en_primer_hogar_o_nuevo_hogar(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+
+        $parroquia = Parroquia::query()->firstOrFail();
+        $anfitrion = User::factory()->create([
+            'rol' => UserRole::Anfitrion,
+            'hogar_solidario_id' => null,
+        ]);
+
+        $profile = app(AnfitrionMobileProfileService::class);
+
+        $this->assertTrue($profile->debeEnviarDatosHogar($anfitrion));
+        $this->assertTrue($profile->debeEnviarDatosHogar($anfitrion, registrarNuevoHogar: true));
+
+        $hogar = HogarSolidario::query()->create([
+            'codigo' => 'HS-DEbe-001',
+            'anfitrion_user_id' => $anfitrion->id,
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.0,
+            'longitud' => -64.0,
+            'direccion_exacta' => 'Hogar con núcleo',
+        ]);
+
+        $anfitrion->forceFill(['hogar_solidario_id' => $hogar->id])->save();
+
+        Invitado::query()->create([
+            'nombre' => 'Jefe',
+            'apellido' => 'Existente',
+            'fecha_nacimiento' => '1990-01-01',
+            'hogar_solidario_id' => $hogar->id,
+            'estatus' => 'activo',
+        ]);
+
+        $anfitrion = $anfitrion->fresh(['hogarSolidario']);
+
+        $this->assertFalse($profile->debeEnviarDatosHogar($anfitrion));
+        $this->assertTrue($profile->debeEnviarDatosHogar($anfitrion, registrarNuevoHogar: true));
+    }
 }
