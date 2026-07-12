@@ -54,7 +54,10 @@ class NucleoFamiliarOnboardingService
                 }
 
                 $hogar = $this->createHogar($hogarData);
-                $anfitrion->forceFill(['hogar_solidario_id' => $hogar->id])->save();
+                $anfitrion->forceFill([
+                    'hogar_solidario_id' => $hogar->id,
+                    'hogar_vinculado_en' => now(),
+                ])->save();
                 $anfitrion->refresh();
                 $hogarCreado = true;
             } else {
@@ -113,7 +116,10 @@ class NucleoFamiliarOnboardingService
                     ]);
                 }
 
-                $anfitrion->forceFill(['hogar_solidario_id' => $hogar->id])->save();
+                $anfitrion->forceFill([
+                    'hogar_solidario_id' => $hogar->id,
+                    'hogar_vinculado_en' => now(),
+                ])->save();
                 $anfitrion = $anfitrion->fresh();
             } else {
                 $anfitrion = null;

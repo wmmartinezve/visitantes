@@ -50,7 +50,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   bool _loadingCatalog = false;
 
   bool get _sinHogarAsignado =>
-      widget.user.requiereRegistroHogar || widget.catalog.requiereRegistroHogar;
+      widget.user.debeRegistrarHogar || widget.catalog.requiereRegistroHogar;
 
   bool get _incluyeHogar => _sinHogarAsignado && !widget.nucleoYaRegistrado;
 

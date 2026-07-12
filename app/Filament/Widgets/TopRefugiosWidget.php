@@ -20,6 +20,8 @@ class TopRefugiosWidget extends BaseWidget
 
     protected static ?string $heading = 'Hogares solidarios con más Invitados activos';
 
+    protected int|string|array $columnSpan = 'full';
+
     public function table(Table $table): Table
     {
         $filtros = OperacionFiltros::fromArray($this->filters);

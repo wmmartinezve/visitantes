@@ -72,11 +72,11 @@ class CatalogService extends ChangeNotifier {
     if (catalog == null) return;
 
     final operador = Map<String, dynamic>.from(catalog['operador'] as Map? ?? {});
-    operador['hogar_solidario_id'] = user.refugioId;
-    operador['requiere_registro_hogar'] = user.requiereRegistroHogar;
+    operador['hogar_solidario_id'] = user.debeRegistrarHogar ? null : user.refugioId;
+    operador['requiere_registro_hogar'] = user.debeRegistrarHogar;
     operador['tiene_nucleo_familiar'] = user.tieneNucleoFamiliar;
 
-    if (user.requiereRegistroHogar) {
+    if (user.debeRegistrarHogar) {
       operador.remove('hogar_solidario');
       operador.remove('refugio');
     } else if (user.refugioId != null) {

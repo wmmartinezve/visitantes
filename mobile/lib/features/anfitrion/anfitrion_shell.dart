@@ -42,7 +42,8 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
   late final FieldApi _fieldApi = FieldApi(catalogService: widget.catalog);
 
   /// Sin hogar: el anfitrión debe crearlo en el wizard (nunca pre-asignado).
-  bool get _sinHogar => _user.requiereRegistroHogar || widget.catalog.requiereRegistroHogar;
+  bool get _sinHogar =>
+      _user.debeRegistrarHogar || widget.catalog.requiereRegistroHogar;
 
   bool get _requiereRegistroHogar => _sinHogar;
 
@@ -90,6 +91,7 @@ class _AnfitrionShellState extends State<AnfitrionShell> {
     super.didUpdateWidget(oldWidget);
     if (oldWidget.user.id != widget.user.id ||
         oldWidget.user.requiereRegistroHogar != widget.user.requiereRegistroHogar ||
+        oldWidget.user.hogarVinculadoEn != widget.user.hogarVinculadoEn ||
         oldWidget.user.refugioId != widget.user.refugioId) {
       _user = widget.user;
       if (_requiereRegistroHogar && _index != 1) {

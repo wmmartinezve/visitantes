@@ -7,6 +7,7 @@ namespace App\Http\Controllers\Api;
 use App\Concerns\ThrottlesAuthentication;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\MobileUserResource;
+use App\Services\AnfitrionMobileProfileService;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -51,6 +52,7 @@ class MobileAuthController extends Controller
 
         $token = $user->createToken($credentials['device_name'] ?? 'flutter-mobile')->plainTextToken;
 
+        $user = app(AnfitrionMobileProfileService::class)->normalize($user);
         $user->load(['hogarSolidario', 'centroAcopio']);
 
         return response()->json([
@@ -68,7 +70,7 @@ class MobileAuthController extends Controller
 
     public function me(Request $request): MobileUserResource
     {
-        $user = $request->user();
+        $user = app(AnfitrionMobileProfileService::class)->normalize($request->user());
         $user->load(['hogarSolidario', 'centroAcopio']);
 
         return new MobileUserResource($user);

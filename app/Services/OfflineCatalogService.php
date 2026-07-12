@@ -24,6 +24,8 @@ class OfflineCatalogService
      */
     public function buildFor(User $user): array
     {
+        $user = app(AnfitrionMobileProfileService::class)->normalize($user);
+
         $estados = Estado::query()->orderBy('nombre')->get(['id', 'nombre']);
         $municipios = Municipio::query()->orderBy('nombre')->get(['id', 'nombre', 'estado_id']);
         $parroquias = Municipio::query()

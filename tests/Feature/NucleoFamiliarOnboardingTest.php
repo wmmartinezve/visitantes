@@ -93,8 +93,7 @@ class NucleoFamiliarOnboardingTest extends TestCase
         $this->assertNotNull($response->json('user.hogar_solidario_id'));
 
         $anfitrion->refresh();
-        $this->assertNotNull($anfitrion->hogar_solidario_id);
-
+        $this->assertNotNull($anfitrion->hogar_vinculado_en);
         $hogar = HogarSolidario::query()->findOrFail($anfitrion->hogar_solidario_id);
         $this->assertNotNull($hogar->codigo);
         $this->assertMatchesRegularExpression('/^[A-Z]{2,3}-[A-Z]{2,3}-\d{4}$/', $hogar->codigo);

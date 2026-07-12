@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Http\Resources;
 
 use App\Models\User;
+use App\Services\AnfitrionMobileProfileService;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
@@ -16,34 +17,37 @@ class MobileUserResource extends JsonResource
      */
     public function toArray(Request $request): array
     {
+        /** @var User $user */
+        $user = $this->resource;
+        $profile = app(AnfitrionMobileProfileService::class);
+
         return [
-            'id' => $this->id,
-            'name' => $this->name,
-            'email' => $this->email,
-            'rol' => $this->rol->value,
-            'rol_label' => $this->rol->label(),
-            'hogar_solidario_id' => $this->hogar_solidario_id,
-            'refugio_id' => $this->hogar_solidario_id,
-            'centro_acopio_id' => $this->centro_acopio_id,
+            'id' => $user->id,
+            'name' => $user->name,
+            'email' => $user->email,
+            'rol' => $user->rol->value,
+            'rol_label' => $user->rol->label(),
+            'hogar_solidario_id' => $user->hogar_solidario_id,
+            'refugio_id' => $user->hogar_solidario_id,
+            'hogar_vinculado_en' => $user->hogar_vinculado_en?->toIso8601String(),
+            'centro_acopio_id' => $user->centro_acopio_id,
             'hogar_solidario' => $this->whenLoaded('hogarSolidario', fn () => [
-                'id' => $this->hogarSolidario?->id,
-                'codigo' => $this->hogarSolidario?->codigo,
-                'nombre' => $this->hogarSolidario?->codigo,
-                'direccion_exacta' => $this->hogarSolidario?->direccion_exacta,
-                'tiene_nucleo_familiar' => $this->hogarSolidario?->tieneNucleoFamiliar() ?? false,
+                'id' => $user->hogarSolidario?->id,
+                'codigo' => $user->hogarSolidario?->codigo,
+                'nombre' => $user->hogarSolidario?->codigo,
+                'direccion_exacta' => $user->hogarSolidario?->direccion_exacta,
+                'tiene_nucleo_familiar' => $user->hogarSolidario?->tieneNucleoFamiliar() ?? false,
             ]),
             'refugio' => $this->whenLoaded('hogarSolidario', fn () => [
-                'id' => $this->hogarSolidario?->id,
-                'codigo' => $this->hogarSolidario?->codigo,
-                'nombre' => $this->hogarSolidario?->codigo,
-                'direccion_exacta' => $this->hogarSolidario?->direccion_exacta,
-                'tiene_nucleo_familiar' => $this->hogarSolidario?->tieneNucleoFamiliar() ?? false,
+                'id' => $user->hogarSolidario?->id,
+                'codigo' => $user->hogarSolidario?->codigo,
+                'nombre' => $user->hogarSolidario?->codigo,
+                'direccion_exacta' => $user->hogarSolidario?->direccion_exacta,
+                'tiene_nucleo_familiar' => $user->hogarSolidario?->tieneNucleoFamiliar() ?? false,
             ]),
-            'requiere_registro_hogar' => $this->isAnfitrion() && $this->hogar_solidario_id === null,
-            'tiene_nucleo_familiar' => $this->isAnfitrion()
-                && $this->hogarSolidario !== null
-                && $this->hogarSolidario->tieneNucleoFamiliar(),
-            'centro_acopio' => $this->whenLoaded('centroAcopio', fn () => new MobileCentroAcopioResource($this->centroAcopio)),
+            'requiere_registro_hogar' => $profile->requiereRegistroHogar($user),
+            'tiene_nucleo_familiar' => $profile->tieneNucleoFamiliar($user),
+            'centro_acopio' => $this->whenLoaded('centroAcopio', fn () => new MobileCentroAcopioResource($user->centroAcopio)),
         ];
     }
 }
