@@ -12,6 +12,7 @@ use App\Filament\Support\GeografiaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
 use App\Filament\Support\HogarAnfitrionFields;
 use App\Models\User;
+use App\Models\Estado;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\InvitadoFotoStorage;
 use Filament\Forms\Components\DatePicker;
@@ -56,6 +57,7 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             'tipo_vivienda' => TipoViviendaHogar::Casa->value,
             'tipo_anfitrion' => TipoAnfitrionHogar::Familiar->value,
             'familiares' => [],
+            'estado_id' => Estado::query()->where('nombre', 'Anzoátegui')->value('id'),
         ]);
     }
 

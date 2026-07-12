@@ -42,18 +42,18 @@ final class GeografiaSelectFields
 
         $defaultEstadoId = self::defaultEstadoId($record, $estadoScope);
         $defaultMunicipioId = $record?->parroquia?->municipio_id;
+        $estadoFijo = $estadoScope === 'anzoategui';
 
         $fields = [
             Forms\Components\Select::make($estadoField)
                 ->label($labels['estado'] ?? 'Estado')
                 ->options(fn (): array => GeografiaSelectOptions::estados($estadoScope))
-                ->searchable()
+                ->searchable(! $estadoFijo)
                 ->required()
                 ->live()
                 ->dehydrated($persistEstadoMunicipio)
                 ->default($defaultEstadoId)
-                ->disabled($estadoScope === 'anzoategui')
-                ->helperText($options['estadoHelper'] ?? ($estadoScope === 'anzoategui'
+                ->helperText($options['estadoHelper'] ?? ($estadoFijo
                     ? 'Los hogares solidarios operan en el estado Anzoátegui.'
                     : null))
                 ->afterStateUpdated(function (Set $set) use ($municipioField, $parroquiaField, $comunaField, $includeComuna): void {
@@ -66,13 +66,17 @@ final class GeografiaSelectFields
 
             Forms\Components\Select::make($municipioField)
                 ->label($labels['municipio'] ?? 'Municipio')
-                ->options(fn (Get $get): array => GeografiaSelectOptions::municipios($get, $estadoField))
+                ->options(fn (Get $get): array => GeografiaSelectOptions::municipios(
+                    $get,
+                    $estadoField,
+                    $estadoFijo ? $defaultEstadoId : null,
+                ))
                 ->searchable()
                 ->required()
                 ->live()
                 ->dehydrated($persistEstadoMunicipio)
                 ->default($defaultMunicipioId)
-                ->placeholder(fn (Get $get): string => filled($get($estadoField))
+                ->placeholder(fn (Get $get): string => filled($get($estadoField) ?? ($estadoFijo ? $defaultEstadoId : null))
                     ? 'Seleccione un municipio'
                     : 'Primero seleccione el estado')
                 ->afterStateUpdated(function (Set $set) use ($parroquiaField, $comunaField, $includeComuna): void {

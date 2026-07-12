@@ -40,9 +40,9 @@ final class GeografiaSelectOptions
     /**
      * @return array<int|string, string>
      */
-    public static function municipios(Get $get, string $estadoField): array
+    public static function municipios(Get $get, string $estadoField, ?int $fallbackEstadoId = null): array
     {
-        $estadoId = $get($estadoField);
+        $estadoId = $get($estadoField) ?? $fallbackEstadoId;
 
         if (! filled($estadoId)) {
             return [];

@@ -601,7 +601,11 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
                 ? null
                 : _estados.firstWhere((e) => e['id'] == _hogarEstadoId)['nombre'] as String?,
             items: _estados.where((e) => e['nombre'] == 'Anzoátegui').map((e) => e['nombre'] as String).toList(),
-            onChanged: null,
+            onChanged: (v) {
+              if (v == null) return;
+              final match = _estados.firstWhere((e) => e['nombre'] == v);
+              setState(() => _hogarEstadoId = match['id'] as int?);
+            },
           ),
           M3SelectField(
             label: 'Municipio',

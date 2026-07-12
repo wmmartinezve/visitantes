@@ -56,7 +56,7 @@
                         @endforeach
                     </x-m3.select-field>
                 @endif
-                <x-m3.select-field label="Estado" icon="public" wire:model="hogar_estado_id" :error="$errors->first('hogar_estado_id')" disabled>
+                <x-m3.select-field label="Estado" icon="public" wire:model="hogar_estado_id" :error="$errors->first('hogar_estado_id')">
                     @foreach ($estadosHogar as $estado)
                         <option value="{{ $estado->id }}">{{ $estado->nombre }}</option>
                     @endforeach
