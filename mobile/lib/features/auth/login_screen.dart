@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/config/app_config.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
@@ -21,8 +20,8 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _email = TextEditingController(text: kDebugMode ? 'anfitrion@visitantes.test' : '');
-  final _password = TextEditingController(text: kDebugMode ? 'password' : '');
+  final _email = TextEditingController();
+  final _password = TextEditingController();
   bool _loading = false;
   bool _obscure = true;
 
