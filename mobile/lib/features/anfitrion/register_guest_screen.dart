@@ -617,15 +617,6 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Card(
-            color: VenezuelaColors.yellow.withValues(alpha: 0.12),
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Text(
-                'El código del hogar se asignará automáticamente (municipio · parroquia · correlativo).',
-              ),
-            ),
-          ),
           M3SelectField(
             label: 'Tipo de vivienda',
             icon: Icons.apartment_outlined,
@@ -660,26 +651,34 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           M3SelectField(
             label: 'Estado',
             icon: Icons.public_outlined,
-            value: _hogarEstadoId == null
-                ? null
-                : _estados.firstWhere((e) => e['id'] == _hogarEstadoId)['nombre'] as String?,
+            value: _nombreEstado(_hogarEstadoId),
             items: _estados.where((e) => e['nombre'] == 'Anzoátegui').map((e) => e['nombre'] as String).toList(),
             onChanged: (v) {
               if (v == null) return;
-              final match = _estados.firstWhere((e) => e['nombre'] == v);
-              setState(() => _hogarEstadoId = match['id'] as int?);
+              for (final estado in _estados) {
+                if (estado['nombre'] == v) {
+                  setState(() => _hogarEstadoId = estado['id'] as int?);
+                  return;
+                }
+              }
             },
           ),
           M3SelectField(
             label: 'Municipio',
             icon: Icons.location_city_outlined,
-            value: _hogarMunicipioId == null
-                ? null
-                : _municipiosHogar.firstWhere((e) => e['id'] == _hogarMunicipioId)['nombre'] as String?,
+            value: _nombreMunicipio(_municipiosHogar, _hogarMunicipioId),
             items: _municipiosHogar.map((e) => e['nombre'] as String).toList(),
             onChanged: (v) => setState(() {
-              _hogarMunicipioId =
-                  v == null ? null : _municipiosHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+              if (v == null) {
+                _hogarMunicipioId = null;
+              } else {
+                for (final municipio in _municipiosHogar) {
+                  if (municipio['nombre'] == v) {
+                    _hogarMunicipioId = municipio['id'] as int?;
+                    break;
+                  }
+                }
+              }
               _hogarParroquiaId = null;
               _hogarComunaId = null;
             }),
@@ -687,29 +686,38 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           M3SelectField(
             label: 'Parroquia',
             icon: Icons.place_outlined,
-            value: _hogarParroquiaId == null
-                ? null
-                : _parroquiasHogar.firstWhere((e) => e['id'] == _hogarParroquiaId)['nombre'] as String?,
+            value: _nombreParroquia(_parroquiasHogar, _hogarParroquiaId),
             items: _parroquiasHogar.map((e) => e['nombre'] as String).toList(),
             onChanged: (v) => setState(() {
-              _hogarParroquiaId =
-                  v == null ? null : _parroquiasHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+              if (v == null) {
+                _hogarParroquiaId = null;
+              } else {
+                for (final parroquia in _parroquiasHogar) {
+                  if (parroquia['nombre'] == v) {
+                    _hogarParroquiaId = parroquia['id'] as int?;
+                    break;
+                  }
+                }
+              }
               _hogarComunaId = null;
             }),
           ),
           M3SelectField(
             label: 'Comuna (opcional)',
             icon: Icons.map_outlined,
-            value: _hogarComunaId == null
-                ? null
-                : _comunasHogar.firstWhere((e) => e['id'] == _hogarComunaId)['nombre'] as String?,
+            value: _hogarComunaId == null ? null : _nombreComuna(_hogarComunaId),
             items: ['Sin comuna', ..._comunasHogar.map((e) => e['nombre'] as String)],
             onChanged: (v) => setState(() {
               if (v == null || v == 'Sin comuna') {
                 _hogarComunaId = null;
                 return;
               }
-              _hogarComunaId = _comunasHogar.firstWhere((e) => e['nombre'] == v)['id'] as int?;
+              for (final comuna in _comunasHogar) {
+                if (comuna['nombre'] == v) {
+                  _hogarComunaId = comuna['id'] as int?;
+                  return;
+                }
+              }
             }),
           ),
           M3TextField(
@@ -1045,62 +1053,69 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildWizardFooter(bool isLastStep) {
-    return Material(
-      elevation: 6,
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: SafeArea(
-        top: false,
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(16, 8, 16, 12 + MediaQuery.viewInsetsOf(context).bottom),
-          child: Row(
-            children: [
-              if (_step > 0)
-                OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
-              else
-                const SizedBox.shrink(),
-              const Spacer(),
-              if (!isLastStep)
-                FilledButton(
-                  onPressed: _saving ? null : _nextStep,
-                  style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-                  child: const Text('Siguiente'),
-                )
-              else
-                FilledButton.icon(
-                  onPressed: _saving ? null : _submit,
-                  icon: _saving
-                      ? const SizedBox(
-                          width: 18,
-                          height: 18,
-                          child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.check),
-                  label: const Text('Registrar'),
-                  style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
-                ),
-            ],
-          ),
-        ),
+    return Padding(
+      padding: EdgeInsets.fromLTRB(0, 16, 0, 8 + MediaQuery.viewInsetsOf(context).bottom),
+      child: Row(
+        children: [
+          if (_step > 0)
+            OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
+          else
+            const SizedBox.shrink(),
+          const Spacer(),
+          if (!isLastStep)
+            FilledButton(
+              onPressed: _saving ? null : _nextStep,
+              style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
+              child: const Text('Siguiente'),
+            )
+          else
+            FilledButton.icon(
+              onPressed: _saving ? null : _submit,
+              icon: _saving
+                  ? const SizedBox(
+                      width: 18,
+                      height: 18,
+                      child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                    )
+                  : const Icon(Icons.check),
+              label: const Text('Registrar'),
+              style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+            ),
+        ],
       ),
     );
   }
 
-  Widget _buildWizardBody({required List<Widget> children, required bool isLastStep}) {
-    return Stack(
-      fit: StackFit.expand,
-      children: [
-        ListView(
-          padding: const EdgeInsets.fromLTRB(16, 12, 16, 96),
-          keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-          physics: const AlwaysScrollableScrollPhysics(),
-          children: children,
-        ),
-        Align(
-          alignment: Alignment.bottomCenter,
-          child: _buildWizardFooter(isLastStep),
-        ),
-      ],
-    );
+  String? _nombreEstado(int? id) {
+    if (id == null) return null;
+    for (final estado in _estados) {
+      if (estado['id'] == id) return estado['nombre'] as String?;
+    }
+    return null;
+  }
+
+  String? _nombreMunicipio(List<Map<String, dynamic>> source, int? id) {
+    if (id == null) return null;
+    for (final item in source) {
+      if (item['id'] == id) return item['nombre'] as String?;
+    }
+    return null;
+  }
+
+  String? _nombreParroquia(List<Map<String, dynamic>> source, int? id) {
+    if (id == null) return null;
+    for (final item in source) {
+      if (item['id'] == id) return item['nombre'] as String?;
+    }
+    return null;
+  }
+
+  String? _nombreComuna(int? id) {
+    if (id == null) return null;
+    for (final item in _comunasHogar) {
+      if (item['id'] == id) return item['nombre'] as String?;
+    }
+    return null;
   }
 
   @override
@@ -1196,42 +1211,18 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
     final isLastStep = _step >= _totalSteps - 1;
 
-    return _buildWizardBody(
-      isLastStep: isLastStep,
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+      keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+      physics: const AlwaysScrollableScrollPhysics(),
       children: [
-        if (widget.registrarNuevoHogar)
-          Card(
-            color: VenezuelaColors.blue.withValues(alpha: 0.1),
-            margin: EdgeInsets.zero,
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Text(
-                'Está creando un hogar solidario nuevo e independiente. '
-                'Tendrá su propio código, dirección y núcleo familiar. '
-                'No comparte datos con otros hogares del anfitrión.',
-              ),
-            ),
-          ),
-        if (widget.registrarNuevoHogar) const SizedBox(height: 12),
-        if (_incluyeHogar && !widget.registrarNuevoHogar)
-          Card(
-            color: VenezuelaColors.yellow.withValues(alpha: 0.12),
-            margin: EdgeInsets.zero,
-            child: const Padding(
-              padding: EdgeInsets.all(10),
-              child: Text(
-                'Primero registre su hogar solidario y luego el núcleo familiar hospedado. '
-                'Un hogar = una familia.',
-              ),
-            ),
-          ),
-        if (_incluyeHogar && !widget.registrarNuevoHogar) const SizedBox(height: 12),
         _buildStepIndicator(),
         const SizedBox(height: 12),
         Form(
           key: _formKey,
           child: _buildStepContent(),
         ),
+        _buildWizardFooter(isLastStep),
       ],
     );
   }
