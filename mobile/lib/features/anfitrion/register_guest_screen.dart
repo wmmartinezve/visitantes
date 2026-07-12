@@ -576,25 +576,23 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   }
 
   Widget _buildStepIndicator() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Text(
-            'Paso ${_step + 1} de $_totalSteps · ${_stepTitles[_step]}',
-            style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          LinearProgressIndicator(
-            value: (_step + 1) / _totalSteps,
-            backgroundColor: VenezuelaColors.blue.withValues(alpha: 0.15),
-            color: VenezuelaColors.red,
-            minHeight: 6,
-            borderRadius: BorderRadius.circular(3),
-          ),
-        ],
-      ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Paso ${_step + 1} de $_totalSteps · ${_stepTitles[_step]}',
+          style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600),
+        ),
+        const SizedBox(height: 8),
+        LinearProgressIndicator(
+          value: (_step + 1) / _totalSteps,
+          backgroundColor: VenezuelaColors.blue.withValues(alpha: 0.15),
+          color: VenezuelaColors.red,
+          minHeight: 6,
+          borderRadius: BorderRadius.circular(3),
+        ),
+      ],
     );
   }
 
@@ -603,6 +601,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       title: 'Datos del hogar solidario',
       icon: Icons.home_work_outlined,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Card(
             color: VenezuelaColors.yellow.withValues(alpha: 0.12),
@@ -759,11 +758,13 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   Widget _buildJefeStep() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         FormSectionCard(
           title: 'Datos del Invitado (jefe de familia)',
           icon: M3FieldIcons.person,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               M3TextField(
                 controller: _nombre,
@@ -804,6 +805,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           title: 'Procedencia y situación laboral',
           icon: Icons.map_outlined,
           child: Column(
+            mainAxisSize: MainAxisSize.min,
             children: [
               M3SelectField(
                 label: 'Estado de procedencia',
@@ -881,6 +883,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
   Widget _buildFamiliaresStep() {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
+      mainAxisSize: MainAxisSize.min,
       children: [
         SectionHeader(
           title: 'Núcleo familiar',
@@ -968,6 +971,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
   Widget _buildFotoStep() {
     return Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         FormSectionCard(
           title: 'Foto testigo de ingreso',
@@ -989,6 +993,7 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
             padding: const EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
               children: [
                 Text('Resumen', style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w600)),
                 const SizedBox(height: 8),
@@ -1078,73 +1083,74 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
     final isLastStep = _step >= _totalSteps - 1;
 
-    return SizedBox.expand(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          if (_incluyeHogar)
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-              child: Card(
-                color: VenezuelaColors.yellow.withValues(alpha: 0.12),
-                child: const Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Text(
-                    'Primero registre su hogar solidario y luego el núcleo familiar hospedado. '
-                    'Un hogar = una familia.',
-                  ),
-                ),
-              ),
-            ),
-          _buildStepIndicator(),
-          Expanded(
-            child: Form(
-              key: _formKey,
-              child: ListView(
-                padding: const EdgeInsets.all(16),
-                children: [
-                  _buildStepContent(),
-                  const SizedBox(height: 80),
-                ],
-              ),
-            ),
-          ),
-          SafeArea(
-            top: false,
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-              child: Row(
-                children: [
-                  if (_step > 0)
-                    OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
-                  else
-                    const SizedBox.shrink(),
-                  const Spacer(),
-                  if (!isLastStep)
-                    FilledButton(
-                      onPressed: _saving ? null : _nextStep,
-                      style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
-                      child: const Text('Siguiente'),
-                    )
-                  else
-                    FilledButton.icon(
-                      onPressed: _saving ? null : _submit,
-                      icon: _saving
-                          ? const SizedBox(
-                              width: 18,
-                              height: 18,
-                              child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
-                            )
-                          : const Icon(Icons.check),
-                      label: const Text('Registrar'),
-                      style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                if (_incluyeHogar)
+                  Card(
+                    color: VenezuelaColors.yellow.withValues(alpha: 0.12),
+                    margin: EdgeInsets.zero,
+                    child: const Padding(
+                      padding: EdgeInsets.all(10),
+                      child: Text(
+                        'Primero registre su hogar solidario y luego el núcleo familiar hospedado. '
+                        'Un hogar = una familia.',
+                      ),
                     ),
-                ],
-              ),
+                  ),
+                if (_incluyeHogar) const SizedBox(height: 12),
+                _buildStepIndicator(),
+                const SizedBox(height: 12),
+                Form(
+                  key: _formKey,
+                  child: _buildStepContent(),
+                ),
+              ],
             ),
           ),
-        ],
-      ),
+        ),
+        SafeArea(
+          top: false,
+          child: Padding(
+            padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+            child: Row(
+              children: [
+                if (_step > 0)
+                  OutlinedButton(onPressed: _saving ? null : _prevStep, child: const Text('Anterior'))
+                else
+                  const SizedBox.shrink(),
+                const Spacer(),
+                if (!isLastStep)
+                  FilledButton(
+                    onPressed: _saving ? null : _nextStep,
+                    style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.blue),
+                    child: const Text('Siguiente'),
+                  )
+                else
+                  FilledButton.icon(
+                    onPressed: _saving ? null : _submit,
+                    icon: _saving
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
+                          )
+                        : const Icon(Icons.check),
+                    label: const Text('Registrar'),
+                    style: FilledButton.styleFrom(backgroundColor: VenezuelaColors.red),
+                  ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
