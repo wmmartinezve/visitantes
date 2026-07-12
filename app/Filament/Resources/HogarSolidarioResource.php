@@ -10,6 +10,7 @@ use App\Filament\Resources\HogarSolidarioResource\Pages;
 use App\Filament\Support\GeografiaSelectFields;
 use App\Filament\Support\GeolocalizacionFields;
 use App\Filament\Support\HogarAnfitrionFields;
+use App\Filament\Support\HogarSolidarioFichaPdfAction;
 use App\Models\HogarSolidario;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -136,6 +137,7 @@ class HogarSolidarioResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                HogarSolidarioFichaPdfAction::makeTableAction(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

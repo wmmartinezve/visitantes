@@ -6,7 +6,9 @@ namespace App\Services;
 
 use App\Models\Inventario;
 use App\Models\Invitado;
+use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
+use App\Support\InvitadoFotoStorage;
 use App\Support\OperacionFiltros;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\Response;
@@ -33,6 +35,44 @@ class ReporteExportService
             $filtros->desde->format('Y-m-d'),
             $filtros->hasta->format('Y-m-d'),
         );
+
+        return $pdf->download($filename);
+    }
+
+    public function hogarSolidarioFichaPdf(HogarSolidario $hogar): Response
+    {
+        $hogar->load([
+            'parroquia.municipio.estado',
+            'comuna',
+            'jefeFamilia.miembrosFamilia',
+            'jefeFamilia.procedenciaEstado',
+            'jefeFamilia.procedenciaMunicipio',
+            'jefeFamilia.procedenciaParroquia',
+            'anfitriones',
+        ]);
+
+        $jefe = $hogar->jefeFamilia;
+        $fotoBase64 = $jefe !== null && filled($jefe->foto_ingreso)
+            ? InvitadoFotoStorage::base64DataUri($jefe->foto_ingreso)
+            : null;
+
+        $miembros = $jefe?->miembrosFamilia
+            ->sortBy(fn (Invitado $miembro): string => $miembro->nombreCompleto())
+            ->values() ?? collect();
+
+        $pdf = Pdf::loadView('reports.hogar-solidario-ficha-pdf', [
+            'hogar' => $hogar,
+            'jefe' => $jefe,
+            'miembros' => $miembros,
+            'fotoBase64' => $fotoBase64,
+            'generadoEn' => now()->timezone(config('app.timezone'))->format('d/m/Y H:i'),
+        ])
+            ->setPaper('letter', 'portrait')
+            ->setOption('isRemoteEnabled', false)
+            ->setOption('defaultFont', 'DejaVu Sans');
+
+        $codigo = str($hogar->codigo ?? 'hogar-'.$hogar->id)->slug('-');
+        $filename = sprintf('ficha-hogar-solidario-%s-%s.pdf', $codigo, now()->format('Y-m-d'));
 
         return $pdf->download($filename);
     }

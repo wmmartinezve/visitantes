@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Admin\DashboardPdfExportController;
+use App\Http\Controllers\Admin\HogarSolidarioPdfExportController;
 use App\Http\Controllers\AnfitrionLogoutController;
 use App\Http\Controllers\InvitadoFotoController;
 use App\Http\Controllers\Api\OfflineCatalogController;
@@ -32,6 +33,9 @@ Route::get('/', function () {
 Route::middleware(['auth'])->prefix('admin')->group(function (): void {
     Route::get('/dashboard/exportar-pdf', DashboardPdfExportController::class)
         ->name('filament.admin.dashboard.export-pdf');
+
+    Route::get('/hogares-solidarios/{hogarSolidario}/exportar-ficha-pdf', HogarSolidarioPdfExportController::class)
+        ->name('filament.admin.hogares-solidarios.export-pdf');
 });
 
 Route::get('/invitados/{invitado}/foto', InvitadoFotoController::class)

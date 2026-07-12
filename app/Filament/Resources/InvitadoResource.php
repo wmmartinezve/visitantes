@@ -8,6 +8,7 @@ use App\Enums\CondicionInvitado;
 use App\Enums\InvitadoEstatus;
 use App\Enums\SituacionJefeFamilia;
 use App\Filament\Support\CondicionInvitadoSelectFields;
+use App\Filament\Support\HogarSolidarioFichaPdfAction;
 use App\Filament\Support\ProcedenciaSelectFields;
 use App\Filament\Resources\InvitadoResource\Pages;
 use App\Filament\Resources\InvitadoResource\RelationManagers\MiembrosFamiliaRelationManager;
@@ -241,6 +242,7 @@ class InvitadoResource extends Resource
                 Tables\Filters\TrashedFilter::make(),
             ])
             ->actions([
+                HogarSolidarioFichaPdfAction::makeInvitadoTableAction(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

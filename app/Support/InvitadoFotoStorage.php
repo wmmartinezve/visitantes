@@ -142,4 +142,45 @@ final class InvitadoFotoStorage
 
         return 'invitados/fotos/'.$targetId;
     }
+
+    /**
+     * Data URI base64 para incrustar fotos en PDF (DomPDF no carga URLs remotas).
+     */
+    public static function base64DataUri(?string $path): ?string
+    {
+        if ($path === null || $path === '') {
+            return null;
+        }
+
+        $filesystem = self::filesystem($path);
+
+        if ($filesystem === null) {
+            return null;
+        }
+
+        try {
+            $contents = $filesystem->get($path);
+        } catch (\Throwable $exception) {
+            report($exception);
+
+            return null;
+        }
+
+        if ($contents === '' || $contents === false) {
+            return null;
+        }
+
+        $mime = 'image/jpeg';
+
+        try {
+            $detected = $filesystem->mimeType($path);
+            if (is_string($detected) && $detected !== '') {
+                $mime = $detected;
+            }
+        } catch (\Throwable) {
+            // fallback jpeg
+        }
+
+        return 'data:'.$mime.';base64,'.base64_encode($contents);
+    }
 }

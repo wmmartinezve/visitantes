@@ -6,6 +6,8 @@ namespace App\Filament\Resources\InvitadoResource\Pages;
 
 use App\Filament\Concerns\LogsFilamentRecordActivity;
 use App\Filament\Resources\InvitadoResource;
+use App\Filament\Support\HogarSolidarioFichaPdfAction;
+use App\Models\Invitado;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
 
@@ -19,6 +21,8 @@ class EditInvitado extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            HogarSolidarioFichaPdfAction::makeHeaderAction(fn (): Invitado => $this->getRecord())
+                ->visible(fn (): bool => $this->getRecord()->esJefeDeFamilia() && $this->getRecord()->hogar_solidario_id !== null),
             Actions\DeleteAction::make()
                 ->after(fn () => $this->logFilamentDeleted($this->getRecord())),
             Actions\ForceDeleteAction::make()

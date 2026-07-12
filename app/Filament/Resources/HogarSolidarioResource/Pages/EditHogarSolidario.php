@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Filament\Resources\HogarSolidarioResource\Pages;
 
 use App\Filament\Resources\HogarSolidarioResource;
+use App\Filament\Support\HogarSolidarioFichaPdfAction;
 use App\Models\HogarSolidario;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -16,6 +17,7 @@ class EditHogarSolidario extends EditRecord
     protected function getHeaderActions(): array
     {
         return [
+            HogarSolidarioFichaPdfAction::makeHeaderAction(fn (): HogarSolidario => $this->getRecord()),
             Actions\DeleteAction::make(),
             Actions\ForceDeleteAction::make(),
             Actions\RestoreAction::make(),
