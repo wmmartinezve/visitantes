@@ -49,6 +49,7 @@ En Railway → servicio `visitantes-anz` → **Settings** → **Networking** →
 |---------|-----|
 | Panel admin | `https://visitantes.proyectoswm.com/admin` |
 | API móvil | `https://visitantes.proyectoswm.com/api/mobile` |
+| Hogares anfitrión | `GET /api/mobile/hogares` · `PUT /api/mobile/hogar-activo` |
 | Health | `https://visitantes.proyectoswm.com/up` |
 
 Confirme que `APP_URL=https://visitantes.proyectoswm.com` en las variables del servicio.

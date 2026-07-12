@@ -1,6 +1,6 @@
 # Visitantes — Prompt Maestro
 
-> **Última actualización:** 2026-07-12 (Hogares Solidarios · procedencia INE)  
+> **Última actualización:** 2026-07-12 (Multi-hogar anfitrión · wizard Flutter)  
 > **Ámbito territorial:** estado **Anzoátegui**, Venezuela  
 > **Estado general:** 🟡 Fase 8 — App Flutter móvil (reemplaza Livewire/PWA de campo)  
 > **Documento vivo:** actualiza checkboxes, fechas y notas al cerrar cada tarea.  
@@ -63,7 +63,7 @@ Panel administrativo empareja Requerimiento con Centro de acopio (por stock y pr
 Centro de acopio despacha / actualiza inventario desde su app
 ```
 
-> Un **anfitrión** está vinculado a un **hogar solidario** concreto. Un operador de **centro de acopio** está vinculado a un **centro de acopio** concreto. El **administrador** no opera en campo; gobierna desde el panel.
+> Un **anfitrión** puede gestionar **varios hogares solidarios** (cada uno con un único núcleo), con un **hogar activo** para registrar Invitados. Un operador de **centro de acopio** está vinculado a un **centro de acopio** concreto. El **administrador** no opera en campo; gobierna desde el panel.
 
 ### 2.2 Enfoque arquitectónico y modular
 
@@ -104,7 +104,9 @@ municipios ──< parroquias ──< comunas ──< hogares_solidarios ──<
 
 **Regla 1:1:** cada `hogar_solidario` acoge **un único núcleo familiar** (exactamente un jefe de familia + sus familiares vinculados).
 
-users (rol: anfitrion) → hogar_solidario_id → registra el núcleo familiar hospedado
+**Regla multi-hogar:** un anfitrión puede crear **varios** `hogares_solidarios` (`anfitrion_user_id`). `users.hogar_solidario_id` = hogar **activo** (scope de Invitados y wizard). Si el activo ya tiene núcleo, debe registrar **otro hogar** antes de un nuevo núcleo.
+
+users (rol: anfitrion) → hogar_solidario_id (activo) + hogares_solidarios.anfitrion_user_id (todos los suyos)
 ```
 
 ### 4.2 Tablas y reglas de negocio
@@ -424,6 +426,7 @@ SEGURIDAD:
 - [x] Laravel Sanctum + tokens por dispositivo
 - [x] `POST /login`, `POST /logout`, `GET /me`
 - [x] `GET /catalog`, `POST /sync` (reutiliza servicios offline)
+- [x] `GET /hogares`, `PUT /hogar-activo` (multi-hogar anfitrión)
 - [x] Tests `MobileApiTest`
 
 **Entregables — Flutter (`mobile/`):**
@@ -439,6 +442,8 @@ SEGURIDAD:
 - [x] Entregas (acopio): listado asignados + marcar entregado + distancia/ruta
 - [x] Listado de Invitados del refugio
 - [x] Núcleo familiar en registro
+- [x] Wizard onboarding hogar + núcleo (primer registro)
+- [x] Multi-hogar: selector hogar activo + «Registrar otro hogar y núcleo»
 - [x] Guía de build Android/iOS (`mobile/README.md`)
 - [ ] Publicación en Play Store / App Store (firmado release en producción)
 
@@ -451,6 +456,11 @@ SEGURIDAD:
 - [x] Fix sync `inventario.update_cantidad` en backend
 - [x] Compresión fotos Flutter (`flutter_image_compress`, ~0.8 MB)
 - [x] `API_BASE_URL` configurable vía `--dart-define` para builds de producción
+- [x] Hogares Solidarios (reemplazo refugios en app anfitrión) + procedencia INE
+- [x] Vínculo hogar por wizard (`hogar_vinculado_en`, `anfitrion_user_id`) — evita hogar demo ajeno
+- [x] Fix pantalla en blanco wizard «Registrar núcleo» (layout Flutter)
+- [x] Widget dashboard top hogares a ancho completo (`columnSpan = full`)
+- [x] **Multi-hogar anfitrión:** varios hogares/núcleos, hogar activo, API + Flutter + sync offline (`eb9ca11`)
 
 ---
 
@@ -478,7 +488,7 @@ En Filament, usar `getGloballySearchableAttributes()` en `InvitadoResource` inde
 |---------|-------------------|----------|----------|
 | **Panel administrativo** | `admin` | Filament | Control total: catálogo geográfico, refugios, centros de acopio, usuarios, invitados, inventarios globales, asignación de requerimientos, reportes |
 | **Centro de acopio** | `centro_acopio` | App Livewire | Gestionar inventario de **su** centro; ver requerimientos asignados; marcar entregas. Centro registrado con municipio, parroquia, dirección y georreferenciación |
-| **Anfitrión** | `anfitrion` | App Livewire | Registrar Invitados y núcleo familiar en **su** refugio; crear y dar seguimiento a requerimientos de sus hospedados |
+| **Anfitrión** | `anfitrion` | App Flutter | Registrar Invitados y núcleo familiar en **su hogar activo** (puede tener varios hogares); crear y dar seguimiento a requerimientos de sus hospedados |
 
 ---
 
@@ -503,6 +513,9 @@ En Filament, usar `getGloballySearchableAttributes()` en `InvitadoResource` inde
 | 2026-07-07 | 2 | Filament Invitados: fotos S3 vía URL autenticada (`/invitados/{id}/foto`); familiares heredan foto del jefe de familia. |
 | 2026-07-08 | — | **Bitácora de auditoría** (`activity_logs`): Invitados, requerimientos, inventario, usuarios; panel admin → Bitácora (solo lectura). |
 | 2026-07-08 | 5 | **Demanda consolidada por refugio** en Filament: agrupa requerimientos por refugio+ítem y asignación en lote al centro de acopio. |
+| 2026-07-12 | 8 | Hogares Solidarios + wizard onboarding (migraciones `100007`/`100008`). Vínculo por wizard; invalidación hogar demo ajeno (`fc3984b`, `a545ff4`). |
+| 2026-07-12 | 8 | Fix pantalla en blanco wizard Flutter «Registrar núcleo» (`a8b8041`). Widget top hogares ancho completo en Filament. |
+| 2026-07-12 | 8 | **Multi-hogar anfitrión:** `GET /hogares`, `PUT /hogar-activo`, selector en app, registrar otro hogar+núcleo, tests (`eb9ca11`). Deploy Railway OK. |
 
 ---
 
