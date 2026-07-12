@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Models\Estado;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\InvitadoFotoStorage;
+use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Repeater;
@@ -158,10 +159,13 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                             Repeater::make('familiares')
                                 ->label('Familiares')
                                 ->schema([
-                                    TextInput::make('parentesco')
+                                    Select::make('parentesco')
                                         ->label('Parentesco')
-                                        ->required()
-                                        ->maxLength(50),
+                                        ->options(collect(config('visitantes.parentescos'))->mapWithKeys(
+                                            fn (string $parentesco): array => [$parentesco => $parentesco]
+                                        ))
+                                        ->searchable()
+                                        ->required(),
                                     TextInput::make('nombre')
                                         ->label('Nombre')
                                         ->required()
@@ -187,6 +191,12 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->addActionLabel('Agregar familiar'),
                         ]),
                 ])
+                    ->submitAction(
+                        Action::make('create')
+                            ->label('Registrar y finalizar')
+                            ->icon('heroicon-o-check')
+                            ->submit('form'),
+                    )
                     ->columnSpanFull(),
             ])
             ->statePath('data');
