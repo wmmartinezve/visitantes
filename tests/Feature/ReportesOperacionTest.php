@@ -10,22 +10,21 @@ use App\Services\ReporteExportService;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Tests\Support\VisitantesFeatureTest;
 use Tests\TestCase;
 
 class ReportesOperacionTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_admin_puede_acceder_a_reportes(): void
+    public function test_admin_puede_acceder_a_reportes_sin_logistica(): void
     {
-        VisitantesFeatureTest::skipUnlessLogistica($this);
-
         $admin = User::factory()->create(['rol' => UserRole::Admin]);
 
         $this->actingAs($admin)
             ->get('/admin/reportes-operacion')
-            ->assertOk();
+            ->assertOk()
+            ->assertSee('Exportar datos (CSV)')
+            ->assertSee('Invitados (jefes de familia)');
     }
 
     public function test_export_invitados_genera_csv_con_datos_demo(): void
