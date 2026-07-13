@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visitantes — Manual de la aplicación móvil</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 22mm 16mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 10pt; line-height: 1.5; color: #1a1a2e; background: #fff;
+    }
+    .tricolor { height: 6px; display: flex; margin-bottom: 18px; }
+    .tricolor span { flex: 1; }
+    .ve-yellow { background: #FFCC00; }
+    .ve-blue { background: #002776; }
+    .ve-red { background: #CF142B; }
+    h1 { font-size: 22pt; font-weight: 700; color: #002776; margin-bottom: 4px; }
+    .subtitle { font-size: 11pt; color: #555; margin-bottom: 16px; }
+    h2 {
+      font-size: 13pt; font-weight: 700; color: #002776;
+      margin: 22px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #FFCC00;
+    }
+    h3 { font-size: 11pt; font-weight: 600; color: #002776; margin: 16px 0 6px; }
+    h4 { font-size: 10pt; font-weight: 600; color: #333; margin: 12px 0 4px; }
+    p { margin-bottom: 8px; }
+    ul, ol { margin: 6px 0 12px 20px; }
+    li { margin-bottom: 5px; }
+    .toc { background: #f8f9fc; border-radius: 8px; padding: 14px 18px; margin: 14px 0; }
+    .toc ol { margin-bottom: 0; }
+    .callout {
+      background: #eef3ff; border-left: 4px solid #002776;
+      padding: 10px 14px; margin: 12px 0; border-radius: 0 6px 6px 0;
+    }
+    .callout-warn { background: #fff8e6; border-left-color: #FFCC00; }
+    .callout-tip { background: #f0faf0; border-left-color: #1b7a1b; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9pt; }
+    th { background: #002776; color: #fff; text-align: left; padding: 6px 10px; font-weight: 600; }
+    td { padding: 5px 10px; border-bottom: 1px solid #e8ecf4; vertical-align: top; }
+    tr:nth-child(even) td { background: #f8f9fc; }
+    .steps { counter-reset: step; list-style: none; margin-left: 0; padding: 0; }
+    .steps li {
+      counter-increment: step; padding: 8px 0 8px 36px; position: relative;
+      border-bottom: 1px solid #eef1f6;
+    }
+    .steps li::before {
+      content: counter(step); position: absolute; left: 0; top: 8px;
+      width: 24px; height: 24px; background: #002776; color: #fff;
+      border-radius: 50%; font-size: 9pt; font-weight: 700;
+      text-align: center; line-height: 24px;
+    }
+    .role-header {
+      background: #1a3a8a; color: #fff; padding: 10px 14px; border-radius: 8px;
+      margin: 18px 0 12px; font-weight: 600; font-size: 12pt;
+    }
+    .role-header.acopio { background: #CF142B; }
+    code {
+      background: #eef1f6; padding: 1px 5px; border-radius: 3px; font-size: 9pt;
+    }
+    .page-break { page-break-before: always; }
+    .footer {
+      margin-top: 20px; padding-top: 8px; border-top: 1px solid #dde3ef;
+      font-size: 8pt; color: #888; text-align: center;
+    }
+    .flow {
+      background: #f8f9fc; border-radius: 8px; padding: 12px; margin: 10px 0;
+      text-align: center; font-size: 9.5pt;
+    }
+    .flow .step {
+      display: inline-block; background: #fff; border: 1px solid #dde3ef;
+      border-radius: 6px; padding: 6px 12px; margin: 3px 0;
+    }
+    .flow .arrow { color: #CF142B; font-weight: bold; margin: 3px 0; }
+  </style>
+</head>
+<body>
+
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+  <h1>Manual de la aplicación móvil</h1>
+  <p class="subtitle">Visitantes · App Flutter (Anfitrión) · Anzoátegui, Venezuela · Julio 2026</p>
+
+  <div class="callout">
+    <strong>Terminología</strong><br />
+    Las personas acogidas se denominan <strong>Invitados</strong> o <strong>Hospedados</strong>.
+    El lugar de acogida es un <strong>hogar solidario</strong>.
+  </div>
+
+  <div class="toc">
+    <strong>Contenido</strong>
+    <ol>
+      <li>Instalación y acceso</li>
+      <li>Pantallas principales</li>
+      <li>Registro desde cero (hogar + núcleo)</li>
+      <li>Consultar hogares e Invitados</li>
+      <li>Menciones opcionales</li>
+      <li>Trabajo sin conexión</li>
+      <li>Varios hogares solidarios</li>
+      <li>Centro de acopio (si aplica)</li>
+      <li>Problemas frecuentes</li>
+    </ol>
+  </div>
+
+  <div class="role-header">1. Instalación y acceso</div>
+
+  <h3>1.1 Preparación</h3>
+  <ol class="steps">
+    <li>Instale el APK suministrado por la institución (Android).</li>
+    <li>Solicite al administrador su correo y contraseña de anfitrión.</li>
+    <li>Active <strong>ubicación (GPS)</strong> y conexíon a internet para el primer uso.</li>
+  </ol>
+
+  <h3>1.2 Iniciar sesión</h3>
+  <ol class="steps">
+    <li>Abra la app <strong>Visitantes</strong>.</li>
+    <li>Ingrese correo y contraseña.</li>
+    <li>Presione <strong>Ingresar</strong>.</li>
+    <li>Si es la primera vez y no tiene hogar, verá el asistente para registrar hogar y núcleo familiar.</li>
+  </ol>
+
+  <div class="callout callout-warn">
+    La URL del servidor no se edita en la app: apunta a producción institucional.
+    No use credenciales de demostración en operación real.
+  </div>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <div class="role-header">2. Pantallas principales (Anfitrión)</div>
+  <table>
+    <thead><tr><th>Pestaña</th><th>Para qué sirve</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Inicio</strong></td><td>Resumen, sincronización, cola pendiente y acceso rápido</td></tr>
+      <tr><td><strong>Hogares</strong></td><td>Lista de hogares solidarios vinculados a su cuenta</td></tr>
+      <tr><td><strong>Registrar</strong> / <strong>Registrar núcleo</strong></td><td>Asistente de alta de hogar e Invitados</td></tr>
+      <tr><td><strong>Invitados</strong></td><td>Búsqueda y detalle de Invitados</td></tr>
+    </tbody>
+  </table>
+  <p>Desde la barra superior puede abrir <strong>Mi perfil</strong>, sincronizar y cerrar sesión.</p>
+
+  <div class="role-header">3. Registro desde cero (hogar + núcleo)</div>
+  <p>Cuando no tiene hogar asignado, el asistente tiene <strong>5 pasos</strong>:</p>
+
+  <div class="flow">
+    <div class="step">1. Hogar solidario</div>
+    <div class="arrow">↓</div>
+    <div class="step">2. Georreferenciación</div>
+    <div class="arrow">↓</div>
+    <div class="step">3. Jefe de familia</div>
+    <div class="arrow">↓</div>
+    <div class="step">4. Familiares</div>
+    <div class="arrow">↓</div>
+    <div class="step">5. Foto y confirmar</div>
+  </div>
+
+  <h3>Paso 1 — Hogar solidario</h3>
+  <ol class="steps">
+    <li>Tipo de vivienda y tipo de acogida.</li>
+    <li>Si es familiar: indique parentesco.</li>
+    <li>Municipio y parroquia (Anzoátegui); comuna si aplica.</li>
+    <li>Dirección exacta.</li>
+    <li>Responsable del hogar: nombre, cédula y teléfono.</li>
+    <li>Toque <strong>Siguiente</strong>.</li>
+  </ol>
+
+  <h3>Paso 2 — Georreferenciación</h3>
+  <ol class="steps">
+    <li>Use <strong>GPS</strong> o toque el mapa para marcar el punto.</li>
+    <li>Confirme latitud y longitud.</li>
+    <li>Toque <strong>Siguiente</strong>.</li>
+  </ol>
+
+  <h3>Paso 3 — Jefe de familia</h3>
+  <ol class="steps">
+    <li>Nombre, apellido y fecha de nacimiento (obligatorios).</li>
+    <li>Cédula y teléfono (recomendados).</li>
+    <li>Procedencia (estado, municipio, parroquia), situación laboral y condición.</li>
+    <li>Toque <strong>Siguiente</strong>.</li>
+  </ol>
+
+  <h3>Paso 4 — Familiares (opcional)</h3>
+  <ol class="steps">
+    <li>Toque <strong>Agregar</strong> por cada familiar.</li>
+    <li>Parentesco, nombre y apellido son obligatorios si agrega alguien.</li>
+    <li>Puede continuar sin familiares.</li>
+  </ol>
+
+  <h3>Paso 5 — Foto y confirmar</h3>
+  <ol class="steps">
+    <li>(Recomendado) Capture la <strong>foto testigo</strong> del jefe de familia.</li>
+    <li>Revise el resumen.</li>
+    <li>Confirme / guarde el registro.</li>
+  </ol>
+
+  <div class="callout callout-tip">
+    Con internet: se guarda en el servidor. Sin internet: queda en cola local y se sincroniza al reconectar.
+  </div>
+
+  <p>Si el hogar <strong>ya existe</strong>, el asistente se reduce a 3 pasos: Jefe de familia → Familiares → Foto y confirmar.</p>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <div class="role-header">4. Consultar hogares e Invitados</div>
+
+  <h3>4.1 Hogares</h3>
+  <ol class="steps">
+    <li>Pestaña <strong>Hogares</strong>.</li>
+    <li>Busque por código o dirección.</li>
+    <li>Abra un hogar para ver datos, responsable, ubicación en mapa e Invitados hospedados.</li>
+  </ol>
+
+  <h3>4.2 Invitados</h3>
+  <ol class="steps">
+    <li>Pestaña <strong>Invitados</strong>.</li>
+    <li>Busque por nombre o cédula.</li>
+    <li>Abra la ficha: datos personales, foto, núcleo familiar y menciones.</li>
+  </ol>
+
+  <div class="role-header">5. Menciones opcionales</div>
+  <p>En el detalle del Invitado, expanda <strong>Menciones opcionales</strong>:</p>
+  <ul>
+    <li><strong>Ayudas:</strong> alimentos, bebidas, otros.</li>
+    <li><strong>Salud:</strong> medicamentos, exámenes, consultas, otros.</li>
+    <li><strong>Trámites:</strong> cédula, partida de nacimiento, otros.</li>
+    <li><strong>Nota breve</strong> (opcional).</li>
+  </ul>
+  <ol class="steps">
+    <li>Marque lo que corresponda.</li>
+    <li>Presione <strong>Guardar menciones</strong> (o <strong>Guardar offline</strong> sin red).</li>
+  </ol>
+  <div class="callout">
+    Es solo referencia informativa. <strong>No</strong> crea requerimientos ni trámites formales.
+  </div>
+
+  <div class="role-header">6. Trabajo sin conexión</div>
+  <ol class="steps">
+    <li>En el primer acceso con red, la app descarga el catálogo (válido aprox. 24 h).</li>
+    <li>Sin red puede registrar y guardar menciones en la cola del teléfono.</li>
+    <li>Al recuperar señal, use el botón de <strong>sincronizar</strong> en Inicio.</li>
+    <li>Revise que el contador de pendientes llegue a cero.</li>
+  </ol>
+  <div class="callout callout-warn">
+    No desinstale la app mientras haya registros en cola: se perderían los datos pendientes.
+  </div>
+
+  <div class="role-header">7. Varios hogares solidarios</div>
+  <p>Un anfitrión puede tener más de un hogar. Desde <strong>Hogares</strong> puede registrar otro hogar + núcleo cuando la institución lo permita. Cada hogar mantiene su propio núcleo familiar.</p>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <div class="role-header acopio">8. Centro de acopio (si el módulo está activo)</div>
+  <p>Si su usuario es de centro de acopio y la logística está habilitada en el servidor:</p>
+  <ul>
+    <li><strong>Inventario:</strong> alta y ajuste de insumos por categoría/subcategoría.</li>
+    <li><strong>Entregas:</strong> confirme despachos asignados cuando entregue físicamente.</li>
+  </ul>
+  <div class="callout callout-warn">
+    En muchas instalaciones de Anzoátegui la logística está desactivada; use solo el flujo de anfitrión.
+  </div>
+
+  <div class="role-header">9. Problemas frecuentes</div>
+  <table>
+    <thead><tr><th>Situación</th><th>Qué hacer</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>No inicia sesión</td>
+        <td>Verifique correo/contraseña y conexión. Pida al admin restablecer la clave.</td>
+      </tr>
+      <tr>
+        <td>No carga el catálogo</td>
+        <td>Conéctese a internet y sincronice desde Inicio.</td>
+      </tr>
+      <tr>
+        <td>No marca GPS</td>
+        <td>Active ubicación del teléfono y permisos de la app; reintente.</td>
+      </tr>
+      <tr>
+        <td>Quedó “en cola”</td>
+        <td>Conéctese y sincronice; no cierre la app hasta vaciar la cola.</td>
+      </tr>
+      <tr>
+        <td>No ve un hogar viejo</td>
+        <td>Si la base se reinició, debe registrar el hogar nuevamente.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="footer">
+    Visitantes · Manual de la aplicación móvil · Anzoátegui, Venezuela ·
+    Generado para uso institucional · Imprima desde el navegador (Ctrl/Cmd + P)
+  </div>
+</body>
+</html>

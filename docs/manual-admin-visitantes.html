@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Visitantes — Manual del panel administrativo</title>
+  <style>
+    @page { size: A4; margin: 18mm 16mm 22mm 16mm; }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      font-size: 10pt; line-height: 1.5; color: #1a1a2e; background: #fff;
+    }
+    .tricolor { height: 6px; display: flex; margin-bottom: 18px; }
+    .tricolor span { flex: 1; }
+    .ve-yellow { background: #FFCC00; }
+    .ve-blue { background: #002776; }
+    .ve-red { background: #CF142B; }
+    h1 { font-size: 22pt; font-weight: 700; color: #002776; margin-bottom: 4px; }
+    .subtitle { font-size: 11pt; color: #555; margin-bottom: 16px; }
+    h2 {
+      font-size: 13pt; font-weight: 700; color: #002776;
+      margin: 22px 0 10px; padding-bottom: 4px; border-bottom: 2px solid #FFCC00;
+    }
+    h3 { font-size: 11pt; font-weight: 600; color: #002776; margin: 16px 0 6px; }
+    h4 { font-size: 10pt; font-weight: 600; color: #333; margin: 12px 0 4px; }
+    p { margin-bottom: 8px; }
+    ul, ol { margin: 6px 0 12px 20px; }
+    li { margin-bottom: 5px; }
+    .toc { background: #f8f9fc; border-radius: 8px; padding: 14px 18px; margin: 14px 0; }
+    .toc ol { margin-bottom: 0; }
+    .callout {
+      background: #eef3ff; border-left: 4px solid #002776;
+      padding: 10px 14px; margin: 12px 0; border-radius: 0 6px 6px 0;
+    }
+    .callout-warn { background: #fff8e6; border-left-color: #FFCC00; }
+    .callout-tip { background: #f0faf0; border-left-color: #1b7a1b; }
+    table { width: 100%; border-collapse: collapse; margin: 8px 0 14px; font-size: 9pt; }
+    th { background: #002776; color: #fff; text-align: left; padding: 6px 10px; font-weight: 600; }
+    td { padding: 5px 10px; border-bottom: 1px solid #e8ecf4; vertical-align: top; }
+    tr:nth-child(even) td { background: #f8f9fc; }
+    .steps { counter-reset: step; list-style: none; margin-left: 0; padding: 0; }
+    .steps li {
+      counter-increment: step; padding: 8px 0 8px 36px; position: relative;
+      border-bottom: 1px solid #eef1f6;
+    }
+    .steps li::before {
+      content: counter(step); position: absolute; left: 0; top: 8px;
+      width: 24px; height: 24px; background: #002776; color: #fff;
+      border-radius: 50%; font-size: 9pt; font-weight: 700;
+      text-align: center; line-height: 24px;
+    }
+    .role-header {
+      background: #002776; color: #fff; padding: 10px 14px; border-radius: 8px;
+      margin: 18px 0 12px; font-weight: 600; font-size: 12pt;
+    }
+    code, .kbd {
+      background: #eef1f6; padding: 1px 5px; border-radius: 3px; font-size: 9pt;
+    }
+    .page-break { page-break-before: always; }
+    .footer {
+      margin-top: 20px; padding-top: 8px; border-top: 1px solid #dde3ef;
+      font-size: 8pt; color: #888; text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+  <h1>Manual del panel administrativo</h1>
+  <p class="subtitle">Visitantes · Anzoátegui, Venezuela · Filament <code>/admin</code> · Julio 2026</p>
+
+  <div class="callout">
+    <strong>Terminología</strong><br />
+    Use siempre <strong>Invitado</strong> u <strong>Hospedado</strong>. El espacio de acogida es un
+    <strong>hogar solidario</strong>. No use <em>refugiado</em>, <em>damnificado</em> ni <em>afectado</em>.
+  </div>
+
+  <div class="toc">
+    <strong>Contenido</strong>
+    <ol>
+      <li>Acceso e interfaz</li>
+      <li>Dashboard y filtros</li>
+      <li>Territorio</li>
+      <li>Operación (hogares, Invitados, mapa, reportes)</li>
+      <li>Administración (usuarios y bitácora)</li>
+      <li>Fichas PDF y exportaciones</li>
+      <li>Logística (si está habilitada)</li>
+      <li>Buenas prácticas</li>
+    </ol>
+  </div>
+
+  <h2>1. Acceso e interfaz</h2>
+  <h3>1.1 Entrar al panel</h3>
+  <ol class="steps">
+    <li>Abra el navegador en <code>https://visitantes.proyectoswm.com/admin</code>.</li>
+    <li>Ingrese su correo y contraseña de administrador.</li>
+    <li>Presione <strong>Iniciar sesión</strong>.</li>
+  </ol>
+
+  <h3>1.2 Menú lateral</h3>
+  <table>
+    <thead><tr><th>Grupo</th><th>Opciones</th></tr></thead>
+    <tbody>
+      <tr><td><strong>Territorio</strong></td><td>Municipios · Parroquias · Comunas</td></tr>
+      <tr><td><strong>Operación</strong></td><td>Hogares solidarios · Registrar núcleo familiar · Invitados · Mapa operativo · Reportes</td></tr>
+      <tr><td><strong>Administración</strong></td><td>Usuarios · Bitácora</td></tr>
+      <tr><td><strong>Logística</strong></td><td>Visible solo si la función de logística está activa (requerimientos, centros, inventario).</td></tr>
+    </tbody>
+  </table>
+
+  <div class="callout callout-tip">
+    Use la búsqueda superior del panel para localizar Invitados por nombre, apellido o cédula.
+  </div>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <h2>2. Dashboard y filtros</h2>
+  <p>Al entrar verá el dashboard <strong>Operación — Anzoátegui</strong> con indicadores según filtros.</p>
+
+  <h3>2.1 Filtros</h3>
+  <ol class="steps">
+    <li>Defina <strong>Desde</strong> y <strong>Hasta</strong> (período).</li>
+    <li>Opcional: Municipio, Parroquia y Hogar solidario.</li>
+    <li>Los widgets y el PDF se recalculan con esos criterios.</li>
+  </ol>
+
+  <h3>2.2 Indicadores principales</h3>
+  <ul>
+    <li>Hogares solidarios (total, con núcleo, sin núcleo, nuevos en período).</li>
+    <li>Anfitriones (registrados, desplegados, sin asignar, tasa de despliegue).</li>
+    <li>Invitados (activos, registrados en período, nuevas familias, miembros, egresados).</li>
+    <li><strong>Menciones opcionales:</strong> Invitados con menciones; conteos de ayudas, salud y trámites.</li>
+  </ul>
+
+  <h3>2.3 Tablas del dashboard</h3>
+  <ul>
+    <li><strong>Indicadores por municipio:</strong> hogares, núcleo, anfitriones, Invitados activos, con menciones.</li>
+    <li><strong>Hogares con más Invitados activos:</strong> top de hogares solidarios.</li>
+  </ul>
+
+  <h3>2.4 Exportar PDF del dashboard</h3>
+  <ol class="steps">
+    <li>Ajuste los filtros deseados.</li>
+    <li>Presione <strong>Exportar PDF</strong> (arriba a la derecha).</li>
+    <li>El archivo incluye KPIs, municipios, menciones por opción e Invitados recientes del período.</li>
+  </ol>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <h2>3. Territorio</h2>
+  <p>Catálogo geográfico de Venezuela / Anzoátegui. En operación normal ya viene cargado.</p>
+  <ul>
+    <li><strong>Municipios</strong> y <strong>Parroquias</strong>: base para ubicar hogares.</li>
+    <li><strong>Comunas</strong>: dato territorial adicional del hogar.</li>
+  </ul>
+  <div class="callout callout-warn">
+    No elimine municipios o parroquias con hogares vinculados. Solo corrija o agregue cuando sea necesario.
+  </div>
+
+  <h2>4. Operación</h2>
+
+  <h3>4.1 Hogares solidarios</h3>
+  <ol class="steps">
+    <li>Menú → Operación → <strong>Hogares solidarios</strong>.</li>
+    <li>Consulte el listado (código, parroquia, núcleo).</li>
+    <li>Puede <strong>Crear</strong> o <strong>Editar</strong> desde el panel (dirección, tipo de vivienda, responsable, GPS).</li>
+    <li>Desde la tabla o la ficha, exporte la <strong>ficha PDF</strong> del hogar (incluye jefe, núcleo y menciones del jefe).</li>
+  </ol>
+
+  <h3>4.2 Registrar núcleo familiar</h3>
+  <p>Flujo guiado en el panel para crear o completar un núcleo en un hogar. Preferible también desde la app del anfitrión en campo.</p>
+
+  <h3>4.3 Invitados</h3>
+  <ol class="steps">
+    <li>Menú → Operación → <strong>Invitados</strong>.</li>
+    <li>Busque por nombre o cédula.</li>
+    <li>Al editar un Invitado verá identificación, procedencia, situación laboral y <strong>Menciones opcionales</strong> (ayudas, salud, trámites, nota).</li>
+    <li>En jefes de familia: gestione el <strong>núcleo familiar</strong> y, si aplica, exporte la ficha PDF del hogar.</li>
+    <li>Estados: <strong>Activo</strong> o <strong>Egresado</strong>.</li>
+  </ol>
+
+  <div class="callout">
+    Las <strong>menciones</strong> son etiquetas informativas. No generan requerimientos ni trámites formales.
+  </div>
+
+  <h3>4.4 Mapa operativo</h3>
+  <p>Vista territorial de hogares solidarios (e Invitados asociados) filtrable por municipio/parroquia. Útil para supervisión geográfica.</p>
+
+  <h3>4.5 Reportes (CSV)</h3>
+  <ol class="steps">
+    <li>Menú → Operación → <strong>Reportes</strong>.</li>
+    <li>Revise el resumen (hogares, Invitados activos, con menciones).</li>
+    <li>Descargue <strong>Invitados y núcleos familiares</strong>: una fila por persona (jefes y miembros), con datos del hogar, procedencia, responsable y menciones.</li>
+    <li>Si logística está activa, también podrá exportar requerimientos e inventario.</li>
+  </ol>
+
+  <div class="page-break"></div>
+  <div class="tricolor"><span class="ve-yellow"></span><span class="ve-blue"></span><span class="ve-red"></span></div>
+
+  <h2>5. Administración</h2>
+
+  <h3>5.1 Usuarios</h3>
+  <ol class="steps">
+    <li>Menú → Administración → <strong>Usuarios</strong> → <strong>Crear</strong>.</li>
+    <li>Complete nombre, correo y contraseña.</li>
+    <li>Rol: <strong>Administrador</strong> o <strong>Anfitrión</strong> (y Centro de acopio si logística está activa).</li>
+    <li>Para anfitrión: puede iniciar sin hogar asignado; el hogar se crea al registrar desde la app.</li>
+    <li>Guarde y entregue las credenciales al operador de forma segura.</li>
+  </ol>
+
+  <h3>5.2 Bitácora</h3>
+  <p>Registro de auditoría de acciones relevantes (altas, cambios, sincronizaciones). Consúltela ante incidencias o seguimiento institucional.</p>
+
+  <h2>6. Fichas PDF y exportaciones</h2>
+  <table>
+    <thead><tr><th>Documento</th><th>Desde dónde</th><th>Contenido</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Ficha de hogar solidario</td>
+        <td>Hogares / Invitado (jefe)</td>
+        <td>Datos del hogar, responsable, jefe, núcleo, menciones del jefe, foto si existe</td>
+      </tr>
+      <tr>
+        <td>Reporte de operación (PDF)</td>
+        <td>Dashboard → Exportar PDF</td>
+        <td>KPIs, municipios, menciones, top hogares, Invitados del período</td>
+      </tr>
+      <tr>
+        <td>CSV Invitados y núcleos</td>
+        <td>Reportes</td>
+        <td>Exportación completa persona a persona</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <h2>7. Logística (módulo opcional)</h2>
+  <p>Si <code>VISITANTES_LOGISTICA</code> está activo en el servidor, verá el grupo Logística:</p>
+  <ul>
+    <li>Centros de acopio e inventario.</li>
+    <li>Requerimientos de insumos y asignación a centros.</li>
+    <li>Widgets adicionales en el dashboard (pendientes, entregas, stock bajo).</li>
+  </ul>
+  <div class="callout callout-warn">
+    En la configuración habitual de Anzoátegui la logística puede estar <strong>deshabilitada</strong>. En ese caso el foco del admin es territorio, hogares, Invitados, mapa y reportes.
+  </div>
+
+  <h2>8. Buenas prácticas</h2>
+  <ul>
+    <li>Verifique filtros del dashboard antes de exportar PDF institucional.</li>
+    <li>Use la ficha PDF del hogar para entregas formales o archivo físico.</li>
+    <li>No comparta contraseñas de anfitriones por canales inseguros.</li>
+    <li>Mantenga la geografía oficial; no duplique parroquias.</li>
+    <li>Las menciones son referencia: no sustituyen entregas ni trámites documentales.</li>
+  </ul>
+
+  <div class="footer">
+    Visitantes · Manual del panel administrativo · Anzoátegui, Venezuela ·
+    Generado para uso institucional · Imprima desde el navegador (Ctrl/Cmd + P)
+  </div>
+</body>
+</html>
