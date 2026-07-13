@@ -51,12 +51,15 @@ class ReportesOperacion extends Page
     public function getResumenProperty(): array
     {
         $invitadosActivos = Invitado::query()->where('estatus', 'activo');
+        $invitadosConMenciones = InvitadoMencionesCatalog::columnasDisponibles()
+            ? InvitadoMencionesCatalog::scopeConAlgunaMencion(clone $invitadosActivos)->count()
+            : 0;
 
         return [
             'refugios' => HogarSolidario::query()->count(),
             'centros' => CentroAcopio::query()->where('activo', true)->count(),
             'invitados' => (clone $invitadosActivos)->count(),
-            'invitados_con_menciones' => InvitadoMencionesCatalog::scopeConAlgunaMencion(clone $invitadosActivos)->count(),
+            'invitados_con_menciones' => $invitadosConMenciones,
             'requerimientos' => Requerimiento::query()->count(),
         ];
     }

@@ -6,6 +6,7 @@ namespace App\Support;
 
 use App\Models\Invitado;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Validation\Rule;
 
 final class InvitadoMencionesCatalog
@@ -219,6 +220,11 @@ final class InvitadoMencionesCatalog
         ];
     }
 
+    public static function columnasDisponibles(): bool
+    {
+        return Schema::hasColumn('invitados', 'menciones_ayudas');
+    }
+
     public static function tieneMenciones(?Invitado $invitado): bool
     {
         if ($invitado === null) {
@@ -282,8 +288,7 @@ final class InvitadoMencionesCatalog
     {
         return $query
             ->whereNotNull($column)
-            ->where($column, '!=', '[]')
-            ->where($column, '!=', 'null');
+            ->whereJsonLength($column, '>', 0);
     }
 
     /**
@@ -292,6 +297,10 @@ final class InvitadoMencionesCatalog
      */
     public static function scopeConAlgunaMencion(Builder $query): Builder
     {
+        if (! self::columnasDisponibles()) {
+            return $query->whereRaw('1 = 0');
+        }
+
         return $query->where(function (Builder $sub): void {
             foreach (self::columnasMenciones() as $column) {
                 $sub->orWhere(fn (Builder $q) => self::scopeConValoresEnColumna($q, $column));

@@ -79,10 +79,7 @@ class OperacionMetricsService
             'nuevas_familias' => $this->invitadosRegistradosEnPeriodo($filtros)->whereNull('jefe_familia_id')->count(),
             'miembros_familia' => $this->invitadosRegistradosEnPeriodo($filtros)->whereNotNull('jefe_familia_id')->count(),
             'invitados_egresados' => $this->invitados($filtros)->where('estatus', InvitadoEstatus::Egresado)->count(),
-            'invitados_con_menciones' => $this->invitadosConMenciones($filtros)->count(),
-            'menciones_ayudas_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_AYUDAS)->count(),
-            'menciones_salud_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_SALUD)->count(),
-            'menciones_tramites_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_TRAMITES)->count(),
+            ...$this->kpisMenciones($filtros),
             'centros_activos' => $this->centrosAcopio($filtros)->where('activo', true)->count(),
             'requerimientos_creados' => $reqCreados,
             'requerimientos_pendientes' => $this->requerimientos($filtros)->where('estatus', RequerimientoEstatus::Pendiente)->count(),
@@ -212,6 +209,10 @@ class OperacionMetricsService
      */
     public function mencionesPorOpcion(OperacionFiltros $filtros): Collection
     {
+        if (! InvitadoMencionesCatalog::columnasDisponibles()) {
+            return collect();
+        }
+
         $base = $this->invitados($filtros)->where('estatus', InvitadoEstatus::Activo);
         $filas = collect();
 
@@ -357,6 +358,26 @@ class OperacionMetricsService
             'invitados_recientes' => $this->invitadosRegistradosRecientes($filtros, 30),
             'menciones_por_opcion' => $this->mencionesPorOpcion($filtros),
             'generado_en' => now()->timezone(config('app.timezone'))->format('d/m/Y H:i'),
+        ];
+    }
+
+    /** @return array<string, int> */
+    private function kpisMenciones(OperacionFiltros $filtros): array
+    {
+        if (! InvitadoMencionesCatalog::columnasDisponibles()) {
+            return [
+                'invitados_con_menciones' => 0,
+                'menciones_ayudas_invitados' => 0,
+                'menciones_salud_invitados' => 0,
+                'menciones_tramites_invitados' => 0,
+            ];
+        }
+
+        return [
+            'invitados_con_menciones' => $this->invitadosConMenciones($filtros)->count(),
+            'menciones_ayudas_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_AYUDAS)->count(),
+            'menciones_salud_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_SALUD)->count(),
+            'menciones_tramites_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_TRAMITES)->count(),
         ];
     }
 

@@ -108,4 +108,44 @@ class InvitadoMencionesTest extends TestCase
         $this->assertStringContainsString('Cédula', $resumen);
         $this->assertTrue(InvitadoMencionesCatalog::tieneMenciones($invitado));
     }
+
+    public function test_scope_con_menciones_excluye_vacios(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+
+        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
+        $hogar = HogarSolidario::query()->create([
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.214,
+            'longitud' => -64.633,
+            'direccion_exacta' => 'PLC',
+        ]);
+
+        Invitado::query()->create([
+            'nombre' => 'Sin',
+            'apellido' => 'Menciones',
+            'fecha_nacimiento' => '1990-01-01',
+            'hogar_solidario_id' => $hogar->id,
+            'estatus' => 'activo',
+        ]);
+
+        Invitado::query()->create([
+            'nombre' => 'Con',
+            'apellido' => 'Menciones',
+            'fecha_nacimiento' => '1990-01-01',
+            'hogar_solidario_id' => $hogar->id,
+            'jefe_familia_id' => Invitado::query()->where('hogar_solidario_id', $hogar->id)->value('id'),
+            'parentesco' => 'Hijo',
+            'estatus' => 'activo',
+            ...InvitadoMencionesCatalog::normalizePayload([
+                'menciones_ayudas' => ['alimentos'],
+            ]),
+        ]);
+
+        $total = InvitadoMencionesCatalog::scopeConAlgunaMencion(
+            Invitado::query()->where('estatus', 'activo'),
+        )->count();
+
+        $this->assertSame(1, $total);
+    }
 }
