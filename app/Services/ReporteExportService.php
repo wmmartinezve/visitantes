@@ -4,11 +4,12 @@ declare(strict_types=1);
 
 namespace App\Services;
 
+use App\Models\HogarSolidario;
 use App\Models\Inventario;
 use App\Models\Invitado;
-use App\Models\HogarSolidario;
 use App\Models\Requerimiento;
 use App\Support\InvitadoFotoStorage;
+use App\Support\InvitadoMencionesCatalog;
 use App\Support\OperacionFiltros;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Symfony\Component\HttpFoundation\Response;
@@ -65,6 +66,7 @@ class ReporteExportService
             'jefe' => $jefe,
             'miembros' => $miembros,
             'fotoBase64' => $fotoBase64,
+            'mencionesJefe' => $jefe !== null ? InvitadoMencionesCatalog::resourcePayload($jefe) : null,
             'generadoEn' => now()->timezone(config('app.timezone'))->format('d/m/Y H:i'),
         ])
             ->setPaper('letter', 'portrait')
@@ -89,6 +91,10 @@ class ReporteExportService
             'Municipio',
             'Parroquia',
             'Estatus',
+            'Ayudas mencionadas',
+            'Salud mencionada',
+            'Trámites mencionados',
+            'Nota menciones',
             'Registrado',
         ], function ($handle): void {
             Invitado::query()
@@ -108,6 +114,19 @@ class ReporteExportService
                             $invitado->refugio?->parroquia?->municipio?->nombre,
                             $invitado->refugio?->parroquia?->nombre,
                             $invitado->estatus?->label(),
+                            InvitadoMencionesCatalog::etiquetasCsv(
+                                $invitado->menciones_ayudas,
+                                InvitadoMencionesCatalog::CATEGORIA_AYUDAS,
+                            ),
+                            InvitadoMencionesCatalog::etiquetasCsv(
+                                $invitado->menciones_salud,
+                                InvitadoMencionesCatalog::CATEGORIA_SALUD,
+                            ),
+                            InvitadoMencionesCatalog::etiquetasCsv(
+                                $invitado->menciones_tramites,
+                                InvitadoMencionesCatalog::CATEGORIA_TRAMITES,
+                            ),
+                            $invitado->menciones_nota,
                             $invitado->created_at?->format('Y-m-d H:i'),
                         ]);
                     }

@@ -8,6 +8,7 @@ use App\Enums\UserRole;
 use App\Models\HogarSolidario;
 use App\Models\User;
 use App\Services\ReporteExportService;
+use App\Support\InvitadoMencionesCatalog;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Database\Seeders\DemoOperacionSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -55,5 +56,31 @@ class HogarSolidarioFichaPdfTest extends TestCase
         $this->assertSame(200, $response->getStatusCode());
         $this->assertStringContainsString('application/pdf', (string) $response->headers->get('Content-Type'));
         $this->assertStringContainsString('ficha-hogar-solidario', (string) $response->headers->get('Content-Disposition'));
+    }
+
+    public function test_ficha_pdf_incluye_menciones_del_jefe(): void
+    {
+        $hogar = HogarSolidario::query()->whereHas('jefeFamilia')->firstOrFail();
+        $jefe = $hogar->jefeFamilia;
+        $jefe->update(InvitadoMencionesCatalog::normalizePayload([
+            'menciones_ayudas' => ['alimentos'],
+            'menciones_salud' => ['consultas'],
+            'menciones_tramites' => ['cedula'],
+            'menciones_nota' => 'Referencia en ficha',
+        ]));
+
+        $html = view('reports.hogar-solidario-ficha-pdf', [
+            'hogar' => $hogar->fresh(['jefeFamilia', 'anfitriones', 'parroquia.municipio.estado', 'comuna']),
+            'jefe' => $hogar->fresh()->jefeFamilia,
+            'miembros' => collect(),
+            'fotoBase64' => null,
+            'mencionesJefe' => InvitadoMencionesCatalog::resourcePayload($hogar->fresh()->jefeFamilia),
+            'generadoEn' => now()->format('d/m/Y H:i'),
+        ])->render();
+
+        $this->assertStringContainsString('Menciones opcionales', $html);
+        $this->assertStringContainsString('Alimentos', $html);
+        $this->assertStringContainsString('Consultas médicas', $html);
+        $this->assertStringContainsString('Referencia en ficha', $html);
     }
 }

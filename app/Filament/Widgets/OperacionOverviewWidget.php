@@ -93,6 +93,26 @@ class OperacionOverviewWidget extends BaseWidget
                 ->description('Total acumulado')
                 ->icon('heroicon-o-arrow-right-on-rectangle')
                 ->color('gray'),
+
+            Stat::make('Con menciones', (string) $kpis['invitados_con_menciones'])
+                ->description('Invitados activos · referencia informativa')
+                ->icon('heroicon-o-tag')
+                ->color('info'),
+
+            Stat::make('Menciones · ayudas', (string) $kpis['menciones_ayudas_invitados'])
+                ->description('Invitados activos')
+                ->icon('heroicon-o-gift')
+                ->color('warning'),
+
+            Stat::make('Menciones · salud', (string) $kpis['menciones_salud_invitados'])
+                ->description('Invitados activos')
+                ->icon('heroicon-o-heart')
+                ->color('danger'),
+
+            Stat::make('Menciones · trámites', (string) $kpis['menciones_tramites_invitados'])
+                ->description('Documentos · Invitados activos')
+                ->icon('heroicon-o-document-text')
+                ->color('primary'),
         ];
 
         if (VisitantesFeatures::logistica()) {

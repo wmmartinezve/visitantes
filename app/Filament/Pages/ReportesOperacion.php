@@ -6,10 +6,11 @@ namespace App\Filament\Pages;
 
 use App\Filament\Concerns\HidesWhenLogisticaDisabled;
 use App\Models\CentroAcopio;
+use App\Models\HogarSolidario;
 use App\Models\Invitado;
 use App\Models\Requerimiento;
-use App\Models\HogarSolidario;
 use App\Services\ReporteExportService;
+use App\Support\InvitadoMencionesCatalog;
 use Filament\Pages\Page;
 use Symfony\Component\HttpFoundation\StreamedResponse;
 
@@ -49,10 +50,13 @@ class ReportesOperacion extends Page
      */
     public function getResumenProperty(): array
     {
+        $invitadosActivos = Invitado::query()->where('estatus', 'activo');
+
         return [
             'refugios' => HogarSolidario::query()->count(),
             'centros' => CentroAcopio::query()->where('activo', true)->count(),
-            'invitados' => Invitado::query()->where('estatus', 'activo')->count(),
+            'invitados' => (clone $invitadosActivos)->count(),
+            'invitados_con_menciones' => InvitadoMencionesCatalog::scopeConAlgunaMencion(clone $invitadosActivos)->count(),
             'requerimientos' => Requerimiento::query()->count(),
         ];
     }

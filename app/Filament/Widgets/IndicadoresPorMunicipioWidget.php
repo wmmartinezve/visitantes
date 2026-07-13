@@ -60,6 +60,10 @@ class IndicadoresPorMunicipioWidget extends BaseWidget
                     ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->invitados_registrados ?? 0))
                     ->alignCenter()
                     ->toggleable(isToggledHiddenByDefault: true),
+                Tables\Columns\TextColumn::make('invitados_con_menciones')
+                    ->label('Con menciones')
+                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->invitados_con_menciones ?? 0))
+                    ->alignCenter(),
             ])
             ->paginated(false);
     }

@@ -7,15 +7,15 @@ namespace App\Filament\Resources;
 use App\Enums\CondicionInvitado;
 use App\Enums\InvitadoEstatus;
 use App\Enums\SituacionJefeFamilia;
+use App\Filament\Resources\InvitadoResource\Pages;
+use App\Filament\Resources\InvitadoResource\RelationManagers\MiembrosFamiliaRelationManager;
 use App\Filament\Support\CondicionInvitadoSelectFields;
 use App\Filament\Support\HogarSolidarioFichaPdfAction;
 use App\Filament\Support\InvitadoMencionesFields;
 use App\Filament\Support\ProcedenciaSelectFields;
-use App\Filament\Resources\InvitadoResource\Pages;
-use App\Filament\Resources\InvitadoResource\RelationManagers\MiembrosFamiliaRelationManager;
 use App\Models\Invitado;
-use App\Support\InvitadoMencionesCatalog;
 use App\Support\InvitadoFotoStorage;
+use App\Support\InvitadoMencionesCatalog;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Forms\Get;
@@ -23,6 +23,7 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class InvitadoResource extends Resource
@@ -48,7 +49,7 @@ class InvitadoResource extends Resource
         return ['cedula', 'nombre', 'apellido'];
     }
 
-    public static function getGlobalSearchResultDetails(\Illuminate\Database\Eloquent\Model $record): array
+    public static function getGlobalSearchResultDetails(Model $record): array
     {
         /** @var Invitado $record */
         return [
@@ -231,7 +232,7 @@ class InvitadoResource extends Resource
                     }),
                 Tables\Columns\TextColumn::make('menciones_resumen')
                     ->label('Menciones')
-                    ->state(fn (Invitado $record): string => self::formatMencionesResumen($record))
+                    ->state(fn (Invitado $record): string => InvitadoMencionesCatalog::resumenTexto($record))
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('miembros_familia_count')
                     ->label('Familiares')
@@ -285,30 +286,5 @@ class InvitadoResource extends Resource
             'create' => Pages\CreateInvitado::route('/create'),
             'edit' => Pages\EditInvitado::route('/{record}/edit'),
         ];
-    }
-
-    private static function formatMencionesResumen(Invitado $record): string
-    {
-        $partes = [];
-
-        foreach ([
-            InvitadoMencionesCatalog::CATEGORIA_AYUDAS => $record->menciones_ayudas,
-            InvitadoMencionesCatalog::CATEGORIA_SALUD => $record->menciones_salud,
-            InvitadoMencionesCatalog::CATEGORIA_TRAMITES => $record->menciones_tramites,
-        ] as $categoria => $keys) {
-            if (! is_array($keys) || $keys === []) {
-                continue;
-            }
-
-            $etiquetas = collect(InvitadoMencionesCatalog::labelsForApi($keys, $categoria))
-                ->pluck('label')
-                ->implode(', ');
-
-            if ($etiquetas !== '') {
-                $partes[] = $etiquetas;
-            }
-        }
-
-        return $partes === [] ? '—' : implode(' · ', $partes);
     }
 }

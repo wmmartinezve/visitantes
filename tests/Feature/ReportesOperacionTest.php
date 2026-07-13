@@ -44,5 +44,6 @@ class ReportesOperacionTest extends TestCase
 
         $this->assertStringContainsString('Carlos', $content);
         $this->assertStringContainsString('Puerto La Cruz', $content);
+        $this->assertStringContainsString('Ayudas mencionadas', $content);
     }
 }

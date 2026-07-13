@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace Tests\Feature;
 
+use App\Models\HogarSolidario;
 use App\Models\Invitado;
 use App\Models\Parroquia;
-use App\Models\HogarSolidario;
 use App\Support\InvitadoMencionesCatalog;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -74,5 +74,38 @@ class InvitadoMencionesTest extends TestCase
         $this->assertSame(['medicamentos', 'examenes'], $fresh->menciones_salud);
         $this->assertSame(['cedula'], $fresh->menciones_tramites);
         $this->assertSame('Solo referencia', $fresh->menciones_nota);
+    }
+
+    public function test_resumen_texto_formatea_etiquetas(): void
+    {
+        $this->seed(AnzoateguiGeografiaSeeder::class);
+
+        $parroquia = Parroquia::query()->where('nombre', 'Puerto La Cruz')->firstOrFail();
+        $hogar = HogarSolidario::query()->create([
+            'parroquia_id' => $parroquia->id,
+            'latitud' => 10.214,
+            'longitud' => -64.633,
+            'direccion_exacta' => 'PLC',
+        ]);
+
+        $invitado = Invitado::query()->create([
+            'nombre' => 'Luis',
+            'apellido' => 'Resumen',
+            'fecha_nacimiento' => '1990-01-01',
+            'hogar_solidario_id' => $hogar->id,
+            'estatus' => 'activo',
+            ...InvitadoMencionesCatalog::normalizePayload([
+                'menciones_ayudas' => ['alimentos'],
+                'menciones_salud' => ['consultas'],
+                'menciones_tramites' => ['cedula'],
+            ]),
+        ]);
+
+        $resumen = InvitadoMencionesCatalog::resumenTexto($invitado->fresh());
+
+        $this->assertStringContainsString('Alimentos', $resumen);
+        $this->assertStringContainsString('Consultas médicas', $resumen);
+        $this->assertStringContainsString('Cédula', $resumen);
+        $this->assertTrue(InvitadoMencionesCatalog::tieneMenciones($invitado));
     }
 }

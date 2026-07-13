@@ -8,12 +8,13 @@ use App\Enums\InvitadoEstatus;
 use App\Enums\RequerimientoEstatus;
 use App\Enums\UserRole;
 use App\Models\CentroAcopio;
+use App\Models\HogarSolidario;
 use App\Models\Inventario;
 use App\Models\Invitado;
-use App\Models\HogarSolidario;
 use App\Models\Municipio;
 use App\Models\Requerimiento;
 use App\Models\User;
+use App\Support\InvitadoMencionesCatalog;
 use App\Support\OperacionFiltros;
 use App\Support\VisitantesFeatures;
 use Illuminate\Database\Eloquent\Builder;
@@ -78,6 +79,10 @@ class OperacionMetricsService
             'nuevas_familias' => $this->invitadosRegistradosEnPeriodo($filtros)->whereNull('jefe_familia_id')->count(),
             'miembros_familia' => $this->invitadosRegistradosEnPeriodo($filtros)->whereNotNull('jefe_familia_id')->count(),
             'invitados_egresados' => $this->invitados($filtros)->where('estatus', InvitadoEstatus::Egresado)->count(),
+            'invitados_con_menciones' => $this->invitadosConMenciones($filtros)->count(),
+            'menciones_ayudas_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_AYUDAS)->count(),
+            'menciones_salud_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_SALUD)->count(),
+            'menciones_tramites_invitados' => $this->invitadosConMencionEnCategoria($filtros, InvitadoMencionesCatalog::CATEGORIA_TRAMITES)->count(),
             'centros_activos' => $this->centrosAcopio($filtros)->where('activo', true)->count(),
             'requerimientos_creados' => $reqCreados,
             'requerimientos_pendientes' => $this->requerimientos($filtros)->where('estatus', RequerimientoEstatus::Pendiente)->count(),
@@ -116,6 +121,10 @@ class OperacionMetricsService
             ['Nuevas familias (jefes)', $kpis['nuevas_familias']],
             ['Miembros de familia', $kpis['miembros_familia']],
             ['Invitados egresados', $kpis['invitados_egresados']],
+            ['Invitados con menciones', $kpis['invitados_con_menciones']],
+            ['Con menciones de ayudas', $kpis['menciones_ayudas_invitados']],
+            ['Con menciones de salud', $kpis['menciones_salud_invitados']],
+            ['Con menciones de trámites', $kpis['menciones_tramites_invitados']],
         ];
 
         if ($logistica) {
@@ -148,6 +157,7 @@ class OperacionMetricsService
      *     anfitriones_desplegados: int,
      *     hogares_nuevos_periodo: int,
      *     invitados_registrados: int,
+     *     invitados_con_menciones: int,
      * }>
      */
     public function resumenPorMunicipio(OperacionFiltros $filtros): Collection
@@ -184,8 +194,50 @@ class OperacionMetricsService
                 'anfitriones_desplegados' => (int) $kpis['anfitriones_desplegados'],
                 'hogares_nuevos_periodo' => (int) $kpis['hogares_nuevos_periodo'],
                 'invitados_registrados' => (int) $kpis['invitados_registrados'],
+                'invitados_con_menciones' => (int) $kpis['invitados_con_menciones'],
             ];
         });
+    }
+
+    /**
+     * Conteo de Invitados activos por opción del catálogo de menciones.
+     *
+     * @return Collection<int, object{
+     *     categoria: string,
+     *     categoria_label: string,
+     *     value: string,
+     *     label: string,
+     *     total: int,
+     * }>
+     */
+    public function mencionesPorOpcion(OperacionFiltros $filtros): Collection
+    {
+        $base = $this->invitados($filtros)->where('estatus', InvitadoEstatus::Activo);
+        $filas = collect();
+
+        $categoriaLabels = [
+            InvitadoMencionesCatalog::CATEGORIA_AYUDAS => 'Ayudas',
+            InvitadoMencionesCatalog::CATEGORIA_SALUD => 'Salud',
+            InvitadoMencionesCatalog::CATEGORIA_TRAMITES => 'Trámites documentales',
+        ];
+
+        foreach (InvitadoMencionesCatalog::catalog() as $categoria => $opciones) {
+            $column = InvitadoMencionesCatalog::columnaParaCategoria($categoria);
+
+            foreach ($opciones as $value => $label) {
+                $total = (clone $base)->whereJsonContains($column, $value)->count();
+
+                $filas->push((object) [
+                    'categoria' => $categoria,
+                    'categoria_label' => $categoriaLabels[$categoria] ?? $categoria,
+                    'value' => $value,
+                    'label' => $label,
+                    'total' => $total,
+                ]);
+            }
+        }
+
+        return $filas;
     }
 
     /**
@@ -303,8 +355,28 @@ class OperacionMetricsService
             'stock_bajo' => $this->inventarioStockBajo($filtros, 50),
             'requerimientos_recientes' => $this->requerimientosRecientes($filtros, 30),
             'invitados_recientes' => $this->invitadosRegistradosRecientes($filtros, 30),
+            'menciones_por_opcion' => $this->mencionesPorOpcion($filtros),
             'generado_en' => now()->timezone(config('app.timezone'))->format('d/m/Y H:i'),
         ];
+    }
+
+    /** @return Builder<Invitado> */
+    private function invitadosConMenciones(OperacionFiltros $filtros): Builder
+    {
+        return InvitadoMencionesCatalog::scopeConAlgunaMencion(
+            $this->invitados($filtros)->where('estatus', InvitadoEstatus::Activo),
+        );
+    }
+
+    /** @return Builder<Invitado> */
+    private function invitadosConMencionEnCategoria(OperacionFiltros $filtros, string $categoria): Builder
+    {
+        $column = InvitadoMencionesCatalog::columnaParaCategoria($categoria);
+
+        return InvitadoMencionesCatalog::scopeConValoresEnColumna(
+            $this->invitados($filtros)->where('estatus', InvitadoEstatus::Activo),
+            $column,
+        );
     }
 
     /** @return Builder<Invitado> */

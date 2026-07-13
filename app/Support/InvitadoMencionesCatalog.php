@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Support;
 
 use App\Models\Invitado;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Validation\Rule;
 
 final class InvitadoMencionesCatalog
@@ -196,5 +197,109 @@ final class InvitadoMencionesCatalog
                 'nota' => null,
             ],
         ];
+    }
+
+    public static function columnaParaCategoria(string $categoria): string
+    {
+        return match ($categoria) {
+            self::CATEGORIA_AYUDAS => 'menciones_ayudas',
+            self::CATEGORIA_SALUD => 'menciones_salud',
+            self::CATEGORIA_TRAMITES => 'menciones_tramites',
+            default => throw new \InvalidArgumentException("Categoría de menciones desconocida: {$categoria}"),
+        };
+    }
+
+    /** @return list<string> */
+    public static function columnasMenciones(): array
+    {
+        return [
+            'menciones_ayudas',
+            'menciones_salud',
+            'menciones_tramites',
+        ];
+    }
+
+    public static function tieneMenciones(?Invitado $invitado): bool
+    {
+        if ($invitado === null) {
+            return false;
+        }
+
+        foreach (self::columnasMenciones() as $column) {
+            $keys = $invitado->{$column};
+            if (is_array($keys) && $keys !== []) {
+                return true;
+            }
+        }
+
+        return filled(trim((string) ($invitado->menciones_nota ?? '')));
+    }
+
+    public static function resumenTexto(Invitado $invitado): string
+    {
+        $partes = [];
+
+        foreach ([
+            self::CATEGORIA_AYUDAS => $invitado->menciones_ayudas,
+            self::CATEGORIA_SALUD => $invitado->menciones_salud,
+            self::CATEGORIA_TRAMITES => $invitado->menciones_tramites,
+        ] as $categoria => $keys) {
+            if (! is_array($keys) || $keys === []) {
+                continue;
+            }
+
+            $etiquetas = collect(self::labelsForApi($keys, $categoria))
+                ->pluck('label')
+                ->implode(', ');
+
+            if ($etiquetas !== '') {
+                $partes[] = $etiquetas;
+            }
+        }
+
+        return $partes === [] ? '—' : implode(' · ', $partes);
+    }
+
+    /**
+     * @param  list<string>|null  $keys
+     */
+    public static function etiquetasCsv(?array $keys, string $categoria): string
+    {
+        if ($keys === null || $keys === []) {
+            return '';
+        }
+
+        return collect(self::labelsForApi($keys, $categoria))
+            ->pluck('label')
+            ->implode('; ');
+    }
+
+    /**
+     * @param  Builder<Invitado>  $query
+     * @return Builder<Invitado>
+     */
+    public static function scopeConValoresEnColumna(Builder $query, string $column): Builder
+    {
+        return $query
+            ->whereNotNull($column)
+            ->where($column, '!=', '[]')
+            ->where($column, '!=', 'null');
+    }
+
+    /**
+     * @param  Builder<Invitado>  $query
+     * @return Builder<Invitado>
+     */
+    public static function scopeConAlgunaMencion(Builder $query): Builder
+    {
+        return $query->where(function (Builder $sub): void {
+            foreach (self::columnasMenciones() as $column) {
+                $sub->orWhere(fn (Builder $q) => self::scopeConValoresEnColumna($q, $column));
+            }
+
+            $sub->orWhere(fn (Builder $q) => $q
+                ->whereNotNull('menciones_nota')
+                ->where('menciones_nota', '!=', ''));
+        });
     }
 }

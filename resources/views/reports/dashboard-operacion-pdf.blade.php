@@ -193,6 +193,7 @@
                     <th>Anfitriones</th>
                     <th>Invitados activos</th>
                     <th>Registrados período</th>
+                    <th>Con menciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -205,11 +206,37 @@
                         <td>{{ $fila->anfitriones_desplegados }}</td>
                         <td>{{ $fila->invitados_activos }}</td>
                         <td>{{ $fila->invitados_registrados }}</td>
+                        <td>{{ $fila->invitados_con_menciones }}</td>
                     </tr>
                 @endforeach
             </tbody>
         </table>
     @endif
+
+    <h2>Menciones opcionales por opción (Invitados activos)</h2>
+    <p style="font-size: 9px; color: #666; margin: 0 0 8px;">
+        Etiquetado informativo registrado por anfitriones. Un Invitado puede aparecer en varias filas.
+    </p>
+    <table class="data">
+        <thead>
+            <tr>
+                <th>Categoría</th>
+                <th>Opción</th>
+                <th>Invitados activos</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse ($menciones_por_opcion as $fila)
+                <tr>
+                    <td>{{ $fila->categoria_label }}</td>
+                    <td>{{ $fila->label }}</td>
+                    <td>{{ $fila->total }}</td>
+                </tr>
+            @empty
+                <tr><td colspan="3">Sin datos de menciones.</td></tr>
+            @endforelse
+        </tbody>
+    </table>
 
     <h2>Hogares solidarios con más Invitados activos</h2>
     <table class="data">
@@ -297,6 +324,7 @@
                 <th>Cédula</th>
                 <th>Hogar solidario</th>
                 <th>Municipio</th>
+                <th>Menciones</th>
                 <th>Registrado</th>
             </tr>
         </thead>
@@ -307,10 +335,11 @@
                     <td>{{ $invitado->cedula ?? '—' }}</td>
                     <td>{{ $invitado->refugio?->nombre ?? '—' }}</td>
                     <td>{{ $invitado->refugio?->parroquia?->municipio?->nombre ?? '—' }}</td>
+                    <td>{{ \App\Support\InvitadoMencionesCatalog::resumenTexto($invitado) }}</td>
                     <td>{{ $invitado->created_at?->format('d/m/Y H:i') }}</td>
                 </tr>
             @empty
-                <tr><td colspan="5">Sin registros en el período.</td></tr>
+                <tr><td colspan="6">Sin registros en el período.</td></tr>
             @endforelse
         </tbody>
     </table>

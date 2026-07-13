@@ -287,6 +287,56 @@
             </tr>
         </table>
 
+        <h2 style="font-size: 11px; margin-top: 14px;">Menciones opcionales (jefe de familia)</h2>
+        <p class="muted" style="margin-bottom: 8px;">
+            Etiquetado informativo. No genera requerimientos ni trámites formales.
+        </p>
+        @if ($mencionesJefe === null || (
+            empty($mencionesJefe['menciones']['ayudas'])
+            && empty($mencionesJefe['menciones']['salud'])
+            && empty($mencionesJefe['menciones']['tramites'])
+            && blank($mencionesJefe['menciones_nota'] ?? null)
+        ))
+            <p class="muted sin-dato">Sin menciones registradas.</p>
+        @else
+            <table class="data">
+                <tr>
+                    <th>Ayudas</th>
+                    <td>
+                        @if (! empty($mencionesJefe['menciones']['ayudas']))
+                            {{ collect($mencionesJefe['menciones']['ayudas'])->pluck('label')->implode(', ') }}
+                        @else
+                            <span class="sin-dato">—</span>
+                        @endif
+                    </td>
+                </tr>
+                <tr>
+                    <th>Salud</th>
+                    <td>
+                        @if (! empty($mencionesJefe['menciones']['salud']))
+                            {{ collect($mencionesJefe['menciones']['salud'])->pluck('label')->implode(', ') }}
+                        @else
+                            <span class="sin-dato">—</span>
+                        @endif
+                    </td>
+                </tr>
+                <tr>
+                    <th>Trámites documentales</th>
+                    <td>
+                        @if (! empty($mencionesJefe['menciones']['tramites']))
+                            {{ collect($mencionesJefe['menciones']['tramites'])->pluck('label')->implode(', ') }}
+                        @else
+                            <span class="sin-dato">—</span>
+                        @endif
+                    </td>
+                </tr>
+                <tr>
+                    <th>Nota breve</th>
+                    <td>{{ filled($mencionesJefe['menciones_nota'] ?? null) ? $mencionesJefe['menciones_nota'] : '—' }}</td>
+                </tr>
+            </table>
+        @endif
+
         <h2 style="font-size: 11px; margin-top: 14px;">Integrantes del núcleo familiar ({{ $miembros->count() }})</h2>
 
         @if ($miembros->isEmpty())
