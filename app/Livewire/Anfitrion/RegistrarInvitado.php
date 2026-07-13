@@ -15,6 +15,7 @@ use App\Models\Municipio;
 use App\Models\Parroquia;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\HogarSolidarioValidationRules;
+use App\Support\InvitadoCedula;
 use App\Support\NucleoFamiliarPorHogar;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -190,6 +191,7 @@ class RegistrarInvitado extends Component
 
     public function siguiente(): void
     {
+        $this->cedula = InvitadoCedula::normalize($this->cedula);
         $this->validate($this->reglasPasoActual());
 
         if ($this->paso < $this->totalPasos - 1) {
@@ -212,7 +214,7 @@ class RegistrarInvitado extends Component
             return [
                 'nombre' => ['required', 'string', 'max:255'],
                 'apellido' => ['required', 'string', 'max:255'],
-                'cedula' => ['nullable', 'string', 'max:20'],
+                'cedula' => InvitadoCedula::rules(),
                 'telefono' => ['nullable', 'string', 'max:30'],
                 'fecha_nacimiento' => ['required', 'date', 'before_or_equal:today'],
                 'procedencia_estado_id' => ['required', 'integer', 'exists:estados,id'],
@@ -234,7 +236,7 @@ class RegistrarInvitado extends Component
         $rules = [
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
-            'cedula' => ['nullable', 'string', 'max:20'],
+            'cedula' => InvitadoCedula::rules(),
             'telefono' => ['nullable', 'string', 'max:30'],
             'fecha_nacimiento' => ['required', 'date', 'before_or_equal:today'],
             'procedencia_estado_id' => ['required', 'integer', 'exists:estados,id'],
@@ -246,7 +248,7 @@ class RegistrarInvitado extends Component
             'familiares' => ['array'],
             'familiares.*.nombre' => ['required_with:familiares.*.apellido', 'string', 'max:255'],
             'familiares.*.apellido' => ['required_with:familiares.*.nombre', 'string', 'max:255'],
-            'familiares.*.cedula' => ['nullable', 'string', 'max:20'],
+            'familiares.*.cedula' => InvitadoCedula::rules(),
             'familiares.*.telefono' => ['nullable', 'string', 'max:30'],
             'familiares.*.parentesco' => ['required_with:familiares.*.nombre', 'string', 'max:50'],
             'familiares.*.condicion' => array_merge(
@@ -267,7 +269,19 @@ class RegistrarInvitado extends Component
     {
         $this->authorize('create', Invitado::class);
 
+        $this->cedula = InvitadoCedula::normalize($this->cedula);
+        $this->familiares = array_map(function (array $familiar): array {
+            $familiar['cedula'] = InvitadoCedula::normalize($familiar['cedula'] ?? null);
+
+            return $familiar;
+        }, $this->familiares);
+
         $validated = $this->validate($this->reglasCompletas());
+
+        $this->validateDistinctCedulasInPayload([
+            'cedula' => $validated['cedula'] ?? null,
+            'familiares' => $validated['familiares'] ?? [],
+        ]);
 
         $anfitrion = auth()->user();
 
@@ -318,6 +332,21 @@ class RegistrarInvitado extends Component
         );
 
         $this->redirectRoute('anfitrion.invitado', ['invitado' => $jefe->id], navigate: true);
+    }
+
+    /**
+     * @param  array{cedula?: ?string, familiares?: list<array<string, mixed>>}  $data
+     */
+    private function validateDistinctCedulasInPayload(array $data): void
+    {
+        $validator = \Illuminate\Support\Facades\Validator::make($data, []);
+        InvitadoCedula::validateDistinctInPayload($validator, $data);
+
+        if ($validator->errors()->isNotEmpty()) {
+            throw \Illuminate\Validation\ValidationException::withMessages(
+                $validator->errors()->toArray(),
+            );
+        }
     }
 
     public function render()

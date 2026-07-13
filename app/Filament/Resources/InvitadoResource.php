@@ -14,6 +14,7 @@ use App\Filament\Support\HogarSolidarioFichaPdfAction;
 use App\Filament\Support\InvitadoMencionesFields;
 use App\Filament\Support\ProcedenciaSelectFields;
 use App\Models\Invitado;
+use App\Support\InvitadoCedula;
 use App\Support\InvitadoFotoStorage;
 use App\Support\InvitadoMencionesCatalog;
 use Filament\Forms;
@@ -97,7 +98,9 @@ class InvitadoResource extends Resource
                         ->maxLength(255),
                     Forms\Components\TextInput::make('cedula')
                         ->label('Cédula')
-                        ->maxLength(20),
+                        ->maxLength(20)
+                        ->dehydrateStateUsing(fn (mixed $state): ?string => InvitadoCedula::normalize($state))
+                        ->rules(fn (?Invitado $record): array => InvitadoCedula::rules($record?->id)),
                     Forms\Components\DatePicker::make('fecha_nacimiento')
                         ->label('Fecha de nacimiento')
                         ->required()

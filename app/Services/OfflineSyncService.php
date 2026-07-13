@@ -16,6 +16,7 @@ use App\Services\AnfitrionMobileProfileService;
 use App\Support\ActivityLogContext;
 use App\Support\HogarSolidarioValidationRules;
 use App\Support\InsumoCatalog;
+use App\Support\InvitadoCedula;
 use App\Support\InvitadoMencionesCatalog;
 use App\Support\VisitantesFeatures;
 use App\Support\WitnessPhotoDecoder;
@@ -171,12 +172,13 @@ class OfflineSyncService
 
         $profile = app(AnfitrionMobileProfileService::class);
         $registrarNuevoHogar = (bool) ($payload['registrar_nuevo_hogar'] ?? false);
+        $payload = InvitadoCedula::normalizePayload($payload);
 
         $rules = [
             'registrar_nuevo_hogar' => ['sometimes', 'boolean'],
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
-            'cedula' => ['nullable', 'string', 'max:20'],
+            'cedula' => InvitadoCedula::rules(),
             'telefono' => ['nullable', 'string', 'max:30'],
             'fecha_nacimiento' => ['required', 'date', 'before_or_equal:today'],
             'procedencia_estado_id' => ['required', 'integer', 'exists:estados,id'],
@@ -187,7 +189,7 @@ class OfflineSyncService
             'familiares' => ['array'],
             'familiares.*.nombre' => ['required_with:familiares.*.apellido', 'string', 'max:255'],
             'familiares.*.apellido' => ['required_with:familiares.*.nombre', 'string', 'max:255'],
-            'familiares.*.cedula' => ['nullable', 'string', 'max:20'],
+            'familiares.*.cedula' => InvitadoCedula::rules(),
             'familiares.*.telefono' => ['nullable', 'string', 'max:30'],
             'familiares.*.parentesco' => ['required_with:familiares.*.nombre', 'string', 'max:50'],
             'familiares.*.condicion' => array_merge(
@@ -203,7 +205,11 @@ class OfflineSyncService
             $rules = array_merge($rules, HogarSolidarioValidationRules::forPayload('hogar'));
         }
 
-        $validated = Validator::make($payload, $rules)->validate();
+        $validator = Validator::make($payload, $rules);
+        $validator->after(function (\Illuminate\Validation\Validator $validator) use ($payload): void {
+            InvitadoCedula::validateDistinctInPayload($validator, $payload);
+        });
+        $validated = $validator->validate();
 
         $foto = null;
         if (! empty($validated['foto_base64'])) {

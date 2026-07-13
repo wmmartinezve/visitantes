@@ -8,6 +8,7 @@ use App\Enums\CondicionInvitado;
 use App\Enums\InvitadoEstatus;
 use App\Filament\Support\CondicionInvitadoSelectFields;
 use App\Models\Invitado;
+use App\Support\InvitadoCedula;
 use Filament\Forms;
 use Filament\Forms\Form;
 use Filament\Resources\RelationManagers\RelationManager;
@@ -43,7 +44,10 @@ class MiembrosFamiliaRelationManager extends RelationManager
                 ->label('Apellido')
                 ->required(),
             Forms\Components\TextInput::make('cedula')
-                ->label('Cédula'),
+                ->label('Cédula')
+                ->maxLength(20)
+                ->dehydrateStateUsing(fn (mixed $state): ?string => InvitadoCedula::normalize($state))
+                ->rules(fn (?Invitado $record): array => InvitadoCedula::rules($record?->id)),
             Forms\Components\DatePicker::make('fecha_nacimiento')
                 ->label('Fecha de nacimiento')
                 ->required(),

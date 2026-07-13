@@ -19,6 +19,7 @@ use App\Models\Estado;
 use App\Models\User;
 use App\Services\ActivityLogService;
 use App\Services\NucleoFamiliarOnboardingService;
+use App\Support\InvitadoCedula;
 use App\Support\InvitadoFotoStorage;
 use Filament\Actions\Action;
 use Filament\Forms\Components\DatePicker;
@@ -129,7 +130,9 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                 ->maxLength(255),
                             TextInput::make('jefe_cedula')
                                 ->label('Cédula')
-                                ->maxLength(20),
+                                ->maxLength(20)
+                                ->dehydrateStateUsing(fn (mixed $state): ?string => InvitadoCedula::normalize($state))
+                                ->rules(InvitadoCedula::rules()),
                             TextInput::make('jefe_telefono')
                                 ->label('Teléfono')
                                 ->tel()
@@ -182,7 +185,9 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
                                         ->maxLength(255),
                                     TextInput::make('cedula')
                                         ->label('Cédula')
-                                        ->maxLength(20),
+                                        ->maxLength(20)
+                                        ->dehydrateStateUsing(fn (mixed $state): ?string => InvitadoCedula::normalize($state))
+                                        ->rules(InvitadoCedula::rules()),
                                     TextInput::make('telefono')
                                         ->label('Teléfono')
                                         ->maxLength(30),
@@ -226,6 +231,24 @@ class RegistrarNucleoFamiliar extends Page implements HasForms
             Notification::make()
                 ->title('Falta la parroquia del hogar')
                 ->body('Regrese al paso «Hogar solidario» y seleccione municipio y parroquia.')
+                ->danger()
+                ->send();
+
+            return;
+        }
+
+        $data = InvitadoCedula::normalizePayload([
+            ...$data,
+            'cedula' => $data['jefe_cedula'] ?? null,
+        ]);
+        $data['jefe_cedula'] = $data['cedula'] ?? null;
+
+        $distinctValidator = \Illuminate\Support\Facades\Validator::make($data, []);
+        InvitadoCedula::validateDistinctInPayload($distinctValidator, $data);
+        if ($distinctValidator->errors()->isNotEmpty()) {
+            Notification::make()
+                ->title('Cédulas duplicadas en el formulario')
+                ->body($distinctValidator->errors()->first())
                 ->danger()
                 ->send();
 

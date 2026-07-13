@@ -525,6 +525,7 @@ En Filament, usar `getGloballySearchableAttributes()` en `InvitadoResource` inde
 | 2026-07-12 | 8 | Hogares Solidarios + wizard onboarding (migraciones `100007`/`100008`). Vínculo por wizard; invalidación hogar demo ajeno (`fc3984b`, `a545ff4`). |
 | 2026-07-12 | 8 | Fix pantalla en blanco wizard Flutter «Registrar núcleo» (`a8b8041`). Widget top hogares ancho completo en Filament. |
 | 2026-07-12 | 8 | **Multi-hogar anfitrión:** `GET /hogares`, `PUT /hogar-activo`, selector en app, registrar otro hogar+núcleo, tests (`eb9ca11`). Deploy Railway OK. |
+| 2026-07-13 | — | **Cédula única** en `invitados` (parcial, excluye NULL y soft-deleted). Vacío → `null`. Validación API/Filament/Livewire/sync. |
 
 ---
 

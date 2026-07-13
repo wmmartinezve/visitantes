@@ -7,6 +7,8 @@ namespace App\Http\Requests;
 use App\Enums\CondicionInvitado;
 use App\Services\AnfitrionMobileProfileService;
 use App\Support\HogarSolidarioValidationRules;
+use App\Support\InvitadoCedula;
+use Illuminate\Contracts\Validation\Validator;
 use Illuminate\Foundation\Http\FormRequest;
 
 class MobileInvitadoStoreRequest extends FormRequest
@@ -16,6 +18,11 @@ class MobileInvitadoStoreRequest extends FormRequest
         $user = $this->user();
 
         return $user !== null && $user->isAnfitrion();
+    }
+
+    protected function prepareForValidation(): void
+    {
+        $this->merge(InvitadoCedula::normalizePayload($this->all()));
     }
 
     /**
@@ -31,7 +38,7 @@ class MobileInvitadoStoreRequest extends FormRequest
             'registrar_nuevo_hogar' => ['sometimes', 'boolean'],
             'nombre' => ['required', 'string', 'max:255'],
             'apellido' => ['required', 'string', 'max:255'],
-            'cedula' => ['nullable', 'string', 'max:20'],
+            'cedula' => InvitadoCedula::rules(),
             'telefono' => ['nullable', 'string', 'max:30'],
             'fecha_nacimiento' => ['required', 'date', 'before_or_equal:today'],
             'procedencia_estado_id' => ['required', 'integer', 'exists:estados,id'],
@@ -42,7 +49,7 @@ class MobileInvitadoStoreRequest extends FormRequest
             'familiares' => ['array'],
             'familiares.*.nombre' => ['required_with:familiares.*.apellido', 'string', 'max:255'],
             'familiares.*.apellido' => ['required_with:familiares.*.nombre', 'string', 'max:255'],
-            'familiares.*.cedula' => ['nullable', 'string', 'max:20'],
+            'familiares.*.cedula' => InvitadoCedula::rules(),
             'familiares.*.telefono' => ['nullable', 'string', 'max:30'],
             'familiares.*.parentesco' => ['required_with:familiares.*.nombre', 'string', 'max:50'],
             'familiares.*.condicion' => array_merge(
@@ -61,5 +68,12 @@ class MobileInvitadoStoreRequest extends FormRequest
         }
 
         return $rules;
+    }
+
+    public function withValidator(Validator $validator): void
+    {
+        $validator->after(function (Validator $validator): void {
+            InvitadoCedula::validateDistinctInPayload($validator, $this->all());
+        });
     }
 }
