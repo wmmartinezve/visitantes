@@ -12,6 +12,7 @@ use Filament\Tables\Table;
 use Filament\Widgets\Concerns\InteractsWithPageFilters;
 use Filament\Widgets\TableWidget as BaseWidget;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Collection;
 
 class IndicadoresPorMunicipioWidget extends BaseWidget
@@ -24,54 +25,67 @@ class IndicadoresPorMunicipioWidget extends BaseWidget
 
     protected int|string|array $columnSpan = 'full';
 
+    /** @var Collection<int|string, object>|null */
+    private ?Collection $resumenCache = null;
+
     public function table(Table $table): Table
     {
-        $filtros = OperacionFiltros::fromArray($this->filters);
-        $resumen = $this->resumenIndexado($filtros);
-
         return $table
-            ->query(fn (): Builder => $this->municipiosQuery($filtros))
+            ->query(fn (): Builder => $this->municipiosQuery(OperacionFiltros::fromArray($this->filters)))
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')
                     ->label('Municipio')
                     ->weight('medium'),
                 Tables\Columns\TextColumn::make('hogares_solidarios')
                     ->label('Hogares')
-                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->hogares_solidarios ?? 0))
+                    ->getStateUsing(fn (Model $record): string => $this->valorIndicador($record, 'hogares_solidarios'))
                     ->alignCenter(),
                 Tables\Columns\TextColumn::make('hogares_con_nucleo')
                     ->label('Con núcleo')
-                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->hogares_con_nucleo ?? 0))
+                    ->getStateUsing(fn (Model $record): string => $this->valorIndicador($record, 'hogares_con_nucleo'))
                     ->alignCenter(),
                 Tables\Columns\TextColumn::make('hogares_nuevos_periodo')
                     ->label('Hogares nuevos')
-                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->hogares_nuevos_periodo ?? 0))
+                    ->getStateUsing(fn (Model $record): string => $this->valorIndicador($record, 'hogares_nuevos_periodo'))
                     ->alignCenter(),
                 Tables\Columns\TextColumn::make('anfitriones_desplegados')
                     ->label('Anfitriones')
-                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->anfitriones_desplegados ?? 0))
+                    ->getStateUsing(fn (Model $record): string => $this->valorIndicador($record, 'anfitriones_desplegados'))
                     ->alignCenter(),
                 Tables\Columns\TextColumn::make('invitados_activos')
                     ->label('Invitados activos')
-                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->invitados_activos ?? 0))
+                    ->getStateUsing(fn (Model $record): string => $this->valorIndicador($record, 'invitados_activos'))
                     ->alignCenter(),
                 Tables\Columns\TextColumn::make('invitados_registrados')
                     ->label('Registrados período')
-                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->invitados_registrados ?? 0))
+                    ->getStateUsing(fn (Model $record): string => $this->valorIndicador($record, 'invitados_registrados'))
                     ->alignCenter()
                     ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('invitados_con_menciones')
                     ->label('Con menciones')
-                    ->formatStateUsing(fn ($state, Municipio $record): string => (string) ($resumen->get($record->id)?->invitados_con_menciones ?? 0))
+                    ->getStateUsing(fn (Model $record): string => $this->valorIndicador($record, 'invitados_con_menciones'))
                     ->alignCenter(),
             ])
             ->paginated(false);
     }
 
-    /** @return Collection<int, object> */
-    private function resumenIndexado(OperacionFiltros $filtros): Collection
+    private function valorIndicador(Model $record, string $campo): string
     {
-        return app(OperacionMetricsService::class)
+        $fila = $this->resumenIndexado()->get($record->getKey());
+
+        return (string) ($fila?->{$campo} ?? 0);
+    }
+
+    /** @return Collection<int|string, object> */
+    private function resumenIndexado(): Collection
+    {
+        if ($this->resumenCache !== null) {
+            return $this->resumenCache;
+        }
+
+        $filtros = OperacionFiltros::fromArray($this->filters);
+
+        return $this->resumenCache = app(OperacionMetricsService::class)
             ->resumenPorMunicipio($filtros)
             ->keyBy('municipio_id');
     }

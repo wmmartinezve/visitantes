@@ -40,8 +40,22 @@ class DashboardOperacionTest extends TestCase
             ->assertOk();
 
         $widget = new IndicadoresPorMunicipioWidget;
+        $widget->filters = OperacionFiltros::fromArray(null)->toArray();
         $table = $widget->table(Table::make($widget));
         $this->assertNotNull($table);
+
+        $municipio = Municipio::query()
+            ->whereHas('parroquias', fn ($q) => $q->where('nombre', 'Puerto La Cruz'))
+            ->firstOrFail();
+
+        $resumen = app(OperacionMetricsService::class)
+            ->resumenPorMunicipio(OperacionFiltros::fromArray($widget->filters))
+            ->keyBy('municipio_id');
+
+        $fila = $resumen->get($municipio->id);
+        $this->assertNotNull($fila);
+        $this->assertGreaterThan(0, $fila->hogares_solidarios);
+        $this->assertGreaterThan(0, $fila->invitados_activos);
     }
 
     public function test_metricas_responden_a_filtros_de_fecha(): void
