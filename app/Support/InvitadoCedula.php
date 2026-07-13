@@ -46,6 +46,18 @@ final class InvitadoCedula
     }
 
     /**
+     * @return array<string, string>
+     */
+    public static function validationMessages(): array
+    {
+        return [
+            'cedula.unique' => 'Esta cédula ya está registrada.',
+            'familiares.*.cedula.unique' => 'Esta cédula ya está registrada.',
+            'jefe_cedula.unique' => 'Esta cédula ya está registrada.',
+        ];
+    }
+
+    /**
      * Normaliza cédulas vacías a null en un payload de registro (jefe + familiares).
      *
      * @param  array<string, mixed>  $data
@@ -105,7 +117,7 @@ final class InvitadoCedula
             if (isset($seen[$cedula])) {
                 $validator->errors()->add(
                     "familiares.{$index}.cedula",
-                    'Esta cédula ya está en el mismo registro (jefe u otro familiar).',
+                    'Hay una cédula repetida en este registro (jefe u otro familiar).',
                 );
 
                 continue;

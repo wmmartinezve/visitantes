@@ -205,7 +205,7 @@ class OfflineSyncService
             $rules = array_merge($rules, HogarSolidarioValidationRules::forPayload('hogar'));
         }
 
-        $validator = Validator::make($payload, $rules);
+        $validator = Validator::make($payload, $rules, InvitadoCedula::validationMessages());
         $validator->after(function (\Illuminate\Validation\Validator $validator) use ($payload): void {
             InvitadoCedula::validateDistinctInPayload($validator, $payload);
         });

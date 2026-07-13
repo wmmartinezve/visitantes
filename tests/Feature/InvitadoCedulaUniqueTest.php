@@ -89,7 +89,8 @@ class InvitadoCedulaUniqueTest extends TestCase
             'fecha_nacimiento' => '1991-01-01',
             ...$this->procedenciaDemo(),
         ])->assertStatus(422)
-            ->assertJsonValidationErrors(['cedula']);
+            ->assertJsonValidationErrors(['cedula'])
+            ->assertJsonPath('errors.cedula.0', 'Esta cédula ya está registrada.');
     }
 
     public function test_api_permite_cedula_vacia_como_null(): void

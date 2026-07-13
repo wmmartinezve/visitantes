@@ -503,6 +503,16 @@ class FieldApi {
         .toList();
   }
 
+  /// Indica si la cédula ya aparece en la caché local de Invitados.
+  bool cedulaYaRegistradaLocal(String? cedula) {
+    final normalized = cedula?.trim().toLowerCase();
+    if (normalized == null || normalized.isEmpty) return false;
+
+    return _cachedInvitados().any(
+      (invitado) => (invitado.cedula ?? '').trim().toLowerCase() == normalized,
+    );
+  }
+
   List<HogarSolidarioInfo> _cachedHogares() {
     final raw = LocalDb.meta.get('hogares_cache');
     if (raw is! List) return [];

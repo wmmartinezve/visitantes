@@ -15,6 +15,7 @@ import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/offline/geo_catalog_index.dart';
 import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
+import 'package:visitantes_mobile/core/utils/cedula_validation_messages.dart';
 import 'package:visitantes_mobile/features/anfitrion/map_picker_screen.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/m3_text_field.dart';
@@ -498,9 +499,40 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
           return false;
         }
       }
+
+      final conflicto = CedulaValidationMessages.conflictInForm(
+        _cedula.text,
+        _familiares.map((f) => f.cedula.text).toList(),
+      );
+      if (conflicto != null) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(conflicto)));
+        return false;
+      }
     }
 
     return true;
+  }
+
+  String? _validateCedulasAntesDeEnviar() {
+    final conflicto = CedulaValidationMessages.conflictInForm(
+      _cedula.text,
+      _familiares.map((f) => f.cedula.text).toList(),
+    );
+    if (conflicto != null) return conflicto;
+
+    final jefe = _cedula.text.trim();
+    if (jefe.isNotEmpty && widget.fieldApi.cedulaYaRegistradaLocal(jefe)) {
+      return CedulaValidationMessages.alreadyRegistered;
+    }
+
+    for (final familiar in _familiares) {
+      final cedula = familiar.cedula.text.trim();
+      if (cedula.isNotEmpty && widget.fieldApi.cedulaYaRegistradaLocal(cedula)) {
+        return CedulaValidationMessages.alreadyRegistered;
+      }
+    }
+
+    return null;
   }
 
   void _nextStep() {
@@ -617,6 +649,12 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
 
     if (!_validateCurrentStep()) return;
 
+    final cedulaError = _validateCedulasAntesDeEnviar();
+    if (cedulaError != null) {
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(cedulaError)));
+      return;
+    }
+
     setState(() => _saving = true);
 
     try {
@@ -651,21 +689,10 @@ class _RegisterGuestScreenState extends State<RegisterGuestScreen> {
       });
     } on DioException catch (e) {
       if (!mounted) return;
-      final data = e.response?.data;
-      var message = 'No se pudo registrar en el servidor.';
-      if (data is Map) {
-        if (data['message'] is String) message = data['message'] as String;
-        final errors = data['errors'];
-        if (errors is Map) {
-          for (final entry in errors.entries) {
-            final value = entry.value;
-            if (value is List && value.isNotEmpty) {
-              message = value.first.toString();
-              break;
-            }
-          }
-        }
-      }
+      var message = CedulaValidationMessages.fromDioPayload(
+        e.response?.data,
+        fallback: 'No se pudo registrar en el servidor.',
+      );
       if (message == 'Server Error' || e.response?.statusCode == 500) {
         message = 'Error interno del servidor. Intente de nuevo o contacte al administrador.';
       }

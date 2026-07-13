@@ -70,6 +70,14 @@ class MobileInvitadoStoreRequest extends FormRequest
         return $rules;
     }
 
+    /**
+     * @return array<string, string>
+     */
+    public function messages(): array
+    {
+        return InvitadoCedula::validationMessages();
+    }
+
     public function withValidator(Validator $validator): void
     {
         $validator->after(function (Validator $validator): void {

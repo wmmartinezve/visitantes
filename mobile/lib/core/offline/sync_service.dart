@@ -8,6 +8,7 @@ import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
+import 'package:visitantes_mobile/core/utils/cedula_validation_messages.dart';
 
 class SyncService extends ChangeNotifier {
   SyncService({ApiClient? apiClient, CatalogService? catalogService, Connectivity? connectivity, FieldApi? fieldApi})
@@ -279,16 +280,12 @@ class SyncService extends ChangeNotifier {
   }
 
   String _dioErrorMessage(DioException e) {
-    final data = e.response?.data;
-    if (data is Map) {
-      if (data['message'] is String) return data['message'] as String;
-      final errors = data['errors'];
-      if (errors is Map) {
-        for (final entry in errors.entries) {
-          final value = entry.value;
-          if (value is List && value.isNotEmpty) return value.first.toString();
-        }
-      }
+    final fromPayload = CedulaValidationMessages.fromDioPayload(
+      e.response?.data,
+      fallback: '',
+    );
+    if (fromPayload.isNotEmpty) {
+      return fromPayload;
     }
 
     return switch (e.type) {

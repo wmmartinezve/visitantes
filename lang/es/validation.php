@@ -37,6 +37,10 @@ return [
     'unique' => 'El :attribute ya ha sido registrado.',
     'url' => 'El campo :attribute debe ser una URL válida.',
 
-    'attributes' => [],
+    'attributes' => [
+        'cedula' => 'cédula',
+        'jefe_cedula' => 'cédula',
+        'familiares.*.cedula' => 'cédula',
+    ],
 
 ];
