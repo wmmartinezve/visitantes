@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace Tests\Feature;
 
 use App\Enums\UserRole;
+use App\Models\Invitado;
 use App\Models\User;
 use App\Services\ReporteExportService;
 use Database\Seeders\AnzoateguiGeografiaSeeder;
@@ -32,6 +33,18 @@ class ReportesOperacionTest extends TestCase
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $this->seed(DemoOperacionSeeder::class);
 
+        $jefe = Invitado::query()->whereNull('jefe_familia_id')->firstOrFail();
+        Invitado::query()->create([
+            'nombre' => 'Luis',
+            'apellido' => 'Demo',
+            'cedula' => 'V-99999999',
+            'fecha_nacimiento' => '2015-01-10',
+            'hogar_solidario_id' => $jefe->hogar_solidario_id,
+            'jefe_familia_id' => $jefe->id,
+            'parentesco' => 'Hijo',
+            'estatus' => 'activo',
+        ]);
+
         $response = app(ReporteExportService::class)->invitados();
 
         $this->assertSame(200, $response->getStatusCode());
@@ -45,8 +58,10 @@ class ReportesOperacionTest extends TestCase
         $this->assertStringContainsString('Rol en núcleo', $content);
         $this->assertStringContainsString('Jefe de familia', $content);
         $this->assertStringContainsString('Miembro del núcleo', $content);
+        $this->assertStringContainsString('Hijo', $content);
         $this->assertStringContainsString('Código hogar', $content);
         $this->assertStringContainsString('Ayudas mencionadas', $content);
         $this->assertStringContainsString('Carlos', $content);
+        $this->assertStringContainsString('Luis', $content);
     }
 }
