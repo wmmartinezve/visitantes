@@ -37,7 +37,7 @@
             </p>
             <div class="flex flex-wrap gap-3">
                 <x-filament::button icon="heroicon-o-user-group" wire:click="exportInvitados">
-                    Invitados (jefes de familia)
+                    Invitados y núcleos familiares
                 </x-filament::button>
                 @if ($this->logisticaHabilitada)
                     <x-filament::button icon="heroicon-o-clipboard-document-list" color="gray" wire:click="exportRequerimientos">

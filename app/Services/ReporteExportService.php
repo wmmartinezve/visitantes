@@ -81,16 +81,39 @@ class ReporteExportService
 
     public function invitados(): StreamedResponse
     {
-        return $this->csv('invitados-'.config('visitantes.estado').'-'.now()->format('Y-m-d').'.csv', [
+        return $this->csv('invitados-nucleo-'.config('visitantes.estado').'-'.now()->format('Y-m-d').'.csv', [
+            'ID',
+            'Rol en núcleo',
+            'Parentesco',
             'Nombre',
             'Apellido',
             'Cédula',
             'Teléfono',
             'Fecha nacimiento',
-            'HogarSolidario',
-            'Municipio',
-            'Parroquia',
+            'Edad',
+            'Condición',
+            'Situación laboral',
             'Estatus',
+            'Procedencia estado',
+            'Procedencia municipio',
+            'Procedencia parroquia',
+            'ID jefe de familia',
+            'Nombre jefe de familia',
+            'Cédula jefe de familia',
+            'Código hogar',
+            'Dirección hogar',
+            'Municipio hogar',
+            'Parroquia hogar',
+            'Comuna',
+            'Tipo vivienda',
+            'Tipo acogida',
+            'Parentesco anfitrión',
+            'Responsable hogar',
+            'Cédula responsable',
+            'Teléfono responsable',
+            'Latitud',
+            'Longitud',
+            'Foto ingreso',
             'Ayudas mencionadas',
             'Salud mencionada',
             'Trámites mencionados',
@@ -98,40 +121,83 @@ class ReporteExportService
             'Registrado',
         ], function ($handle): void {
             Invitado::query()
-                ->with(['refugio.parroquia.municipio'])
-                ->whereNull('jefe_familia_id')
+                ->with([
+                    'jefeFamilia',
+                    'procedenciaEstado',
+                    'procedenciaMunicipio',
+                    'procedenciaParroquia',
+                    'hogarSolidario.parroquia.municipio',
+                    'hogarSolidario.comuna',
+                ])
+                ->orderByRaw('COALESCE(jefe_familia_id, id)')
+                ->orderByRaw('CASE WHEN jefe_familia_id IS NULL THEN 0 ELSE 1 END')
                 ->orderBy('apellido')
                 ->orderBy('nombre')
                 ->chunk(100, function ($invitados) use ($handle): void {
                     foreach ($invitados as $invitado) {
-                        fputcsv($handle, [
-                            $invitado->nombre,
-                            $invitado->apellido,
-                            $invitado->cedula,
-                            $invitado->telefono,
-                            $invitado->fecha_nacimiento?->format('Y-m-d'),
-                            $invitado->refugio?->nombre,
-                            $invitado->refugio?->parroquia?->municipio?->nombre,
-                            $invitado->refugio?->parroquia?->nombre,
-                            $invitado->estatus?->label(),
-                            InvitadoMencionesCatalog::etiquetasCsv(
-                                $invitado->menciones_ayudas,
-                                InvitadoMencionesCatalog::CATEGORIA_AYUDAS,
-                            ),
-                            InvitadoMencionesCatalog::etiquetasCsv(
-                                $invitado->menciones_salud,
-                                InvitadoMencionesCatalog::CATEGORIA_SALUD,
-                            ),
-                            InvitadoMencionesCatalog::etiquetasCsv(
-                                $invitado->menciones_tramites,
-                                InvitadoMencionesCatalog::CATEGORIA_TRAMITES,
-                            ),
-                            $invitado->menciones_nota,
-                            $invitado->created_at?->format('Y-m-d H:i'),
-                        ]);
+                        fputcsv($handle, $this->invitadoCsvRow($invitado));
                     }
                 });
         });
+    }
+
+    /**
+     * @return list<string|int|null>
+     */
+    private function invitadoCsvRow(Invitado $invitado): array
+    {
+        $hogar = $invitado->hogarSolidario;
+        $jefe = $invitado->esJefeDeFamilia() ? $invitado : $invitado->jefeFamilia;
+        $esJefe = $invitado->esJefeDeFamilia();
+
+        return [
+            $invitado->id,
+            $esJefe ? 'Jefe de familia' : 'Miembro del núcleo',
+            $esJefe ? 'Jefe de familia' : ($invitado->parentesco ?? ''),
+            $invitado->nombre,
+            $invitado->apellido,
+            $invitado->cedula,
+            $invitado->telefono,
+            $invitado->fecha_nacimiento?->format('Y-m-d'),
+            $invitado->fecha_nacimiento?->age,
+            $invitado->condicion?->label(),
+            $invitado->situacion_jefe?->label(),
+            $invitado->estatus?->label(),
+            $invitado->procedenciaEstado?->nombre,
+            $invitado->procedenciaMunicipio?->nombre,
+            $invitado->procedenciaParroquia?->nombre,
+            $jefe?->id,
+            $jefe?->nombreCompleto(),
+            $jefe?->cedula,
+            $hogar?->codigo,
+            $hogar?->direccion_exacta,
+            $hogar?->parroquia?->municipio?->nombre,
+            $hogar?->parroquia?->nombre,
+            $hogar?->comuna?->nombre,
+            $hogar?->tipo_vivienda?->label(),
+            $hogar?->tipo_anfitrion?->label(),
+            $hogar?->parentesco_anfitrion,
+            $hogar?->responsable_nombre,
+            $hogar?->responsable_cedula,
+            $hogar?->responsable_telefono,
+            $hogar?->latitud,
+            $hogar?->longitud,
+            filled($invitado->foto_ingreso) || filled($jefe?->foto_ingreso) ? 'Sí' : 'No',
+            InvitadoMencionesCatalog::etiquetasCsv(
+                $invitado->menciones_ayudas,
+                InvitadoMencionesCatalog::CATEGORIA_AYUDAS,
+            ),
+            InvitadoMencionesCatalog::etiquetasCsv(
+                $invitado->menciones_salud,
+                InvitadoMencionesCatalog::CATEGORIA_SALUD,
+            ),
+            InvitadoMencionesCatalog::etiquetasCsv(
+                $invitado->menciones_tramites,
+                InvitadoMencionesCatalog::CATEGORIA_TRAMITES,
+            ),
+            $invitado->menciones_nota,
+            $invitado->created_at?->format('Y-m-d H:i'),
+        ];
     }
 
     public function requerimientos(): StreamedResponse

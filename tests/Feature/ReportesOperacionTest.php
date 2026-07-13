@@ -24,10 +24,10 @@ class ReportesOperacionTest extends TestCase
             ->get('/admin/reportes-operacion')
             ->assertOk()
             ->assertSee('Exportar datos (CSV)')
-            ->assertSee('Invitados (jefes de familia)');
+            ->assertSee('Invitados y núcleos familiares');
     }
 
-    public function test_export_invitados_genera_csv_con_datos_demo(): void
+    public function test_export_invitados_genera_csv_con_nucleo_familiar(): void
     {
         $this->seed(AnzoateguiGeografiaSeeder::class);
         $this->seed(DemoOperacionSeeder::class);
@@ -36,13 +36,17 @@ class ReportesOperacionTest extends TestCase
 
         $this->assertSame(200, $response->getStatusCode());
         $this->assertStringContainsString('text/csv', (string) $response->headers->get('Content-Type'));
+        $this->assertStringContainsString('invitados-nucleo', (string) $response->headers->get('Content-Disposition'));
 
         ob_start();
         $response->sendContent();
         $content = ob_get_clean();
 
-        $this->assertStringContainsString('Carlos', $content);
-        $this->assertStringContainsString('Puerto La Cruz', $content);
+        $this->assertStringContainsString('Rol en núcleo', $content);
+        $this->assertStringContainsString('Jefe de familia', $content);
+        $this->assertStringContainsString('Miembro del núcleo', $content);
+        $this->assertStringContainsString('Código hogar', $content);
         $this->assertStringContainsString('Ayudas mencionadas', $content);
+        $this->assertStringContainsString('Carlos', $content);
     }
 }
