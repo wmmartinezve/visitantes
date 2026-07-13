@@ -8,10 +8,12 @@ import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/media/photo_compression.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
+import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 import 'package:visitantes_mobile/shared/widgets/brand_widgets.dart';
 import 'package:visitantes_mobile/shared/widgets/invitado_avatar.dart';
 import 'package:visitantes_mobile/shared/widgets/invitado_foto_preview.dart';
+import 'package:visitantes_mobile/shared/widgets/invitado_menciones_section.dart';
 
 class GuestDetailScreen extends StatefulWidget {
   const GuestDetailScreen({
@@ -19,11 +21,13 @@ class GuestDetailScreen extends StatefulWidget {
     required this.invitadoId,
     required this.fieldApi,
     this.catalog,
+    this.sync,
   });
 
   final int invitadoId;
   final FieldApi fieldApi;
   final CatalogService? catalog;
+  final SyncService? sync;
 
   @override
   State<GuestDetailScreen> createState() => _GuestDetailScreenState();
@@ -33,6 +37,8 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
   InvitadoModel? _invitado;
   bool _loading = true;
   bool _uploadingFoto = false;
+  bool _savingMenciones = false;
+  bool _isOnline = true;
 
   CatalogService get _catalog => widget.catalog ?? CatalogService();
 
@@ -40,16 +46,74 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
   void initState() {
     super.initState();
     _load();
+    _checkOnline();
+  }
+
+  Future<void> _checkOnline() async {
+    final online = await _catalog.isOnline;
+    if (!mounted) return;
+    setState(() => _isOnline = online);
   }
 
   Future<void> _load() async {
     setState(() => _loading = true);
+    await _checkOnline();
     final inv = await widget.fieldApi.fetchInvitado(widget.invitadoId);
     if (!mounted) return;
     setState(() {
       _invitado = inv;
       _loading = false;
     });
+  }
+
+  Future<void> _saveMenciones({
+    required List<String> ayudas,
+    required List<String> salud,
+    required List<String> tramites,
+    String? nota,
+  }) async {
+    setState(() => _savingMenciones = true);
+
+    try {
+      final updated = await widget.fieldApi.updateInvitadoMenciones(
+        invitadoId: widget.invitadoId,
+        ayudas: ayudas,
+        salud: salud,
+        tramites: tramites,
+        nota: nota,
+        sync: widget.sync,
+      );
+
+      if (!mounted) return;
+      setState(() => _invitado = updated);
+
+      final online = await _catalog.isOnline;
+      if (!mounted) return;
+      setState(() => _isOnline = online);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            online ? 'Menciones guardadas.' : 'Menciones guardadas offline. Se sincronizarán al reconectar.',
+          ),
+        ),
+      );
+    } on DioException catch (e) {
+      if (!mounted) return;
+      final data = e.response?.data;
+      var message = 'No se pudieron guardar las menciones.';
+      if (data is Map && data['message'] is String) {
+        message = data['message'] as String;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(e.toString().replaceFirst('StateError: ', ''))),
+      );
+    } finally {
+      if (mounted) setState(() => _savingMenciones = false);
+    }
   }
 
   Future<void> _openFotoFullScreen(BuildContext context, String fotoUrl, String nombre) async {
@@ -181,6 +245,14 @@ class _GuestDetailScreenState extends State<GuestDetailScreen> {
                           ],
                         ),
                       ),
+                    ),
+                    const SizedBox(height: 16),
+                    InvitadoMencionesSection(
+                      catalog: _catalog.mencionesCatalogo,
+                      invitado: inv,
+                      saving: _savingMenciones,
+                      isOnline: _isOnline,
+                      onSave: _saveMenciones,
                     ),
                     if (inv.miembrosFamilia.isNotEmpty) ...[
                       const SizedBox(height: 20),

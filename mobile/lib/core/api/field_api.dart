@@ -3,6 +3,7 @@ import 'package:visitantes_mobile/core/api/api_client.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/offline/catalog_service.dart';
+import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
 
 class FieldApi {
@@ -255,6 +256,140 @@ class FieldApi {
     await LocalDb.meta.put('invitados_cache', updated.map(_invitadoToMap).toList());
   }
 
+  Future<void> _replaceInvitadoInCache(InvitadoModel invitado) async {
+    final cached = _cachedInvitados();
+    final idx = cached.indexWhere((i) => i.id == invitado.id);
+    if (idx >= 0) {
+      cached[idx] = invitado;
+    } else {
+      cached.insert(0, invitado);
+    }
+    await LocalDb.meta.put('invitados_cache', cached.map(_invitadoToMap).toList());
+    await _patchHogarDetailInvitado(invitado);
+  }
+
+  Future<InvitadoModel> _patchInvitadoMencionesInCache(int invitadoId, Map<String, dynamic> payload) async {
+    final catalog = _catalog.mencionesCatalogo;
+    final ayudas = (payload['menciones_ayudas'] as List?)?.whereType<String>().toList() ?? [];
+    final salud = (payload['menciones_salud'] as List?)?.whereType<String>().toList() ?? [];
+    final tramites = (payload['menciones_tramites'] as List?)?.whereType<String>().toList() ?? [];
+    final nota = payload['menciones_nota'] as String?;
+
+    InvitadoMencionesLabels? labels;
+    if (catalog != null) {
+      labels = InvitadoMencionesLabels(
+        ayudas: catalog.labelsFor('ayudas', ayudas),
+        salud: catalog.labelsFor('salud', salud),
+        tramites: catalog.labelsFor('tramites', tramites),
+        nota: nota,
+      );
+    }
+
+    final cached = _cachedInvitados();
+    final idx = cached.indexWhere((i) => i.id == invitadoId);
+    final existing = idx >= 0 ? cached[idx] : _findInvitadoInCaches(invitadoId);
+
+    late InvitadoModel updated;
+    if (existing != null) {
+      updated = existing.copyWithMenciones(
+        ayudas: ayudas,
+        salud: salud,
+        tramites: tramites,
+        nota: nota,
+        labels: labels,
+      );
+      if (idx >= 0) {
+        cached[idx] = updated;
+      } else {
+        cached.insert(0, updated);
+      }
+      await LocalDb.meta.put('invitados_cache', cached.map(_invitadoToMap).toList());
+    } else {
+      updated = InvitadoModel(
+        id: invitadoId,
+        nombreCompleto: '',
+        mencionesAyudas: ayudas,
+        mencionesSalud: salud,
+        mencionesTramites: tramites,
+        mencionesNota: nota,
+        mencionesLabels: labels,
+      );
+    }
+
+    await _patchHogarDetailInvitado(updated);
+    return updated;
+  }
+
+  InvitadoModel? _findInvitadoInCaches(int invitadoId) {
+    final fromList = _cachedInvitados().where((i) => i.id == invitadoId).firstOrNull;
+    if (fromList != null) return fromList;
+
+    final raw = LocalDb.meta.get('hogares_detail_cache');
+    if (raw is! Map) return null;
+
+    for (final entry in raw.values) {
+      if (entry is! Map) continue;
+      final detail = Map<String, dynamic>.from(entry);
+
+      final jefeRaw = detail['jefe_familiar'];
+      if (jefeRaw is Map && jefeRaw['id'] == invitadoId) {
+        return InvitadoModel.fromJson(Map<String, dynamic>.from(jefeRaw));
+      }
+
+      final invitadosRaw = detail['invitados'];
+      if (invitadosRaw is List) {
+        for (final inv in invitadosRaw) {
+          if (inv is Map && inv['id'] == invitadoId) {
+            return InvitadoModel.fromJson(Map<String, dynamic>.from(inv));
+          }
+        }
+      }
+    }
+
+    return null;
+  }
+
+  Future<void> _patchHogarDetailInvitado(InvitadoModel invitado) async {
+    final raw = LocalDb.meta.get('hogares_detail_cache');
+    if (raw is! Map) return;
+
+    final map = Map<String, dynamic>.from(raw);
+    var anyChanged = false;
+
+    for (final entry in map.entries.toList()) {
+      final detailRaw = entry.value;
+      if (detailRaw is! Map) continue;
+      final detail = Map<String, dynamic>.from(detailRaw);
+      var entryChanged = false;
+
+      final jefeRaw = detail['jefe_familiar'];
+      if (jefeRaw is Map && jefeRaw['id'] == invitado.id) {
+        detail['jefe_familiar'] = _invitadoToMap(invitado);
+        entryChanged = true;
+      }
+
+      final invitadosRaw = detail['invitados'];
+      if (invitadosRaw is List) {
+        final invitados = invitadosRaw.whereType<Map>().map((e) => Map<String, dynamic>.from(e)).toList();
+        final invIdx = invitados.indexWhere((e) => e['id'] == invitado.id);
+        if (invIdx >= 0) {
+          invitados[invIdx] = _invitadoToMap(invitado);
+          detail['invitados'] = invitados;
+          entryChanged = true;
+        }
+      }
+
+      if (entryChanged) {
+        map[entry.key] = detail;
+        anyChanged = true;
+      }
+    }
+
+    if (anyChanged) {
+      await LocalDb.meta.put('hogares_detail_cache', map);
+    }
+  }
+
   Future<InvitadoModel> uploadInvitadoFoto(int invitadoId, Map<String, dynamic> payload) async {
     final response = await _api.dio.post<Map<String, dynamic>>(
       '/invitados/$invitadoId/foto',
@@ -269,7 +404,52 @@ class FieldApi {
       throw StateError('Respuesta inválida del servidor');
     }
     final invitado = InvitadoModel.fromJson(Map<String, dynamic>.from(data));
-    await _prependInvitadoToCache(invitado);
+    await _replaceInvitadoInCache(invitado);
+    return invitado;
+  }
+
+  Future<InvitadoModel> updateInvitadoMenciones({
+    required int invitadoId,
+    required List<String> ayudas,
+    required List<String> salud,
+    required List<String> tramites,
+    String? nota,
+    SyncService? sync,
+  }) async {
+    final trimmedNota = nota?.trim();
+    final payload = <String, dynamic>{
+      'menciones_ayudas': ayudas,
+      'menciones_salud': salud,
+      'menciones_tramites': tramites,
+      'menciones_nota': trimmedNota != null && trimmedNota.isNotEmpty ? trimmedNota : null,
+    };
+
+    if (!await _catalog.isOnline) {
+      if (sync == null) {
+        throw StateError('Se requiere conexión o servicio de sincronización para guardar menciones.');
+      }
+
+      await sync.enqueueInvitadoMencionesUpdate(
+        invitadoId: invitadoId,
+        ayudas: ayudas,
+        salud: salud,
+        tramites: tramites,
+        nota: trimmedNota,
+      );
+
+      return _patchInvitadoMencionesInCache(invitadoId, payload);
+    }
+
+    final response = await _api.dio.put<Map<String, dynamic>>(
+      '/invitados/$invitadoId/menciones',
+      data: payload,
+    );
+    final data = response.data?['data'];
+    if (data is! Map) {
+      throw StateError('Respuesta inválida del servidor');
+    }
+    final invitado = InvitadoModel.fromJson(Map<String, dynamic>.from(data));
+    await _replaceInvitadoInCache(invitado);
     return invitado;
   }
 
@@ -411,6 +591,17 @@ class FieldApi {
         'detail_invitado_id': i.detailInvitadoId,
         'hogar_solidario_id': i.hogarSolidarioId,
         'hogar_codigo': i.hogarCodigo,
+        'menciones_ayudas': i.mencionesAyudas,
+        'menciones_salud': i.mencionesSalud,
+        'menciones_tramites': i.mencionesTramites,
+        'menciones_nota': i.mencionesNota,
+        if (i.mencionesLabels != null)
+          'menciones': {
+            'ayudas': i.mencionesLabels!.ayudas.map((e) => {'value': e.value, 'label': e.label}).toList(),
+            'salud': i.mencionesLabels!.salud.map((e) => {'value': e.value, 'label': e.label}).toList(),
+            'tramites': i.mencionesLabels!.tramites.map((e) => {'value': e.value, 'label': e.label}).toList(),
+            'nota': i.mencionesLabels!.nota,
+          },
       };
 
   Map<String, dynamic> _requerimientoToMap(RequerimientoModel r) => {

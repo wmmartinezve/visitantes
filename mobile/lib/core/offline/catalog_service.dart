@@ -1,6 +1,7 @@
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 import 'package:visitantes_mobile/core/api/api_client.dart';
+import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
 import 'package:visitantes_mobile/core/storage/local_db.dart';
 
@@ -201,6 +202,12 @@ class CatalogService extends ChangeNotifier {
     final minutes = remaining.inMinutes.remainder(60);
     final ttlLabel = hours > 0 ? '${hours}h ${minutes}m' : '${minutes}m';
     return 'Caché offline · $municipiosCount mun. · válida $ttlLabel';
+  }
+
+  MencionesCatalogo? get mencionesCatalogo {
+    final raw = cachedCatalog?['menciones_catalogo'];
+    if (raw is! Map) return null;
+    return MencionesCatalogo.fromJson(Map<String, dynamic>.from(raw));
   }
 
   bool get tieneNucleoFamiliarEnHogar {

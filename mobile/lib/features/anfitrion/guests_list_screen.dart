@@ -96,6 +96,7 @@ class _GuestsListScreenState extends State<GuestsListScreen> {
                                     builder: (_) => GuestDetailScreen(
                                       invitadoId: inv.navigationId,
                                       fieldApi: widget.fieldApi,
+                                      sync: widget.sync,
                                     ),
                                   ),
                                 );

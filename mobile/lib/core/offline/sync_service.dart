@@ -46,6 +46,7 @@ class SyncService extends ChangeNotifier {
       'inventario.create' => 'Inventario',
       'inventario.update_cantidad' => 'Ajuste de stock',
       'entrega.marcar' => 'Entrega',
+      'invitado.menciones' => 'Menciones de invitado',
       _ => type,
     };
   }
@@ -64,6 +65,7 @@ class SyncService extends ChangeNotifier {
       'inventario.create' => _insumoLabel(map, fallback: 'Ítem de inventario'),
       'inventario.update_cantidad' => 'Stock → ${map['cantidad'] ?? '—'} (ítem #${map['inventario_id'] ?? '—'})',
       'entrega.marcar' => 'Entrega #${map['requerimiento_id'] ?? '—'}',
+      'invitado.menciones' => 'Menciones · Invitado #${map['invitado_id'] ?? '—'}',
       _ => typeLabel(type),
     };
   }
@@ -141,6 +143,34 @@ class SyncService extends ChangeNotifier {
     } finally {
       _syncInProgress = false;
     }
+  }
+
+  /// Reemplaza menciones pendientes del mismo Invitado antes de encolar uno nuevo.
+  Future<String> enqueueInvitadoMencionesUpdate({
+    required int invitadoId,
+    required List<String> ayudas,
+    required List<String> salud,
+    required List<String> tramites,
+    String? nota,
+  }) async {
+    for (final key in LocalDb.queue.keys.toList()) {
+      final raw = LocalDb.queue.get(key);
+      if (raw is! Map) continue;
+      final item = Map<String, dynamic>.from(raw);
+      if (item['type'] != 'invitado.menciones') continue;
+      final payload = item['payload'];
+      if (payload is Map && payload['invitado_id'] == invitadoId) {
+        await LocalDb.queue.delete(key);
+      }
+    }
+
+    return enqueue('invitado.menciones', {
+      'invitado_id': invitadoId,
+      'menciones_ayudas': ayudas,
+      'menciones_salud': salud,
+      'menciones_tramites': tramites,
+      if (nota != null && nota.trim().isNotEmpty) 'menciones_nota': nota.trim(),
+    });
   }
 
   /// Reemplaza ajustes pendientes del mismo ítem antes de encolar uno nuevo.

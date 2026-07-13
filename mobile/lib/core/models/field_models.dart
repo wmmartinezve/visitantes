@@ -1,3 +1,89 @@
+class InvitadoMencionOption {
+  const InvitadoMencionOption({required this.value, required this.label});
+
+  final String value;
+  final String label;
+
+  factory InvitadoMencionOption.fromJson(Map<String, dynamic> json) {
+    return InvitadoMencionOption(
+      value: json['value'] as String? ?? '',
+      label: json['label'] as String? ?? '',
+    );
+  }
+
+  static List<InvitadoMencionOption> parseList(dynamic raw) {
+    if (raw is! List) return [];
+    return raw
+        .whereType<Map>()
+        .map((e) => InvitadoMencionOption.fromJson(Map<String, dynamic>.from(e)))
+        .toList();
+  }
+}
+
+class MencionesCatalogo {
+  const MencionesCatalogo({
+    this.ayudas = const [],
+    this.salud = const [],
+    this.tramites = const [],
+  });
+
+  final List<InvitadoMencionOption> ayudas;
+  final List<InvitadoMencionOption> salud;
+  final List<InvitadoMencionOption> tramites;
+
+  factory MencionesCatalogo.fromJson(Map<String, dynamic> json) {
+    return MencionesCatalogo(
+      ayudas: InvitadoMencionOption.parseList(json['ayudas']),
+      salud: InvitadoMencionOption.parseList(json['salud']),
+      tramites: InvitadoMencionOption.parseList(json['tramites']),
+    );
+  }
+
+  List<InvitadoMencionOption> forCategory(String category) {
+    return switch (category) {
+      'ayudas' => ayudas,
+      'salud' => salud,
+      'tramites' => tramites,
+      _ => const [],
+    };
+  }
+
+  List<InvitadoMencionOption> labelsFor(String category, List<String> keys) {
+    final options = forCategory(category);
+    return keys
+        .map((key) => options.where((o) => o.value == key).firstOrNull)
+        .whereType<InvitadoMencionOption>()
+        .toList();
+  }
+}
+
+class InvitadoMencionesLabels {
+  const InvitadoMencionesLabels({
+    this.ayudas = const [],
+    this.salud = const [],
+    this.tramites = const [],
+    this.nota,
+  });
+
+  final List<InvitadoMencionOption> ayudas;
+  final List<InvitadoMencionOption> salud;
+  final List<InvitadoMencionOption> tramites;
+  final String? nota;
+
+  bool get isEmpty =>
+      ayudas.isEmpty && salud.isEmpty && tramites.isEmpty && (nota == null || nota!.trim().isEmpty);
+
+  factory InvitadoMencionesLabels.fromJson(Map<String, dynamic>? json) {
+    if (json == null) return const InvitadoMencionesLabels();
+    return InvitadoMencionesLabels(
+      ayudas: InvitadoMencionOption.parseList(json['ayudas']),
+      salud: InvitadoMencionOption.parseList(json['salud']),
+      tramites: InvitadoMencionOption.parseList(json['tramites']),
+      nota: json['nota'] as String?,
+    );
+  }
+}
+
 class InvitadoModel {
   InvitadoModel({
     required this.id,
@@ -16,6 +102,11 @@ class InvitadoModel {
     this.hogarCodigo,
     this.miembrosFamilia = const [],
     this.requerimientos = const [],
+    this.mencionesAyudas = const [],
+    this.mencionesSalud = const [],
+    this.mencionesTramites = const [],
+    this.mencionesNota,
+    this.mencionesLabels,
   });
 
   final int id;
@@ -34,6 +125,11 @@ class InvitadoModel {
   final String? hogarCodigo;
   final List<InvitadoMemberModel> miembrosFamilia;
   final List<RequerimientoModel> requerimientos;
+  final List<String> mencionesAyudas;
+  final List<String> mencionesSalud;
+  final List<String> mencionesTramites;
+  final String? mencionesNota;
+  final InvitadoMencionesLabels? mencionesLabels;
 
   int get navigationId => detailInvitadoId ?? id;
 
@@ -45,6 +141,92 @@ class InvitadoModel {
   }
 
   String? get edadLabel => edad != null ? '$edad años' : null;
+
+  bool get tieneMenciones =>
+      mencionesAyudas.isNotEmpty ||
+      mencionesSalud.isNotEmpty ||
+      mencionesTramites.isNotEmpty ||
+      (mencionesNota != null && mencionesNota!.trim().isNotEmpty);
+
+  InvitadoMencionesLabels resolveMencionesLabels(MencionesCatalogo? catalog) {
+    if (mencionesLabels != null && !mencionesLabels!.isEmpty) {
+      return mencionesLabels!;
+    }
+
+    if (catalog != null) {
+      return InvitadoMencionesLabels(
+        ayudas: catalog.labelsFor('ayudas', mencionesAyudas),
+        salud: catalog.labelsFor('salud', mencionesSalud),
+        tramites: catalog.labelsFor('tramites', mencionesTramites),
+        nota: mencionesNota,
+      );
+    }
+
+    List<InvitadoMencionOption> keysAsOptions(List<String> keys) {
+      return keys.map((k) => InvitadoMencionOption(value: k, label: k)).toList();
+    }
+
+    return InvitadoMencionesLabels(
+      ayudas: keysAsOptions(mencionesAyudas),
+      salud: keysAsOptions(mencionesSalud),
+      tramites: keysAsOptions(mencionesTramites),
+      nota: mencionesNota,
+    );
+  }
+
+  String get mencionesResumen {
+    final labels = mencionesLabels;
+    if (labels != null && !labels.isEmpty) {
+      final parts = [
+        ...labels.ayudas.map((e) => e.label),
+        ...labels.salud.map((e) => e.label),
+        ...labels.tramites.map((e) => e.label),
+      ];
+      if (parts.isEmpty) return 'Sin menciones';
+      return parts.join(', ');
+    }
+
+    final count = mencionesAyudas.length + mencionesSalud.length + mencionesTramites.length;
+    if (count == 0) return 'Sin menciones';
+    return '$count seleccionada(s)';
+  }
+
+  InvitadoModel copyWithMenciones({
+    List<String>? ayudas,
+    List<String>? salud,
+    List<String>? tramites,
+    String? nota,
+    InvitadoMencionesLabels? labels,
+  }) {
+    return InvitadoModel(
+      id: id,
+      nombreCompleto: nombreCompleto,
+      cedula: cedula,
+      telefono: telefono,
+      estatusLabel: estatusLabel,
+      fechaNacimiento: fechaNacimiento,
+      edad: edad,
+      registradoEl: registradoEl,
+      fotoUrl: fotoUrl,
+      esJefeFamilia: esJefeFamilia,
+      parentesco: parentesco,
+      detailInvitadoId: detailInvitadoId,
+      hogarSolidarioId: hogarSolidarioId,
+      hogarCodigo: hogarCodigo,
+      miembrosFamilia: miembrosFamilia,
+      requerimientos: requerimientos,
+      mencionesAyudas: ayudas ?? mencionesAyudas,
+      mencionesSalud: salud ?? mencionesSalud,
+      mencionesTramites: tramites ?? mencionesTramites,
+      mencionesNota: nota ?? mencionesNota,
+      mencionesLabels: labels ?? mencionesLabels,
+    );
+  }
+
+  static List<String> _parseStringList(dynamic raw) {
+    if (raw is! List) return [];
+    return raw.whereType<String>().toList();
+  }
 
   factory InvitadoModel.fromJson(Map<String, dynamic> json) {
     return InvitadoModel(
@@ -68,7 +250,22 @@ class InvitadoModel {
       requerimientos: (json['requerimientos'] as List<dynamic>? ?? [])
           .map((e) => RequerimientoModel.fromJson(Map<String, dynamic>.from(e as Map)))
           .toList(),
+      mencionesAyudas: _parseStringList(json['menciones_ayudas']),
+      mencionesSalud: _parseStringList(json['menciones_salud']),
+      mencionesTramites: _parseStringList(json['menciones_tramites']),
+      mencionesNota: json['menciones_nota'] as String?,
+      mencionesLabels: json['menciones'] is Map
+          ? InvitadoMencionesLabels.fromJson(Map<String, dynamic>.from(json['menciones'] as Map))
+          : null,
     );
+  }
+}
+
+extension _FirstOrNullInvitadoMencion on Iterable<InvitadoMencionOption> {
+  InvitadoMencionOption? get firstOrNull {
+    final iterator = this.iterator;
+    if (iterator.moveNext()) return iterator.current;
+    return null;
   }
 }
 

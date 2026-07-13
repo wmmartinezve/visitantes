@@ -73,6 +73,7 @@ class _HogaresListScreenState extends State<HogaresListScreen> {
           hogarId: hogar.id,
           fieldApi: widget.fieldApi,
           preview: hogar,
+          sync: widget.sync,
         ),
       ),
     );

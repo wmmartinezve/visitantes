@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:visitantes_mobile/core/api/field_api.dart';
 import 'package:visitantes_mobile/core/models/field_models.dart';
 import 'package:visitantes_mobile/core/models/mobile_user.dart';
+import 'package:visitantes_mobile/core/offline/sync_service.dart';
 import 'package:visitantes_mobile/core/theme/venezuela_colors.dart';
 import 'package:visitantes_mobile/core/utils/geo_links.dart';
 import 'package:visitantes_mobile/core/utils/map_launcher.dart';
@@ -15,11 +16,13 @@ class HogarDetailScreen extends StatefulWidget {
     required this.hogarId,
     required this.fieldApi,
     this.preview,
+    this.sync,
   });
 
   final int hogarId;
   final FieldApi fieldApi;
   final HogarSolidarioInfo? preview;
+  final SyncService? sync;
 
   @override
   State<HogarDetailScreen> createState() => _HogarDetailScreenState();
@@ -55,6 +58,7 @@ class _HogarDetailScreenState extends State<HogarDetailScreen> {
         builder: (_) => GuestDetailScreen(
           invitadoId: invitado.navigationId,
           fieldApi: widget.fieldApi,
+          sync: widget.sync,
         ),
       ),
     );
