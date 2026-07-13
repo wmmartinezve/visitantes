@@ -16,6 +16,7 @@ use App\Services\AnfitrionMobileProfileService;
 use App\Support\ActivityLogContext;
 use App\Support\HogarSolidarioValidationRules;
 use App\Support\InsumoCatalog;
+use App\Support\InvitadoMencionesCatalog;
 use App\Support\VisitantesFeatures;
 use App\Support\WitnessPhotoDecoder;
 use Illuminate\Database\QueryException;
@@ -67,6 +68,7 @@ class OfflineSyncService
 
                         $serverId = match ($type) {
                             'invitado.registro' => $this->syncInvitadoRegistro($user, $payload, $clientId, $idMap),
+                            'invitado.menciones' => $this->syncInvitadoMenciones($user, $payload, $idMap),
                             'requerimiento.create' => $this->syncRequerimientoCreate($user, $payload, $idMap),
                             'inventario.create' => $this->syncInventarioCreate($user, $payload),
                             'inventario.update_cantidad' => $this->syncInventarioUpdate($user, $payload),
@@ -250,6 +252,46 @@ class OfflineSyncService
         $idMap[$clientId] = $jefe->id;
 
         return $jefe->id;
+    }
+
+    /**
+     * @param  array<string, mixed>  $payload
+     * @param  array<string, int>  $idMap
+     */
+    private function syncInvitadoMenciones(User $user, array $payload, array $idMap): int
+    {
+        if (! $user->isAnfitrion()) {
+            throw new RuntimeException('Solo anfitriones pueden actualizar menciones offline.');
+        }
+
+        $invitadoId = $payload['invitado_id'] ?? null;
+        if ($invitadoId === null && ! empty($payload['invitado_client_id'])) {
+            $invitadoId = $idMap[$payload['invitado_client_id']] ?? null;
+        }
+
+        $validated = Validator::make(
+            array_merge($payload, ['invitado_id' => $invitadoId]),
+            array_merge(
+                ['invitado_id' => ['required', 'integer', 'exists:invitados,id']],
+                InvitadoMencionesCatalog::validationRules(),
+            ),
+        )->validate();
+
+        $invitado = Invitado::query()->findOrFail((int) $validated['invitado_id']);
+
+        Gate::authorize('update', $invitado);
+
+        $before = $this->activityLog->snapshot($invitado);
+        $invitado = app(InvitadoMencionesService::class)->update($invitado, $validated);
+
+        $this->activityLog->updated(
+            $invitado,
+            $before,
+            $this->activityLog->snapshot($invitado),
+            'Menciones actualizadas (sync offline)',
+        );
+
+        return $invitado->id;
     }
 
     /**

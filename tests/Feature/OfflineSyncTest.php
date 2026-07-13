@@ -44,6 +44,7 @@ class OfflineSyncTest extends TestCase
                 'centros_acopio',
                 'unidades_medida',
                 'items_insumo_sugeridos',
+                'menciones_catalogo',
                 'operador',
             ])
             ->assertJsonPath('operador.rol', 'anfitrion')

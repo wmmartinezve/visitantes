@@ -6,11 +6,13 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\MobileInvitadoFotoRequest;
+use App\Http\Requests\MobileInvitadoMencionesRequest;
 use App\Http\Requests\MobileInvitadoStoreRequest;
 use App\Http\Resources\MobileInvitadoResource;
 use App\Http\Resources\MobileUserResource;
 use App\Models\Invitado;
 use App\Services\AnfitrionMobileProfileService;
+use App\Services\InvitadoMencionesService;
 use App\Services\InvitadoRegistrationService;
 use App\Services\NucleoFamiliarOnboardingService;
 use App\Support\WitnessPhotoDecoder;
@@ -142,5 +144,17 @@ class MobileInvitadoController extends Controller
         $jefe = $registration->attachFoto($invitado, $foto);
 
         return new MobileInvitadoResource($jefe->load(['miembrosFamilia', 'hogarSolidario']));
+    }
+
+    public function updateMenciones(
+        MobileInvitadoMencionesRequest $request,
+        Invitado $invitado,
+        InvitadoMencionesService $menciones,
+    ): MobileInvitadoResource {
+        $this->authorize('update', $invitado);
+
+        $invitado = $menciones->update($invitado, $request->validated());
+
+        return new MobileInvitadoResource($invitado->load(['miembrosFamilia', 'hogarSolidario']));
     }
 }

@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Support;
 
+use App\Models\Invitado;
+use Illuminate\Validation\Rule;
+
 final class InvitadoMencionesCatalog
 {
     public const CATEGORIA_AYUDAS = 'ayudas';
@@ -135,5 +138,63 @@ final class InvitadoMencionesCatalog
         }
 
         return $result;
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function validationRules(string $prefix = ''): array
+    {
+        $field = static fn (string $name): string => $prefix.$name;
+
+        return [
+            $field('menciones_ayudas') => ['sometimes', 'nullable', 'array'],
+            $field('menciones_ayudas.*') => ['string', Rule::in(self::keys(self::CATEGORIA_AYUDAS))],
+            $field('menciones_salud') => ['sometimes', 'nullable', 'array'],
+            $field('menciones_salud.*') => ['string', Rule::in(self::keys(self::CATEGORIA_SALUD))],
+            $field('menciones_tramites') => ['sometimes', 'nullable', 'array'],
+            $field('menciones_tramites.*') => ['string', Rule::in(self::keys(self::CATEGORIA_TRAMITES))],
+            $field('menciones_nota') => ['sometimes', 'nullable', 'string', 'max:500'],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    public static function resourcePayload(?Invitado $invitado = null): array
+    {
+        if ($invitado === null) {
+            return self::emptyResourcePayload();
+        }
+
+        return [
+            'menciones_ayudas' => $invitado->menciones_ayudas ?? [],
+            'menciones_salud' => $invitado->menciones_salud ?? [],
+            'menciones_tramites' => $invitado->menciones_tramites ?? [],
+            'menciones_nota' => $invitado->menciones_nota,
+            'menciones' => [
+                'ayudas' => self::labelsForApi($invitado->menciones_ayudas, self::CATEGORIA_AYUDAS),
+                'salud' => self::labelsForApi($invitado->menciones_salud, self::CATEGORIA_SALUD),
+                'tramites' => self::labelsForApi($invitado->menciones_tramites, self::CATEGORIA_TRAMITES),
+                'nota' => $invitado->menciones_nota,
+            ],
+        ];
+    }
+
+    /** @return array<string, mixed> */
+    public static function emptyResourcePayload(): array
+    {
+        return [
+            'menciones_ayudas' => [],
+            'menciones_salud' => [],
+            'menciones_tramites' => [],
+            'menciones_nota' => null,
+            'menciones' => [
+                'ayudas' => [],
+                'salud' => [],
+                'tramites' => [],
+                'nota' => null,
+            ],
+        ];
     }
 }

@@ -18,6 +18,7 @@ use App\Enums\SituacionJefeFamilia;
 use App\Enums\TipoAnfitrionHogar;
 use App\Enums\TipoViviendaHogar;
 use App\Support\InsumoCatalog;
+use App\Support\InvitadoMencionesCatalog;
 
 class OfflineCatalogService
 {
@@ -152,6 +153,7 @@ class OfflineCatalogService
                 ->map(fn (CondicionInvitado $c) => ['value' => $c->value, 'label' => $c->label()])
                 ->values()
                 ->all(),
+            'menciones_catalogo' => InvitadoMencionesCatalog::forApi(),
             'tipos_vivienda' => collect(TipoViviendaHogar::cases())
                 ->map(fn (TipoViviendaHogar $t) => ['value' => $t->value, 'label' => $t->label()])
                 ->values()
