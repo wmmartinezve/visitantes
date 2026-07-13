@@ -121,4 +121,26 @@ return [
     'features' => [
         'logistica' => env('VISITANTES_LOGISTICA', false),
     ],
+
+    /*
+    | Menciones opcionales por Invitado (solo etiquetado, sin detalle operativo).
+    */
+    'menciones' => [
+        'ayudas' => [
+            'alimentos' => 'Alimentos',
+            'bebidas' => 'Bebidas',
+            'otros' => 'Otros',
+        ],
+        'salud' => [
+            'medicamentos' => 'Medicamentos',
+            'examenes' => 'Exámenes',
+            'consultas' => 'Consultas médicas',
+            'otros' => 'Otros',
+        ],
+        'tramites' => [
+            'cedula' => 'Cédula',
+            'partida_nacimiento' => 'Partida de nacimiento',
+            'otros' => 'Otros',
+        ],
+    ],
 ];

@@ -1,0 +1,139 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Support;
+
+final class InvitadoMencionesCatalog
+{
+    public const CATEGORIA_AYUDAS = 'ayudas';
+
+    public const CATEGORIA_SALUD = 'salud';
+
+    public const CATEGORIA_TRAMITES = 'tramites';
+
+    /** @return array<string, array<string, string>> */
+    public static function catalog(): array
+    {
+        return config('visitantes.menciones', []);
+    }
+
+    /** @return array<string, string> */
+    public static function opciones(string $categoria): array
+    {
+        return self::catalog()[$categoria] ?? [];
+    }
+
+    /** @return list<string> */
+    public static function keys(string $categoria): array
+    {
+        return array_keys(self::opciones($categoria));
+    }
+
+    public static function label(string $categoria, string $key): ?string
+    {
+        return self::opciones($categoria)[$key] ?? null;
+    }
+
+    public static function isValidKey(string $categoria, string $key): bool
+    {
+        return array_key_exists($key, self::opciones($categoria));
+    }
+
+    /**
+     * Normaliza una lista de claves: únicas, válidas, orden estable.
+     *
+     * @param  list<string>|null  $keys
+     * @return list<string>|null
+     */
+    public static function normalizeKeys(?array $keys, string $categoria): ?array
+    {
+        if ($keys === null) {
+            return null;
+        }
+
+        $valid = [];
+
+        foreach ($keys as $key) {
+            if (! is_string($key) || $key === '') {
+                continue;
+            }
+
+            if (! self::isValidKey($categoria, $key)) {
+                continue;
+            }
+
+            $valid[$key] = true;
+        }
+
+        if ($valid === []) {
+            return null;
+        }
+
+        return array_keys($valid);
+    }
+
+    /**
+     * @param  array{
+     *     menciones_ayudas?: list<string>|null,
+     *     menciones_salud?: list<string>|null,
+     *     menciones_tramites?: list<string>|null,
+     *     menciones_nota?: string|null,
+     * }  $payload
+     * @return array{
+     *     menciones_ayudas: list<string>|null,
+     *     menciones_salud: list<string>|null,
+     *     menciones_tramites: list<string>|null,
+     *     menciones_nota: string|null,
+     * }
+     */
+    public static function normalizePayload(array $payload): array
+    {
+        $nota = isset($payload['menciones_nota']) ? trim((string) $payload['menciones_nota']) : null;
+
+        return [
+            'menciones_ayudas' => self::normalizeKeys($payload['menciones_ayudas'] ?? null, self::CATEGORIA_AYUDAS),
+            'menciones_salud' => self::normalizeKeys($payload['menciones_salud'] ?? null, self::CATEGORIA_SALUD),
+            'menciones_tramites' => self::normalizeKeys($payload['menciones_tramites'] ?? null, self::CATEGORIA_TRAMITES),
+            'menciones_nota' => $nota !== '' ? $nota : null,
+        ];
+    }
+
+    /**
+     * @param  list<string>|null  $keys
+     * @return list<array{value: string, label: string}>
+     */
+    public static function labelsForApi(?array $keys, string $categoria): array
+    {
+        if ($keys === null || $keys === []) {
+            return [];
+        }
+
+        return collect($keys)
+            ->map(fn (string $key): ?array => self::label($categoria, $key) !== null
+                ? ['value' => $key, 'label' => self::label($categoria, $key)]
+                : null)
+            ->filter()
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Catálogo completo para offline / selectores móviles.
+     *
+     * @return array<string, list<array{value: string, label: string}>>
+     */
+    public static function forApi(): array
+    {
+        $result = [];
+
+        foreach (self::catalog() as $categoria => $opciones) {
+            $result[$categoria] = collect($opciones)
+                ->map(fn (string $label, string $value): array => ['value' => $value, 'label' => $label])
+                ->values()
+                ->all();
+        }
+
+        return $result;
+    }
+}

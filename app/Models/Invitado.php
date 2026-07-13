@@ -33,6 +33,10 @@ class Invitado extends Model
         'procedencia_parroquia_id',
         'situacion_jefe',
         'estatus',
+        'menciones_ayudas',
+        'menciones_salud',
+        'menciones_tramites',
+        'menciones_nota',
     ];
 
     protected function casts(): array
@@ -42,6 +46,9 @@ class Invitado extends Model
             'estatus' => InvitadoEstatus::class,
             'condicion' => CondicionInvitado::class,
             'situacion_jefe' => SituacionJefeFamilia::class,
+            'menciones_ayudas' => 'array',
+            'menciones_salud' => 'array',
+            'menciones_tramites' => 'array',
         ];
     }
 

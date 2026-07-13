@@ -7,6 +7,7 @@ namespace App\Filament\Resources\InvitadoResource\Pages;
 use App\Filament\Concerns\LogsFilamentRecordActivity;
 use App\Filament\Resources\InvitadoResource;
 use App\Filament\Support\HogarSolidarioFichaPdfAction;
+use App\Filament\Support\InvitadoMencionesFields;
 use App\Models\Invitado;
 use Filament\Actions;
 use Filament\Resources\Pages\EditRecord;
@@ -45,7 +46,7 @@ class EditInvitado extends EditRecord
 
         unset($data['es_jefe_familia'], $data['foto_reemplazo']);
 
-        return $data;
+        return InvitadoMencionesFields::mergeNormalized($data);
     }
 
     protected function afterSave(): void

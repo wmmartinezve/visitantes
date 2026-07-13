@@ -6,6 +6,7 @@ namespace App\Filament\Resources\InvitadoResource\Pages;
 
 use App\Filament\Concerns\LogsFilamentRecordActivity;
 use App\Filament\Resources\InvitadoResource;
+use App\Filament\Support\InvitadoMencionesFields;
 use App\Support\NucleoFamiliarPorHogar;
 use Filament\Resources\Pages\CreateRecord;
 use Illuminate\Validation\ValidationException;
@@ -31,7 +32,7 @@ class CreateInvitado extends CreateRecord
 
         unset($data['es_jefe_familia'], $data['foto_reemplazo']);
 
-        return $data;
+        return InvitadoMencionesFields::mergeNormalized($data);
     }
 
     protected function beforeCreate(): void

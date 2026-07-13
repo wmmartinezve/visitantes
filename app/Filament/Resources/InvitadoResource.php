@@ -9,10 +9,12 @@ use App\Enums\InvitadoEstatus;
 use App\Enums\SituacionJefeFamilia;
 use App\Filament\Support\CondicionInvitadoSelectFields;
 use App\Filament\Support\HogarSolidarioFichaPdfAction;
+use App\Filament\Support\InvitadoMencionesFields;
 use App\Filament\Support\ProcedenciaSelectFields;
 use App\Filament\Resources\InvitadoResource\Pages;
 use App\Filament\Resources\InvitadoResource\RelationManagers\MiembrosFamiliaRelationManager;
 use App\Models\Invitado;
+use App\Support\InvitadoMencionesCatalog;
 use App\Support\InvitadoFotoStorage;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -176,6 +178,8 @@ class InvitadoResource extends Resource
                         ->required(fn (Get $get): bool => ! $get('es_jefe_familia')),
                 ])
                 ->columns(2),
+
+            ...InvitadoMencionesFields::section(),
         ]);
     }
 
@@ -225,6 +229,10 @@ class InvitadoResource extends Resource
                         InvitadoEstatus::Egresado => 'gray',
                         default => 'gray',
                     }),
+                Tables\Columns\TextColumn::make('menciones_resumen')
+                    ->label('Menciones')
+                    ->state(fn (Invitado $record): string => self::formatMencionesResumen($record))
+                    ->toggleable(isToggledHiddenByDefault: true),
                 Tables\Columns\TextColumn::make('miembros_familia_count')
                     ->label('Familiares')
                     ->counts('miembrosFamilia')
@@ -277,5 +285,30 @@ class InvitadoResource extends Resource
             'create' => Pages\CreateInvitado::route('/create'),
             'edit' => Pages\EditInvitado::route('/{record}/edit'),
         ];
+    }
+
+    private static function formatMencionesResumen(Invitado $record): string
+    {
+        $partes = [];
+
+        foreach ([
+            InvitadoMencionesCatalog::CATEGORIA_AYUDAS => $record->menciones_ayudas,
+            InvitadoMencionesCatalog::CATEGORIA_SALUD => $record->menciones_salud,
+            InvitadoMencionesCatalog::CATEGORIA_TRAMITES => $record->menciones_tramites,
+        ] as $categoria => $keys) {
+            if (! is_array($keys) || $keys === []) {
+                continue;
+            }
+
+            $etiquetas = collect(InvitadoMencionesCatalog::labelsForApi($keys, $categoria))
+                ->pluck('label')
+                ->implode(', ');
+
+            if ($etiquetas !== '') {
+                $partes[] = $etiquetas;
+            }
+        }
+
+        return $partes === [] ? '—' : implode(' · ', $partes);
     }
 }
